@@ -7,7 +7,7 @@ import type { Platform, Database } from "@/types/database";
 
 type SocialAccount = Database["public"]["Tables"]["social_accounts"]["Row"];
 
-const PLATFORM_IDS: Platform[] = ["twitter", "instagram", "tiktok"];
+const PLATFORM_IDS: Platform[] = ["twitter", "instagram", "facebook", "tiktok"];
 
 export default async function SocialAccountsPage({
   params,
@@ -37,12 +37,14 @@ export default async function SocialAccountsPage({
   const platformNameKeys: Record<Platform, string> = {
     twitter: "twitterName",
     instagram: "instagramName",
+    facebook: "facebookName",
     tiktok: "tiktokName",
   };
 
   const platformDescKeys: Record<Platform, string> = {
     twitter: "twitterDescription",
     instagram: "instagramDescription",
+    facebook: "facebookDescription",
     tiktok: "tiktokDescription",
   };
 

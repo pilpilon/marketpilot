@@ -161,6 +161,8 @@
     "twitterDescription": "Post tweets, threads, and engage with your audience",
     "instagramName": "Instagram",
     "instagramDescription": "Share photos, reels, and stories to your followers",
+    "facebookName": "Facebook",
+    "facebookDescription": "Publish posts, photos, and engage with your Facebook Page audience",
     "tiktokName": "TikTok",
     "tiktokDescription": "Upload short videos and engage with trends"
   },

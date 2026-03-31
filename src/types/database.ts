@@ -6,7 +6,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export type Platform = "twitter" | "instagram" | "tiktok";
+export type Platform = "twitter" | "instagram" | "tiktok" | "facebook";
 export type PostStatus = "draft" | "scheduled" | "publishing" | "published" | "failed" | "cancelled";
 export type PostPlatformStatus = "pending" | "processing" | "publishing" | "published" | "failed";
 export type SocialAccountStatus = "active" | "expired" | "revoked" | "error";

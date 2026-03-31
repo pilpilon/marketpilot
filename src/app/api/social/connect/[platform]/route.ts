@@ -9,7 +9,7 @@ import {
 } from "@/lib/social/oauth";
 import type { Platform } from "@/types/database";
 
-const VALID_PLATFORMS = ["twitter", "instagram", "tiktok"] as const;
+const VALID_PLATFORMS = ["twitter", "instagram", "tiktok", "facebook"] as const;
 
 export async function GET(
   request: Request,

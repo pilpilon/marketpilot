@@ -17,6 +17,7 @@ interface PlatformPreviewProps {
 const PLATFORM_NAMES: Record<Platform, string> = {
   twitter: "X",
   instagram: "Instagram",
+  facebook: "Facebook",
   tiktok: "TikTok",
 };
 

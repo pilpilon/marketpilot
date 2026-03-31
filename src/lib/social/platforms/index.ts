@@ -2,6 +2,7 @@ import type { Platform } from "@/types/database";
 import { TwitterClient } from "./twitter";
 import { InstagramClient } from "./instagram";
 import { TikTokClient } from "./tiktok";
+import { FacebookClient } from "./facebook";
 
 export interface PlatformPublishResult {
   platformPostId: string;
@@ -51,10 +52,11 @@ const clients: Record<Platform, SocialPlatformClient> = {
   twitter: new TwitterClient(),
   instagram: new InstagramClient(),
   tiktok: new TikTokClient(),
+  facebook: new FacebookClient(),
 };
 
 export function getPlatformClient(platform: Platform): SocialPlatformClient {
   return clients[platform];
 }
 
-export { TwitterClient, InstagramClient, TikTokClient };
+export { TwitterClient, InstagramClient, TikTokClient, FacebookClient };

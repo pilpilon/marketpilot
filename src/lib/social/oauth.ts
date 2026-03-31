@@ -56,6 +56,19 @@ const platformConfigs: Record<Platform, () => OAuthConfig> = {
     ],
     usePKCE: false,
   }),
+  facebook: () => ({
+    authUrl: "https://www.facebook.com/v22.0/dialog/oauth",
+    tokenUrl: "https://graph.facebook.com/v22.0/oauth/access_token",
+    clientId: process.env.FACEBOOK_APP_ID!,
+    clientSecret: process.env.FACEBOOK_APP_SECRET!,
+    scopes: [
+      "pages_show_list",
+      "pages_read_engagement",
+      "pages_manage_posts",
+      "pages_read_user_content",
+    ],
+    usePKCE: false,
+  }),
 };
 
 export function getOAuthConfig(platform: Platform): OAuthConfig {
@@ -162,6 +175,21 @@ export async function exchangeCodeForTokens(
         accessToken: longLivedData.access_token,
         refreshToken: longLivedData.access_token,
         expiresIn: longLivedData.expires_in || 5184000, // 60 days
+      };
+    }
+  }
+
+  // Facebook: exchange short-lived token for long-lived token (~60 days)
+  if (platform === "facebook" && data.access_token) {
+    const longLivedRes = await fetch(
+      `https://graph.facebook.com/v22.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${config.clientId}&client_secret=${config.clientSecret}&fb_exchange_token=${data.access_token}`
+    );
+    if (longLivedRes.ok) {
+      const longLivedData = await longLivedRes.json();
+      return {
+        accessToken: longLivedData.access_token,
+        refreshToken: longLivedData.access_token,
+        expiresIn: longLivedData.expires_in || 5184000,
       };
     }
   }

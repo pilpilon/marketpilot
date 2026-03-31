@@ -20,6 +20,7 @@ type SocialAccount = Database["public"]["Tables"]["social_accounts"]["Row"];
 const CHAR_LIMITS: Record<Platform, number> = {
   twitter: 280,
   instagram: 2200,
+  facebook: 63206,
   tiktok: 2200,
 };
 
