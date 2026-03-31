@@ -11,6 +11,7 @@ interface PlatformPreviewProps {
   avatarUrl: string;
   caption: string;
   hashtags: string[];
+  mediaUrls?: string[];
 }
 
 const PLATFORM_NAMES: Record<Platform, string> = {
@@ -25,6 +26,7 @@ export function PlatformPreview({
   avatarUrl,
   caption,
   hashtags,
+  mediaUrls,
 }: PlatformPreviewProps) {
   const fullText = hashtags.length > 0
     ? `${caption}\n\n${hashtags.map((h) => `#${h}`).join(" ")}`
@@ -48,6 +50,16 @@ export function PlatformPreview({
               <p className="text-xs text-muted-foreground">Just now</p>
             </div>
           </div>
+          {mediaUrls && mediaUrls.length > 0 && (
+            <div className="rounded-md overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={mediaUrls[0]}
+                alt="Post media"
+                className="w-full object-cover"
+              />
+            </div>
+          )}
           <p className="text-sm whitespace-pre-wrap break-words">
             {fullText || (
               <span className="text-muted-foreground italic">

@@ -363,6 +363,7 @@ export function ComposeEditor({
               avatarUrl={account.platform_avatar_url || ""}
               caption={caption}
               hashtags={hashtags}
+              mediaUrls={initialMediaUrls}
             />
           ))
         )}
