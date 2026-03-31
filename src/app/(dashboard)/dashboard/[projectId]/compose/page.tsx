@@ -82,6 +82,7 @@ export default async function ComposePage({
         initialCaption={initialCaption}
         initialHashtags={initialHashtags}
         initialMediaUrls={initialMediaUrls}
+        campaignId={campaignId}
       />
     </div>
   );

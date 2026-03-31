@@ -29,6 +29,7 @@ interface ComposeEditorProps {
   initialCaption?: string;
   initialHashtags?: string[];
   initialMediaUrls?: string[];
+  campaignId?: string;
 }
 
 export function ComposeEditor({
@@ -37,6 +38,7 @@ export function ComposeEditor({
   initialCaption,
   initialHashtags,
   initialMediaUrls,
+  campaignId,
 }: ComposeEditorProps) {
   const [caption, setCaption] = useState(initialCaption || "");
   const [hashtags, setHashtags] = useState<string[]>(initialHashtags || []);
@@ -85,6 +87,7 @@ export function ComposeEditor({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           projectId,
+          campaignId: campaignId || undefined,
           status,
           scheduledAt: mode === "schedule" ? new Date(scheduledAt).toISOString() : undefined,
           platforms: selectedPlatforms.map((a) => ({
