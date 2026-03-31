@@ -8,18 +8,61 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Globe, Loader2, Zap } from "lucide-react";
+import { ArrowLeft, Globe, Loader2, Zap, Plus, X, Facebook, Instagram, Linkedin } from "lucide-react";
+import type { BrandUrlType } from "@/types/database";
+
+const SOCIAL_OPTIONS: { value: BrandUrlType; label: string; placeholder: string }[] = [
+  { value: "facebook", label: "Facebook", placeholder: "https://facebook.com/yourbrand" },
+  { value: "instagram", label: "Instagram", placeholder: "https://instagram.com/yourbrand" },
+  { value: "linkedin", label: "LinkedIn", placeholder: "https://linkedin.com/company/yourbrand" },
+  { value: "tiktok", label: "TikTok", placeholder: "https://tiktok.com/@yourbrand" },
+  { value: "youtube", label: "YouTube", placeholder: "https://youtube.com/@yourbrand" },
+  { value: "other", label: "Other URL", placeholder: "https://..." },
+];
+
+function SocialIcon({ type, className }: { type: BrandUrlType; className?: string }) {
+  switch (type) {
+    case "facebook":
+      return <Facebook className={className} />;
+    case "instagram":
+      return <Instagram className={className} />;
+    case "linkedin":
+      return <Linkedin className={className} />;
+    default:
+      return <Globe className={className} />;
+  }
+}
+
+type BrandUrlEntry = { url: string; type: BrandUrlType };
 
 export default function NewProjectPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ name: "", url: "", description: "", market: "global" });
+  const [brandUrls, setBrandUrls] = useState<BrandUrlEntry[]>([]);
+
+  function addBrandUrl() {
+    setBrandUrls([...brandUrls, { url: "", type: "facebook" }]);
+  }
+
+  function removeBrandUrl(index: number) {
+    setBrandUrls(brandUrls.filter((_, i) => i !== index));
+  }
+
+  function updateBrandUrl(index: number, field: keyof BrandUrlEntry, value: string) {
+    setBrandUrls(brandUrls.map((entry, i) =>
+      i === index ? { ...entry, [field]: value } : entry
+    ));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    // Filter out empty brand URLs
+    const validBrandUrls = brandUrls.filter((b) => b.url.trim());
 
     const res = await fetch("/api/projects", {
       method: "POST",
@@ -28,6 +71,7 @@ export default function NewProjectPage() {
         name: form.name,
         url: form.url,
         description: form.description,
+        brandUrls: validBrandUrls,
         settings:
           form.market === "il"
             ? { locale: "he", market: "IL", language: "Hebrew", timezone: "Asia/Jerusalem" }
@@ -95,6 +139,76 @@ export default function NewProjectPage() {
             <p className="text-xs text-muted-foreground">
               Used to research your brand, competitors, and market positioning automatically.
             </p>
+          </div>
+
+          {/* Social Profiles Section */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">
+                Social Profiles{" "}
+                <span className="text-muted-foreground font-normal">(optional)</span>
+              </Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs gap-1 text-primary"
+                onClick={addBrandUrl}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add source
+              </Button>
+            </div>
+
+            {brandUrls.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Add your social media pages to enrich the brand analysis. Great if you don&apos;t have a website yet.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {brandUrls.map((entry, index) => {
+                  const option = SOCIAL_OPTIONS.find((o) => o.value === entry.type) ?? SOCIAL_OPTIONS[5];
+                  return (
+                    <div key={index} className="flex items-center gap-2">
+                      <Select
+                        value={entry.type}
+                        onValueChange={(val) => updateBrandUrl(index, "type", val)}
+                      >
+                        <SelectTrigger className="w-[130px] h-9 shrink-0">
+                          <div className="flex items-center gap-1.5">
+                            <SocialIcon type={entry.type} className="h-3.5 w-3.5" />
+                            <SelectValue />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SOCIAL_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="url"
+                        placeholder={option.placeholder}
+                        className="h-9 flex-1"
+                        value={entry.url}
+                        onChange={(e) => updateBrandUrl(index, "url", e.target.value)}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-9 w-9 p-0 shrink-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => removeBrandUrl(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">

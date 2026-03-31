@@ -64,6 +64,7 @@ export async function POST(
   const projectName = project.name as string;
   const projectUrl = project.url as string | null;
   const projectDesc = project.description as string | null;
+  const brandUrls = (project.brand_urls ?? []) as Array<{ url: string; type: string; label?: string }>;
 
   // Parse locale settings
   const settings = parseProjectSettings(project.settings);
@@ -85,12 +86,23 @@ export async function POST(
   const runId = (run as { id: string } | null)?.id;
 
   try {
-    const context = [
+    // Build context from all available brand sources
+    const TYPE_LABELS: Record<string, string> = {
+      facebook: "Facebook Page",
+      instagram: "Instagram Profile",
+      linkedin: "LinkedIn Page",
+      tiktok: "TikTok Profile",
+      youtube: "YouTube Channel",
+      other: "Online Presence",
+    };
+
+    const contextLines = [
       projectUrl ? `Website: ${projectUrl}` : null,
+      ...brandUrls.map((b) => `${TYPE_LABELS[b.type] ?? "Online Presence"}: ${b.url}`),
       projectDesc ? `Description: ${projectDesc}` : null,
-    ]
-      .filter(Boolean)
-      .join("\n");
+    ];
+    const context = contextLines.filter(Boolean).join("\n");
+    const hasSocialUrls = brandUrls.length > 0;
 
     // 1. Competitor research via Perplexity
     const competitorResearch = await perplexityResearch(
@@ -115,6 +127,25 @@ export async function POST(
       - Common objections and concerns${localeCtx.researchContext}`
     );
 
+    // 2b. Social media presence research (only when social URLs are provided)
+    let socialResearch = "";
+    if (hasSocialUrls) {
+      const socialUrlList = brandUrls.map((b) => `${TYPE_LABELS[b.type] ?? b.type}: ${b.url}`).join("\n");
+      socialResearch = await perplexityResearch(
+        `Analyze the social media presence of "${projectName}" based on their profiles:
+${socialUrlList}
+
+Provide:
+- Content themes and topics they post about most
+- Posting frequency and consistency patterns
+- Engagement levels and audience interaction style
+- Visual style and branding consistency across platforms
+- Top-performing content types (video, images, text, stories)
+- Hashtag usage and community building approach
+- Strengths and gaps in their current social strategy${localeCtx.researchContext}`
+      );
+    }
+
     // 3. Brand positioning via Gemini (synthesis)
     const brandDoc = await geminiGenerate(
       `You are a senior brand strategist. Based on the following research, create a comprehensive brand positioning document for "${projectName}".
@@ -126,6 +157,7 @@ ${competitorResearch}
 
 Target audience:
 ${audienceResearch}
+${socialResearch ? `\nSocial media presence analysis:\n${socialResearch}` : ""}
 ${localeCtx.synthesisContext}
 
 Write a Brand Positioning document with these sections:
@@ -182,6 +214,7 @@ Keep it tight and focused on what matters for marketing.`
 
 Brand positioning context:
 ${brandDoc.slice(0, 800)}
+${socialResearch ? `\nCurrent social media activity:\n${socialResearch.slice(0, 600)}` : ""}
 ${localeCtx.synthesisContext}
 
 Write a Character Brief with these sections:

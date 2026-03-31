@@ -15,6 +15,14 @@ export type AiTone = "professional" | "friendly" | "casual" | "formal";
 export type ReplyStatus = "pending_approval" | "approved" | "sent" | "rejected" | "failed";
 export type Plan = "free" | "starter" | "pro";
 
+export type BrandUrlType = "facebook" | "instagram" | "linkedin" | "tiktok" | "youtube" | "other";
+
+export interface BrandUrl {
+  url: string;
+  type: BrandUrlType;
+  label?: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -55,6 +63,7 @@ export interface Database {
           slug: string;
           description: string | null;
           url: string | null;
+          brand_urls: BrandUrl[];
           repo_url: string | null;
           logo_url: string | null;
           status: "setup" | "active" | "archived";
@@ -69,6 +78,7 @@ export interface Database {
           slug: string;
           description?: string | null;
           url?: string | null;
+          brand_urls?: BrandUrl[];
           repo_url?: string | null;
           logo_url?: string | null;
           status?: "setup" | "active" | "archived";

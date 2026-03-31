@@ -11,11 +11,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { name, url, description, settings } = await request.json();
+  const { name, url, description, settings, brandUrls } = await request.json();
 
   if (!name?.trim()) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
   }
+
+  // Validate and sanitise brand URLs
+  const validBrandUrls = Array.isArray(brandUrls)
+    ? brandUrls
+        .filter((b: { url?: string }) => b?.url?.trim())
+        .map((b: { url: string; type?: string; label?: string }) => ({
+          url: b.url.trim(),
+          type: b.type ?? "other",
+          ...(b.label ? { label: b.label.trim() } : {}),
+        }))
+    : [];
 
   // Generate slug from name
   const slug = name
@@ -42,6 +53,7 @@ export async function POST(request: Request) {
       name: name.trim(),
       slug: finalSlug,
       url: url?.trim() || null,
+      brand_urls: validBrandUrls,
       description: description?.trim() || null,
       settings: settings && typeof settings === "object" ? settings : {},
       status: "setup",

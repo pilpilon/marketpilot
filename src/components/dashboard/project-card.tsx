@@ -5,15 +5,26 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, Loader2, ArrowRight, Globe } from "lucide-react";
+import { Trash2, Loader2, ArrowRight, Globe, Facebook, Instagram, Linkedin } from "lucide-react";
+import type { BrandUrl, BrandUrlType } from "@/types/database";
 
 type Project = {
   id: string;
   name: string;
   description: string | null;
   url: string | null;
+  brand_urls?: BrandUrl[];
   status: string;
 };
+
+function PlatformIcon({ type, className }: { type: BrandUrlType; className?: string }) {
+  switch (type) {
+    case "facebook": return <Facebook className={className} />;
+    case "instagram": return <Instagram className={className} />;
+    case "linkedin": return <Linkedin className={className} />;
+    default: return <Globe className={className} />;
+  }
+}
 
 export function ProjectCard({ project }: { project: Project }) {
   const router = useRouter();
@@ -59,12 +70,21 @@ export function ProjectCard({ project }: { project: Project }) {
               </div>
               <div className="min-w-0">
                 <h3 className="font-heading font-bold text-base tracking-tight truncate">{project.name}</h3>
-                {project.url && (
+                {project.url ? (
                   <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
                     <Globe className="h-3 w-3 shrink-0" />
                     {project.url.replace(/^https?:\/\//, "")}
                   </p>
-                )}
+                ) : project.brand_urls && project.brand_urls.length > 0 ? (
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    {project.brand_urls.slice(0, 3).map((b, i) => (
+                      <PlatformIcon key={i} type={b.type} className="h-3 w-3 text-muted-foreground" />
+                    ))}
+                    <span className="text-xs text-muted-foreground truncate">
+                      {project.brand_urls[0].url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                    </span>
+                  </div>
+                ) : null}
               </div>
             </div>
             <Badge
