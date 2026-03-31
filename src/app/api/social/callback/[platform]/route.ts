@@ -94,7 +94,7 @@ export async function GET(
     }
 
     // Upsert social account
-    await supabase.from("social_accounts").upsert(
+    const { error: upsertError } = await supabase.from("social_accounts").upsert(
       {
         user_id: user.id,
         project_id: oauthState.project_id,
@@ -116,6 +116,10 @@ export async function GET(
         onConflict: "project_id,platform,platform_user_id",
       }
     );
+
+    if (upsertError) {
+      throw new Error(`DB upsert failed: ${upsertError.message}`);
+    }
 
     return NextResponse.redirect(
       `${appUrl}/dashboard/${oauthState.project_id}/social?connected=${platform}`
