@@ -97,7 +97,7 @@ export default function NewProjectPage() {
     <div className="max-w-lg mx-auto space-y-6">
       <Button variant="ghost" size="sm" asChild>
         <Link href="/dashboard">
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="me-2 h-4 w-4" />
           Back to projects
         </Link>
       </Button>
@@ -129,12 +129,12 @@ export default function NewProjectPage() {
               <span className="text-muted-foreground font-normal">(recommended)</span>
             </Label>
             <div className="relative">
-              <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Globe className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="url"
                 type="url"
                 placeholder="https://acme.com"
-                className="pl-9 h-11"
+                className="ps-9 h-11"
                 value={form.url}
                 onChange={(e) => setForm({ ...form, url: e.target.value })}
               />
@@ -175,7 +175,7 @@ export default function NewProjectPage() {
                     <div key={index} className="flex items-center gap-2">
                       <Select
                         value={entry.type}
-                        onValueChange={(val) => updateBrandUrl(index, "type", val)}
+                        onValueChange={(val) => val && updateBrandUrl(index, "type", val)}
                       >
                         <SelectTrigger className="w-[130px] h-9 shrink-0">
                           <div className="flex items-center gap-1.5">
@@ -260,7 +260,7 @@ export default function NewProjectPage() {
           >
             {loading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="me-2 h-4 w-4 animate-spin" />
                 Creating project…
               </>
             ) : (
