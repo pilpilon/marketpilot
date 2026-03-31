@@ -14,7 +14,7 @@ export default function DashboardLayout({
         <div className="flex items-center gap-3 border-b border-border bg-card/50 px-4 py-2.5 sticky top-0 z-10 backdrop-blur-sm">
           <SidebarTrigger className="h-8 w-8" />
         </div>
-        <div className="p-6 max-w-7xl mx-auto">{children}</div>
+        <div className="p-4 sm:p-6 max-w-7xl mx-auto">{children}</div>
       </main>
       <Toaster />
     </SidebarProvider>
