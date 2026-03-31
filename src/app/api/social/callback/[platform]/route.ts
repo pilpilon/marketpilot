@@ -119,9 +119,10 @@ export async function GET(
       `${appUrl}/dashboard/${oauthState.project_id}/social?connected=${platform}`
     );
   } catch (err) {
-    console.error(`OAuth callback error for ${platform}:`, err);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`OAuth callback error for ${platform}:`, msg);
     return NextResponse.redirect(
-      `${appUrl}/dashboard?error=oauth_exchange_failed&platform=${platform}`
+      `${appUrl}/dashboard?error=oauth_exchange_failed&platform=${platform}&detail=${encodeURIComponent(msg)}`
     );
   }
 }
