@@ -1,0 +1,82 @@
+import React from "react";
+
+/** Detect if any text in the fields contains RTL characters (Hebrew, Arabic) */
+export function detectDirection(fields: Record<string, string>): "rtl" | "ltr" {
+  const allText = Object.values(fields).join(" ");
+  const rtlPattern = /[\u0590-\u05FF\u0600-\u06FF\u0700-\u074F]/;
+  return rtlPattern.test(allText) ? "rtl" : "ltr";
+}
+
+const HEBREW_PATTERN = /[\u0590-\u05FF]/;
+
+/**
+ * Reverse graphemes within a single token.
+ */
+function reverseGraphemes(s: string): string {
+  const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+  return Array.from(segmenter.segment(s))
+    .map((seg) => seg.segment)
+    .reverse()
+    .join("");
+}
+
+/**
+ * Satori does not implement the Unicode Bidi Algorithm.
+ * `direction: rtl` CSS does NOT reorder characters or handle multi-line wrapping.
+ *
+ * Solution: render RTL text as a flexbox with `flex-direction: row-reverse` and
+ * `flex-wrap: wrap`. Each word is a separate <span>. Hebrew words have their
+ * characters reversed so they read correctly in LTR glyph rendering.
+ * English/Latin words are kept as-is.
+ *
+ * This gives us:
+ * - Correct character order within words ✓
+ * - Correct word order (right-to-left) ✓
+ * - Correct multi-line wrapping (line 1 = beginning of sentence) ✓
+ * - English words preserved ✓
+ */
+export function RtlTextBlock(props: {
+  text: string;
+  style: React.CSSProperties;
+}): React.ReactElement {
+  const { text, style } = props;
+  if (!text) return <div style={style} />;
+
+  const words = text.split(/\s+/).filter(Boolean);
+
+  // Build the flex container — row-reverse handles RTL word ordering + line wrapping
+  // Satori doesn't support `gap` on flex containers, so we add a trailing space to each word
+  const { direction: _dir, textAlign: _ta, ...restStyle } = style;
+
+  return (
+    <div
+      style={{
+        ...restStyle,
+        display: "flex",
+        flexDirection: "row-reverse",
+        flexWrap: "wrap",
+        justifyContent: "flex-start",
+        alignItems: "baseline",
+      }}
+    >
+      {words.map((word, i) => (
+        <span key={i} style={{ whiteSpace: "pre" }}>
+          {(HEBREW_PATTERN.test(word) ? reverseGraphemes(word) : word) + (i < words.length - 1 ? " " : "")}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Legacy string-based visual RTL — still used by overlay-preview.tsx (CSS client-side).
+ * For Satori overlays, use RtlTextBlock instead.
+ */
+export function toVisualRtl(text: string): string {
+  if (!text) return text;
+  return text.split(/(\s+)/).map((token) => {
+    if (/^\s+$/.test(token)) return token;
+    if (!HEBREW_PATTERN.test(token)) return token;
+    return reverseGraphemes(token);
+  }).join("");
+}

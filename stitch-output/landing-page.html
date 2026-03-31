@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Architect | Build Your Vision</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-fixed": "#ffdcc6",
+              "surface-container-highest": "#e0e3e5",
+              "error": "#ba1a1a",
+              "on-primary-fixed": "#000c62",
+              "primary-fixed-dim": "#bcc2ff",
+              "on-error": "#ffffff",
+              "surface-container-low": "#f2f4f6",
+              "secondary-fixed": "#dee0ff",
+              "on-secondary-fixed": "#00105b",
+              "on-secondary": "#ffffff",
+              "on-primary-container": "#cbcfff",
+              "on-tertiary-fixed": "#301400",
+              "on-primary-fixed-variant": "#303c9a",
+              "error-container": "#ffdad6",
+              "on-tertiary-fixed-variant": "#713700",
+              "background": "#f7f9fb",
+              "surface-container-lowest": "#ffffff",
+              "surface-container": "#eceef0",
+              "tertiary-fixed-dim": "#ffb784",
+              "tertiary": "#6c3400",
+              "primary-fixed": "#dfe0ff",
+              "inverse-on-surface": "#eff1f3",
+              "surface": "#f7f9fb",
+              "inverse-surface": "#2d3133",
+              "surface-tint": "#4955b3",
+              "surface-variant": "#e0e3e5",
+              "on-tertiary": "#ffffff",
+              "primary": "#2b3896",
+              "outline": "#757684",
+              "surface-bright": "#f7f9fb",
+              "on-error-container": "#93000a",
+              "on-background": "#191c1e",
+              "on-secondary-container": "#27378a",
+              "surface-dim": "#d8dadc",
+              "secondary-fixed-dim": "#bac3ff",
+              "primary-container": "#4551af",
+              "on-surface-variant": "#454652",
+              "on-tertiary-container": "#ffc7a2",
+              "inverse-primary": "#bcc2ff",
+              "secondary-container": "#96a5ff",
+              "on-primary": "#ffffff",
+              "tertiary-container": "#8f4700",
+              "on-secondary-fixed-variant": "#2f3f92",
+              "outline-variant": "#c5c5d4",
+              "secondary": "#4858ab",
+              "surface-container-high": "#e6e8ea",
+              "on-surface": "#191c1e"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-nav {
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+      }
+      .primary-gradient {
+        background: linear-gradient(135deg, #2b3896 0%, #4551af 100%);
+      }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Top Navigation Shell -->
+<nav class="fixed top-0 w-full z-50 bg-surface/80 glass-nav shadow-sm dark:shadow-none">
+<div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+<div class="text-2xl font-bold tracking-tighter text-slate-900 dark:text-slate-50 font-headline">Architect</div>
+<div class="hidden md:flex items-center gap-8 font-manrope tracking-tight text-sm font-semibold">
+<a class="text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-600 pb-1" href="#">Features</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-indigo-600 transition-colors" href="#">Pricing</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="hidden md:block text-indigo-700 dark:text-indigo-400 font-manrope text-sm font-semibold hover:opacity-80 transition-opacity active:scale-95">Sign In</button>
+<button class="primary-gradient text-on-primary px-5 py-2.5 rounded-md font-manrope text-sm font-semibold hover:opacity-90 transition-all active:scale-95">Get Started</button>
+</div>
+</div>
+</nav>
+<!-- Hero Section -->
+<section class="relative pt-40 pb-24 md:pt-56 md:pb-32 overflow-hidden">
+<div class="max-w-7xl mx-auto px-6 relative z-10">
+<div class="flex flex-col md:flex-row gap-16 items-center">
+<div class="w-full md:w-1/2 space-y-8">
+<div class="inline-flex items-center px-3 py-1 rounded-full bg-secondary-container/30 text-on-secondary-container text-xs font-semibold tracking-wide uppercase">
+                        Introducing Version 2.0
+                    </div>
+<h1 class="font-headline text-5xl md:text-7xl font-extrabold text-on-surface tracking-tight leading-[1.1]">
+                        Build with <span class="text-primary">Precision.</span> Scale with ease.
+                    </h1>
+<p class="text-on-surface-variant text-lg md:text-xl max-w-lg leading-relaxed">
+                        The modern editorial SaaS framework designed for architects of digital experiences. Structured, fast, and impossibly clean.
+                    </p>
+<div class="flex flex-wrap gap-4 pt-4">
+<button class="primary-gradient text-on-primary px-8 py-4 rounded-md font-headline font-bold text-lg hover:shadow-lg transition-all active:scale-95">
+                            Start Building Now
+                        </button>
+<button class="border border-outline-variant/30 text-primary px-8 py-4 rounded-md font-headline font-bold text-lg hover:bg-surface-container-low transition-colors">
+                            View Demo
+                        </button>
+</div>
+</div>
+<div class="w-full md:w-1/2 relative">
+<div class="aspect-square rounded-xl overflow-hidden shadow-2xl relative">
+<img alt="Modern Office" class="object-cover w-full h-full" data-alt="Minimalist architectural office interior with large windows, clean white desks, and soft morning sunlight casting long shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_FgDHpAp02-eCnbsE_-nEJli7deUzWRHsMrqsuT_FPDO_9jZtxGd6OlQZ4-_lbFBxwAJ8avb17zB2f3bu_UEXaT73NxXuXImSsSJFKI9A1VK9ZFpDlQ0-DsyU9VGDpDCP2fbXPmVJFbHsxVccb8A3_7rB7C63V-BwMCBGRZyjIywKy0Ro51mzeO_U6aw8OJACC7kWZyeCUwrChdWI_2-lmskj7E_eqdmw7cBpKZZV1nAsKqbwSzunbOOzoTQe35V_YPGNikCspg4O"/>
+<div class="absolute inset-0 bg-primary/5 mix-blend-multiply"></div>
+</div>
+<!-- Decorative Floating Element -->
+<div class="absolute -bottom-6 -left-6 bg-surface-container-lowest p-6 rounded-xl shadow-xl border border-outline-variant/10 hidden md:block">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<div>
+<p class="text-xs font-bold text-outline uppercase tracking-widest">Growth</p>
+<p class="text-xl font-black text-on-surface">+142%</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Background Accents -->
+<div class="absolute top-0 right-0 w-1/3 h-full bg-surface-container-low -z-10 translate-x-1/4"></div>
+</section>
+<!-- How It Works Section -->
+<section class="py-24 md:py-40 bg-surface-container-low">
+<div class="max-w-7xl mx-auto px-6">
+<div class="text-center max-w-3xl mx-auto mb-20 space-y-4">
+<h2 class="font-headline text-4xl md:text-5xl font-extrabold tracking-tight text-on-surface">The Blueprint to Success</h2>
+<p class="text-on-surface-variant text-lg">Our three-step process ensures your digital architecture remains solid as you scale.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+<!-- Step 1 -->
+<div class="group">
+<div class="mb-8 relative h-64 rounded-xl overflow-hidden">
+<img alt="Blueprint" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" data-alt="Close up of architectural blueprints and drafting tools on a clean wooden table in natural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOWZCFQKGVkAMjCpmSqB6Mjo35KKzdH3PrmylcwvEgtAFgEdx9hgG6B9DkZrrz422z1DDDqyUHwkcoquf3MoWNoIe0mH40oU94ZbACHGo7pOpGo-rr1mai7fqII9lSLPtGezQbngOJQVQXYoN1qUT3ASGUl1qAj57yo6SmOp4EWxL2PnqtOpUutvVkx94DEBG3EVKcr0f8MUD6epHhso7DEsDCP-Qj2MmkyLG8JYR4OeMcWQQPqzmYpbatAoyqPEW-bAm5h31YhCLl"/>
+<div class="absolute top-4 left-4 bg-primary text-on-primary w-10 h-10 rounded-full flex items-center justify-center font-headline font-bold text-lg shadow-lg">1</div>
+</div>
+<h3 class="font-headline text-2xl font-bold mb-4 text-on-surface">Plan the Foundation</h3>
+<p class="text-on-surface-variant leading-relaxed">Define your structural requirements with our intuitive drag-and-drop schema architect. No code required.</p>
+</div>
+<!-- Step 2 -->
+<div class="group">
+<div class="mb-8 relative h-64 rounded-xl overflow-hidden">
+<img alt="Modern Building" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" data-alt="Abstract low angle shot of a sleek modern skyscraper reflecting the blue sky and white clouds" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQO3AeFxlDC9IKDpX31hSiQkCupzyBP9-sWyDlZ2AOu4nLnhNM5Wt9Hops0nPHrkdxTnw0yS3Dz5J_-qoQTxqa2ZAxvkdkN_ygyb8q5MJ0eCn3_Ft3Tgs3fphvGrISj8NaVhtaJufQL_mWuLL73E22eKd_T05oRQEdnBSGCyHthITtg-ZEKQVeIaTXIZ2g0pRb5VFZ4XNTosDU9nWwvegJe-uZ8ffNRawU2AKaCXzQTws5rLedKa0YWVyqSF3jkRj6Us3DqvI4FtmD"/>
+<div class="absolute top-4 left-4 bg-primary text-on-primary w-10 h-10 rounded-full flex items-center justify-center font-headline font-bold text-lg shadow-lg">2</div>
+</div>
+<h3 class="font-headline text-2xl font-bold mb-4 text-on-surface">Automated Build</h3>
+<p class="text-on-surface-variant leading-relaxed">Our engine constructs your environment using editorial-grade components that prioritize speed and clarity.</p>
+</div>
+<!-- Step 3 -->
+<div class="group">
+<div class="mb-8 relative h-64 rounded-xl overflow-hidden">
+<img alt="Office Space" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" data-alt="Wide shot of a contemporary open-plan office space with plants and soft diffused lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVOLVw5RMIaALT0zqKHM2sdgpU90M1aHgo5jk6JivRd7JWTbp0giF5_xPQcRQwZ90Y7NY4p1ZVYchR5WbjzSyhQzn-MoPXcwcmOcvBxHwY1OF3hoy-dY2qu6fc7ttl400A_6KvSeiSAiYrg06TWlSlO3AttK68Shnw7BvIjozPglhqyZ9b5j_gEnSx-DQ36lU9q5WxxMNr5PcoZps3_QWw5ivvaLl2FyG1PuJQXjIF9sP50AM0mX-PnL90ZlhCjbuNIZUVsFYOlacx"/>
+<div class="absolute top-4 left-4 bg-primary text-on-primary w-10 h-10 rounded-full flex items-center justify-center font-headline font-bold text-lg shadow-lg">3</div>
+</div>
+<h3 class="font-headline text-2xl font-bold mb-4 text-on-surface">Deploy &amp; Scale</h3>
+<p class="text-on-surface-variant leading-relaxed">Launch with confidence on our global edge network. Scale vertically or horizontally with a single click.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Bento Grid Showcase -->
+<section class="py-24 md:py-40 bg-surface">
+<div class="max-w-7xl mx-auto px-6">
+<div class="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-6 h-auto md:h-[600px]">
+<div class="md:col-span-2 md:row-span-2 bg-surface-container-lowest p-10 rounded-xl shadow-sm flex flex-col justify-between border border-outline-variant/10">
+<div>
+<span class="material-symbols-outlined text-primary text-4xl mb-6">architecture</span>
+<h3 class="font-headline text-3xl font-bold mb-4">Structural Integrity</h3>
+<p class="text-on-surface-variant text-lg">Every component is stress-tested to handle millions of requests while maintaining sub-second latency.</p>
+</div>
+<div class="mt-8 pt-8 border-t border-outline-variant/10">
+<div class="flex items-center gap-4">
+<div class="text-4xl font-black text-primary font-headline tracking-tighter">99.9%</div>
+<div class="text-sm font-medium text-outline">Uptime Guaranteed<br/>SLA Infrastructure</div>
+</div>
+</div>
+</div>
+<div class="md:col-span-2 bg-primary-container text-on-primary-container p-10 rounded-xl relative overflow-hidden group">
+<div class="relative z-10">
+<h3 class="font-headline text-2xl font-bold mb-2">Editorial Control</h3>
+<p class="opacity-80">A CMS experience that editors actually love to use.</p>
+</div>
+<span class="material-symbols-outlined absolute -right-4 -bottom-4 text-[120px] opacity-10 group-hover:rotate-12 transition-transform">edit_document</span>
+</div>
+<div class="md:col-span-1 bg-surface-container p-8 rounded-xl flex flex-col justify-center items-center text-center">
+<span class="material-symbols-outlined text-primary mb-4" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<p class="font-headline font-bold text-lg">Fast Delivery</p>
+</div>
+<div class="md:col-span-1 bg-surface-container-highest p-8 rounded-xl flex flex-col justify-center items-center text-center">
+<span class="material-symbols-outlined text-primary mb-4" style="font-variation-settings: 'FILL' 1;">security</span>
+<p class="font-headline font-bold text-lg">Fortified Security</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Final CTA Section -->
+<section class="py-24 md:py-40 relative">
+<div class="max-w-5xl mx-auto px-6">
+<div class="primary-gradient p-12 md:p-24 rounded-2xl shadow-2xl text-center text-on-primary overflow-hidden relative">
+<div class="relative z-10 space-y-8">
+<h2 class="font-headline text-4xl md:text-6xl font-extrabold tracking-tight">Ready to build your masterpiece?</h2>
+<p class="text-xl opacity-90 max-w-2xl mx-auto leading-relaxed">Join 2,000+ companies who have traded their legacy systems for a cleaner, faster digital architecture.</p>
+<div class="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+<button class="bg-surface text-primary px-10 py-5 rounded-md font-headline font-bold text-xl hover:bg-surface-bright transition-colors active:scale-95 shadow-lg">
+                            Get Started for Free
+                        </button>
+<button class="border border-on-primary/30 text-on-primary px-10 py-5 rounded-md font-headline font-bold text-xl hover:bg-on-primary/10 transition-colors">
+                            Talk to Sales
+                        </button>
+</div>
+</div>
+<!-- Abstract Design Overlay -->
+<div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+<div class="absolute bottom-0 left-0 w-64 h-64 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl"></div>
+</div>
+</div>
+</section>
+<!-- Footer Shell -->
+<footer class="bg-slate-50 dark:bg-slate-900 w-full py-12">
+<div class="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-8">
+<div class="text-lg font-black text-slate-900 dark:text-slate-100 font-headline uppercase tracking-tighter">Architect</div>
+<div class="flex gap-8 font-inter text-xs tracking-wide uppercase font-semibold">
+<a class="text-slate-500 dark:text-slate-400 hover:text-indigo-500 transition-colors" href="#">Privacy Policy</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-indigo-500 transition-colors" href="#">Terms of Service</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-indigo-500 transition-colors" href="#">Contact</a>
+</div>
+<div class="text-slate-500 dark:text-slate-400 font-inter text-xs tracking-wide uppercase">
+                © 2024 Architect Digital. All rights reserved.
+            </div>
+</div>
+</footer>
+</body></html>
