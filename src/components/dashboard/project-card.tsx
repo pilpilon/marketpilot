@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, Loader2, ArrowRight, Globe, Facebook, Instagram, Linkedin } from "lucide-react";
+import { Trash2, Loader2, ArrowRight, Globe, Share2, Hash, Link2, Play } from "lucide-react";
 import type { BrandUrl, BrandUrlType } from "@/types/database";
 
 type Project = {
@@ -19,9 +19,11 @@ type Project = {
 
 function PlatformIcon({ type, className }: { type: BrandUrlType; className?: string }) {
   switch (type) {
-    case "facebook": return <Facebook className={className} />;
-    case "instagram": return <Instagram className={className} />;
-    case "linkedin": return <Linkedin className={className} />;
+    case "facebook": return <Share2 className={className} />;
+    case "instagram": return <Hash className={className} />;
+    case "linkedin": return <Link2 className={className} />;
+    case "tiktok":
+    case "youtube": return <Play className={className} />;
     default: return <Globe className={className} />;
   }
 }

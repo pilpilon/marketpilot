@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Globe, Loader2, Zap, Plus, X, Facebook, Instagram, Linkedin } from "lucide-react";
+import { ArrowLeft, Globe, Loader2, Zap, Plus, X, Share2, Link2, Hash, Play } from "lucide-react";
 import type { BrandUrlType } from "@/types/database";
 
 const SOCIAL_OPTIONS: { value: BrandUrlType; label: string; placeholder: string }[] = [
@@ -23,11 +23,14 @@ const SOCIAL_OPTIONS: { value: BrandUrlType; label: string; placeholder: string 
 function SocialIcon({ type, className }: { type: BrandUrlType; className?: string }) {
   switch (type) {
     case "facebook":
-      return <Facebook className={className} />;
+      return <Share2 className={className} />;
     case "instagram":
-      return <Instagram className={className} />;
+      return <Hash className={className} />;
     case "linkedin":
-      return <Linkedin className={className} />;
+      return <Link2 className={className} />;
+    case "tiktok":
+    case "youtube":
+      return <Play className={className} />;
     default:
       return <Globe className={className} />;
   }
