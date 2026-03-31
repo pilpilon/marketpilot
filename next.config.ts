@@ -32,6 +32,7 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
+  turbopack: {},
   serverExternalPackages: ["@resvg/resvg-js", "sharp"],
   images: {
     remotePatterns: [
