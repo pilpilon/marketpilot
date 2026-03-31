@@ -29,7 +29,7 @@ export default async function CampaignsPage({
 
   const { data: campaigns } = await supabase
     .from("campaigns")
-    .select("*, campaign_assets(id)")
+    .select("*, campaign_assets(id), posts(id, status)")
     .eq("project_id", projectId)
     .order("created_at", { ascending: false });
 
@@ -42,6 +42,7 @@ export default async function CampaignsPage({
     platforms: string[];
     created_at: string;
     campaign_assets: Array<{ id: string }>;
+    posts: Array<{ id: string; status: string }>;
   };
 
   const rows = (campaigns || []) as CampaignRow[];

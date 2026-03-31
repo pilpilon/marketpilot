@@ -129,6 +129,15 @@ export async function POST(request: Request) {
     );
   }
 
+  // Update campaign status to "active" if a post was scheduled/published from it
+  if (campaignId && (status === "scheduled" || status === "draft")) {
+    await supabase
+      .from("campaigns")
+      .update({ status: "active" })
+      .eq("id", campaignId)
+      .eq("status", "draft");
+  }
+
   // Return the created post with platforms
   const { data: fullPost } = await supabase
     .from("posts")

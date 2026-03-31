@@ -16,6 +16,8 @@ import {
   Trash2,
   Loader2,
   X,
+  Clock,
+  CheckCircle2,
 } from "lucide-react";
 
 const CAMPAIGN_ICONS: Record<string, React.ElementType> = {
@@ -41,6 +43,7 @@ type CampaignRow = {
   platforms: string[];
   created_at: string;
   campaign_assets: Array<{ id: string }>;
+  posts?: Array<{ id: string; status: string }>;
 };
 
 export function CampaignList({
@@ -203,6 +206,27 @@ export function CampaignList({
                     {campaign.campaign_assets.length} asset
                     {campaign.campaign_assets.length !== 1 ? "s" : ""}
                   </span>
+                  {(() => {
+                    const posts = campaign.posts || [];
+                    const scheduled = posts.filter((p) => p.status === "scheduled").length;
+                    const published = posts.filter((p) => p.status === "published").length;
+                    return (
+                      <>
+                        {scheduled > 0 && (
+                          <Badge variant="outline" className="gap-1 border-amber-300 text-amber-600">
+                            <Clock className="h-3 w-3" />
+                            {scheduled} scheduled
+                          </Badge>
+                        )}
+                        {published > 0 && (
+                          <Badge variant="outline" className="gap-1 border-green-300 text-green-600">
+                            <CheckCircle2 className="h-3 w-3" />
+                            {published} published
+                          </Badge>
+                        )}
+                      </>
+                    );
+                  })()}
                   <Badge
                     variant={campaign.status === "active" ? "default" : "secondary"}
                     className={
