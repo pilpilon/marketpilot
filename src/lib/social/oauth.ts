@@ -32,16 +32,14 @@ const platformConfigs: Record<Platform, () => OAuthConfig> = {
     usePKCE: true,
   }),
   instagram: () => ({
-    authUrl: "https://www.facebook.com/v21.0/dialog/oauth",
-    tokenUrl: "https://graph.facebook.com/v21.0/oauth/access_token",
-    clientId: process.env.FACEBOOK_APP_ID!,
-    clientSecret: process.env.FACEBOOK_APP_SECRET!,
+    authUrl: "https://www.instagram.com/oauth/authorize",
+    tokenUrl: "https://api.instagram.com/oauth/access_token",
+    clientId: process.env.INSTAGRAM_APP_ID!,
+    clientSecret: process.env.INSTAGRAM_APP_SECRET!,
     scopes: [
-      "instagram_basic",
-      "instagram_content_publish",
-      "instagram_manage_comments",
-      "pages_show_list",
-      "pages_read_engagement",
+      "instagram_business_basic",
+      "instagram_business_content_publish",
+      "instagram_business_manage_comments",
     ],
     usePKCE: false,
   }),
@@ -78,6 +76,11 @@ export function buildAuthorizationUrl(
     state,
     scope: config.scopes.join(" "),
   });
+
+  if (platform === "instagram") {
+    params.set("enable_fb_login", "0");
+    params.set("force_authentication", "1");
+  }
 
   if (platform === "tiktok") {
     // TikTok uses client_key instead of client_id
@@ -147,17 +150,17 @@ export async function exchangeCodeForTokens(
 
   const data = await res.json();
 
-  // Instagram: exchange short-lived token for long-lived token
+  // Instagram Business Login: exchange short-lived token for long-lived token
   if (platform === "instagram") {
     const longLivedRes = await fetch(
-      `https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${config.clientId}&client_secret=${config.clientSecret}&fb_exchange_token=${data.access_token}`
+      `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${config.clientSecret}&access_token=${data.access_token}`
     );
 
     if (longLivedRes.ok) {
       const longLivedData = await longLivedRes.json();
       return {
         accessToken: longLivedData.access_token,
-        refreshToken: longLivedData.access_token, // IG uses same token for refresh
+        refreshToken: longLivedData.access_token,
         expiresIn: longLivedData.expires_in || 5184000, // 60 days
       };
     }

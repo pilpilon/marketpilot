@@ -7,7 +7,7 @@ import type {
 export class InstagramClient implements SocialPlatformClient {
   platform = "instagram" as const;
 
-  private graphUrl = "https://graph.facebook.com/v21.0";
+  private graphUrl = "https://graph.instagram.com/v21.0";
 
   private async request(path: string, accessToken: string, options: RequestInit = {}) {
     const separator = path.includes("?") ? "&" : "?";
@@ -42,15 +42,11 @@ export class InstagramClient implements SocialPlatformClient {
     caption: string,
     mediaUrls: string[]
   ): Promise<PlatformPublishResult> {
-    // Step 1: Get the Instagram Business Account ID
-    const accounts = await this.request(
-      "/me/accounts?fields=instagram_business_account",
-      accessToken
-    );
-
-    const igAccountId = accounts.data?.[0]?.instagram_business_account?.id;
+    // Step 1: Get the Instagram user ID
+    const profile = await this.request("/me?fields=user_id", accessToken);
+    const igAccountId = profile.user_id || profile.id;
     if (!igAccountId) {
-      throw new Error("No Instagram Business Account found");
+      throw new Error("Could not get Instagram user ID");
     }
 
     // Step 2: Create media container
@@ -160,7 +156,7 @@ export class InstagramClient implements SocialPlatformClient {
   }> {
     // Instagram long-lived tokens are refreshed via GET
     const res = await fetch(
-      `${this.graphUrl}/oauth/access_token?grant_type=fb_exchange_token&client_id=${process.env.FACEBOOK_APP_ID}&client_secret=${process.env.FACEBOOK_APP_SECRET}&fb_exchange_token=${refreshToken}`
+      `${this.graphUrl}/refresh_access_token?grant_type=ig_refresh_token&access_token=${refreshToken}`
     );
 
     if (!res.ok) {
@@ -175,34 +171,17 @@ export class InstagramClient implements SocialPlatformClient {
   }
 
   async getUserProfile(accessToken: string) {
-    // Debug: check what permissions the token has
-    const perms = await this.request("/me/permissions", accessToken);
-    const grantedPerms = (perms.data || [])
-      .filter((p: { status: string }) => p.status === "granted")
-      .map((p: { permission: string }) => p.permission)
-      .join(",");
-
-    // Get Facebook Page -> IG Business Account
-    const accounts = await this.request(
-      "/me/accounts?fields=id,name,instagram_business_account{id,username,name,profile_picture_url}",
+    // Instagram Business Login: get user profile directly
+    const profile = await this.request(
+      "/me?fields=user_id,username,name,profile_picture_url",
       accessToken
     );
 
-    if (!accounts.data || accounts.data.length === 0) {
-      throw new Error(`No Pages found. Granted perms: ${grantedPerms}. Token prefix: ${accessToken.substring(0, 10)}`);
-    }
-
-    const ig = accounts.data?.[0]?.instagram_business_account;
-    if (!ig) {
-      const pageNames = accounts.data.map((p: { name: string }) => p.name).join(", ");
-      throw new Error(`Pages found (${pageNames}) but none have an Instagram Business Account linked.`);
-    }
-
     return {
-      id: ig.id,
-      username: ig.username || "",
-      displayName: ig.name || ig.username || "",
-      avatarUrl: ig.profile_picture_url || "",
+      id: profile.user_id || profile.id,
+      username: profile.username || "",
+      displayName: profile.name || profile.username || "",
+      avatarUrl: profile.profile_picture_url || "",
     };
   }
 }
