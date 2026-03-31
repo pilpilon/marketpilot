@@ -2,15 +2,15 @@
   "crons": [
     {
       "path": "/api/cron/publish-scheduled",
-      "schedule": "* * * * *"
+      "schedule": "0 * * * *"
     },
     {
       "path": "/api/cron/refresh-tokens",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 0 * * *"
     },
     {
       "path": "/api/cron/monitor-comments",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 */2 * * *"
     }
   ]
 }
