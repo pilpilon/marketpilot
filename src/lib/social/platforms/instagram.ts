@@ -177,13 +177,20 @@ export class InstagramClient implements SocialPlatformClient {
   async getUserProfile(accessToken: string) {
     // Get Facebook Page -> IG Business Account
     const accounts = await this.request(
-      "/me/accounts?fields=instagram_business_account{id,username,name,profile_picture_url}",
+      "/me/accounts?fields=id,name,instagram_business_account{id,username,name,profile_picture_url}",
       accessToken
     );
 
+    console.log("[IG OAuth] /me/accounts response:", JSON.stringify(accounts, null, 2));
+
+    if (!accounts.data || accounts.data.length === 0) {
+      throw new Error("No Facebook Pages found. Make sure you granted page access during OAuth.");
+    }
+
     const ig = accounts.data?.[0]?.instagram_business_account;
     if (!ig) {
-      throw new Error("No Instagram Business Account found");
+      const pageNames = accounts.data.map((p: { name: string }) => p.name).join(", ");
+      throw new Error(`Pages found (${pageNames}) but none have an Instagram Business Account linked.`);
     }
 
     return {

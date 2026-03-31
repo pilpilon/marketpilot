@@ -65,6 +65,7 @@ export async function GET(
   try {
     const redirectUri = `${appUrl}/api/social/callback/${platform}`;
 
+    console.log(`[OAuth] Exchanging code for ${platform} tokens...`);
     // Exchange code for tokens
     const tokens = await exchangeCodeForTokens(
       platform as Platform,
@@ -73,6 +74,7 @@ export async function GET(
       oauthState.code_verifier || undefined
     );
 
+    console.log(`[OAuth] Token exchange successful, getting ${platform} profile...`);
     // Get user profile from the platform
     const client = getPlatformClient(platform as Platform);
     const profile = await client.getUserProfile(tokens.accessToken);
