@@ -175,16 +175,21 @@ export class InstagramClient implements SocialPlatformClient {
   }
 
   async getUserProfile(accessToken: string) {
+    // Debug: check what permissions the token has
+    const perms = await this.request("/me/permissions", accessToken);
+    const grantedPerms = (perms.data || [])
+      .filter((p: { status: string }) => p.status === "granted")
+      .map((p: { permission: string }) => p.permission)
+      .join(",");
+
     // Get Facebook Page -> IG Business Account
     const accounts = await this.request(
       "/me/accounts?fields=id,name,instagram_business_account{id,username,name,profile_picture_url}",
       accessToken
     );
 
-    console.log("[IG OAuth] /me/accounts response:", JSON.stringify(accounts, null, 2));
-
     if (!accounts.data || accounts.data.length === 0) {
-      throw new Error("No Facebook Pages found. Make sure you granted page access during OAuth.");
+      throw new Error(`No Pages found. Granted perms: ${grantedPerms}. Token prefix: ${accessToken.substring(0, 10)}`);
     }
 
     const ig = accounts.data?.[0]?.instagram_business_account;
