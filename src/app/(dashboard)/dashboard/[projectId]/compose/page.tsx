@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { ComposeEditor } from "@/components/compose/compose-editor";
 import type { Database } from "@/types/database";
 
@@ -12,6 +13,7 @@ export default async function ComposePage({
   params: Promise<{ projectId: string }>;
   searchParams: Promise<{ campaignId?: string }>;
 }) {
+  const t = await getTranslations("compose");
   const { projectId } = await params;
   const { campaignId } = await searchParams;
   const supabase = await createServerSupabaseClient();
@@ -70,9 +72,9 @@ export default async function ComposePage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-heading text-3xl font-extrabold tracking-tight">Create Post</h1>
+        <h1 className="font-heading text-3xl font-extrabold tracking-tight">{t("title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Compose and publish content across your social platforms
+          {t("subtitle")}
         </p>
       </div>
 

@@ -1,28 +1,13 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { SocialAccountCard } from "@/components/social/social-account-card";
 import { ConnectButton } from "@/components/social/connect-button";
 import type { Platform, Database } from "@/types/database";
 
 type SocialAccount = Database["public"]["Tables"]["social_accounts"]["Row"];
 
-const PLATFORMS: { id: Platform; name: string; description: string }[] = [
-  {
-    id: "twitter",
-    name: "X (Twitter)",
-    description: "Post tweets, threads, and engage with your audience",
-  },
-  {
-    id: "instagram",
-    name: "Instagram",
-    description: "Share photos, reels, and stories to your followers",
-  },
-  {
-    id: "tiktok",
-    name: "TikTok",
-    description: "Upload short videos and engage with trends",
-  },
-];
+const PLATFORM_IDS: Platform[] = ["twitter", "instagram", "tiktok"];
 
 export default async function SocialAccountsPage({
   params,
@@ -30,6 +15,7 @@ export default async function SocialAccountsPage({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = await params;
+  const t = await getTranslations("social");
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -48,17 +34,35 @@ export default async function SocialAccountsPage({
     typedAccounts.map((a) => [a.platform, a])
   );
 
+  const platformNameKeys: Record<Platform, string> = {
+    twitter: "twitterName",
+    instagram: "instagramName",
+    tiktok: "tiktokName",
+  };
+
+  const platformDescKeys: Record<Platform, string> = {
+    twitter: "twitterDescription",
+    instagram: "instagramDescription",
+    tiktok: "tiktokDescription",
+  };
+
+  const platforms = PLATFORM_IDS.map((id) => ({
+    id,
+    name: t(platformNameKeys[id] as any),
+    description: t(platformDescKeys[id] as any),
+  }));
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-heading text-3xl font-extrabold tracking-tight">Social Accounts</h1>
+        <h1 className="font-heading text-3xl font-extrabold tracking-tight">{t("title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Connect your social media accounts to publish content
+          {t("description")}
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {PLATFORMS.map((platform) => {
+        {platforms.map((platform) => {
           const account = connectedMap.get(platform.id);
           return account ? (
             <SocialAccountCard

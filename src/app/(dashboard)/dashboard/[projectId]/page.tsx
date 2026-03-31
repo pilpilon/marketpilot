@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ export default async function ProjectOverviewPage({
 }: {
   params: Promise<{ projectId: string }>;
 }) {
+  const t = await getTranslations("projectOverview");
   const { projectId } = await params;
   const supabase = await createServerSupabaseClient();
 
@@ -55,51 +57,51 @@ export default async function ProjectOverviewPage({
   const intelligenceComplete = contextFileTypes.size >= 4;
 
   const REQUIRED_TYPES = ["brand", "product", "audience", "competitors"];
-  const missing = REQUIRED_TYPES.filter((t) => !contextFileTypes.has(t));
+  const missingTypes = REQUIRED_TYPES.filter((type) => !contextFileTypes.has(type));
 
   const steps = [
     {
       id: "intelligence",
-      title: "Brand Intelligence",
-      description: "Research your brand, audience & competitors with AI",
+      title: t("stepIntelligenceTitle"),
+      description: t("stepIntelligenceDesc"),
       href: `/dashboard/${projectId}/intelligence`,
       icon: Brain,
       done: intelligenceComplete,
-      cta: intelligenceComplete ? "View Intelligence" : "Run Analysis",
+      cta: intelligenceComplete ? t("viewIntelligence") : t("runAnalysis"),
     },
     {
       id: "skills",
-      title: "Skills Engine",
-      description: "Generate campaigns, posts, scripts & calendars",
+      title: t("stepSkillsTitle"),
+      description: t("stepSkillsDesc"),
       href: `/dashboard/${projectId}/skills`,
       icon: Zap,
       done: (assetCount ?? 0) > 0,
-      cta: "Run Skills",
+      cta: t("runSkills"),
     },
     {
       id: "social",
-      title: "Social Publishing",
-      description: "Connect accounts and publish your content",
+      title: t("stepSocialTitle"),
+      description: t("stepSocialDesc"),
       href: `/dashboard/${projectId}/social`,
       icon: Share2,
       done: false,
-      cta: "Connect Accounts",
+      cta: t("connectAccounts"),
     },
     {
       id: "calendar",
-      title: "Content Calendar",
-      description: "Schedule and manage your content pipeline",
+      title: t("stepCalendarTitle"),
+      description: t("stepCalendarDesc"),
       href: `/dashboard/${projectId}/calendar`,
       icon: CalendarDays,
       done: (publishedCount ?? 0) > 0,
-      cta: "Open Calendar",
+      cta: t("openCalendar"),
     },
   ];
 
   const stats = [
-    { label: "Context Files", value: `${contextFileTypes.size}/7`, sub: "types populated" },
-    { label: "Campaigns", value: campaignCount ?? 0, sub: "total created" },
-    { label: "Published Posts", value: publishedCount ?? 0, sub: "across all platforms" },
+    { label: t("contextFiles"), value: `${contextFileTypes.size}/7`, sub: t("typesPopulated") },
+    { label: t("campaigns"), value: campaignCount ?? 0, sub: t("totalCreated") },
+    { label: t("publishedPosts"), value: publishedCount ?? 0, sub: t("acrossAllPlatforms") },
   ];
 
   return (
@@ -141,19 +143,19 @@ export default async function ProjectOverviewPage({
           <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-              Brand intelligence incomplete
+              {t("intelligenceIncomplete")}
             </p>
             <p className="text-sm text-amber-700 dark:text-amber-400 mt-0.5">
-              Missing: {missing.map((t, i) => (
-                <span key={t}>
+              {t("missingPrefix")} {missingTypes.map((type, i) => (
+                <span key={type}>
                   {i > 0 && ", "}
-                  <span className="capitalize">{t}</span>
+                  <span className="capitalize">{type}</span>
                 </span>
-              ))}. Run the analyzer to unlock the full skills engine.
+              ))}{t("missingSuffix")}
             </p>
           </div>
           <Button size="sm" className="primary-gradient text-white border-0 hover:opacity-90 shrink-0" asChild>
-            <Link href={`/dashboard/${projectId}/intelligence`}>Run Analysis</Link>
+            <Link href={`/dashboard/${projectId}/intelligence`}>{t("runAnalysis")}</Link>
           </Button>
         </div>
       )}
@@ -173,7 +175,7 @@ export default async function ProjectOverviewPage({
 
       {/* Workflow steps */}
       <div>
-        <h2 className="font-heading text-lg font-bold mb-4">Workflow</h2>
+        <h2 className="font-heading text-lg font-bold mb-4">{t("workflow")}</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {steps.map((step, i) => (
             <Link key={step.id} href={step.href}>
@@ -203,11 +205,11 @@ export default async function ProjectOverviewPage({
 
       {/* Campaigns quick link */}
       <div className="flex items-center justify-between">
-        <h2 className="font-heading text-lg font-bold">Campaigns</h2>
+        <h2 className="font-heading text-lg font-bold">{t("campaignsHeading")}</h2>
         <Button variant="outline" size="sm" asChild>
           <Link href={`/dashboard/${projectId}/campaigns`}>
             <FolderKanban className="me-2 h-4 w-4" />
-            View all
+            {t("viewAll")}
           </Link>
         </Button>
       </div>

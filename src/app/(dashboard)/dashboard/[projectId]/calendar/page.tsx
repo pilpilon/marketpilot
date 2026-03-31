@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { ContentCalendar } from "@/components/calendar/content-calendar";
 
 export default async function CalendarPage({
@@ -8,6 +9,7 @@ export default async function CalendarPage({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = await params;
+  const t = await getTranslations("calendar");
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -18,9 +20,9 @@ export default async function CalendarPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-heading text-3xl font-extrabold tracking-tight">Content Calendar</h1>
+        <h1 className="font-heading text-3xl font-extrabold tracking-tight">{t("title")}</h1>
         <p className="text-muted-foreground mt-1">
-          View and manage your scheduled posts
+          {t("description")}
         </p>
       </div>
 

@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,7 @@ export default async function AutoReplyPage({
 }: {
   params: Promise<{ projectId: string }>;
 }) {
+  const t = await getTranslations("autoReply");
   const { projectId } = await params;
   const supabase = await createServerSupabaseClient();
   const {
@@ -64,16 +66,16 @@ export default async function AutoReplyPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-heading text-3xl font-extrabold tracking-tight">Auto Replies</h1>
+          <h1 className="font-heading text-3xl font-extrabold tracking-tight">{t("title")}</h1>
           <p className="text-muted-foreground mt-1">
-            Automatically respond to comments on your posts
+            {t("description")}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
             <Link href={`/dashboard/${projectId}/auto-reply/queue`}>
               <Inbox className="me-2 h-4 w-4" />
-              Approval Queue
+              {t("approvalQueue")}
               {(pendingCount || 0) > 0 && (
                 <Badge variant="destructive" className="ms-2">
                   {pendingCount}
@@ -84,7 +86,7 @@ export default async function AutoReplyPage({
           <Button className="primary-gradient text-white border-0 hover:opacity-90 font-heading font-semibold" asChild>
             <Link href={`/dashboard/${projectId}/auto-reply/new`}>
               <Plus className="me-2 h-4 w-4" />
-              New Rule
+              {t("newRule")}
             </Link>
           </Button>
         </div>
@@ -106,22 +108,22 @@ export default async function AutoReplyPage({
                     <CardTitle className="text-base">{rule.name}</CardTitle>
                     <Badge variant="outline">
                       {rule.rule_type === "keyword_match"
-                        ? "Keyword Match"
-                        : "AI Generated"}
+                        ? t("keywordMatch")
+                        : t("aiGenerated")}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-3">
                     <Badge variant={rule.is_active ? "default" : "secondary"}>
-                      {rule.is_active ? "Active" : "Paused"}
+                      {rule.is_active ? t("active") : t("paused")}
                     </Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-muted-foreground space-y-1">
-                    <p>Account: @{account.platform_username}</p>
+                    <p>{t("account")}: @{account.platform_username}</p>
                     {rule.rule_type === "keyword_match" && (
                       <p>
-                        Keywords:{" "}
+                        {t("keywords")}:{" "}
                         {(rule.trigger_keywords || []).map((kw) => (
                           <Badge key={kw} variant="secondary" className="me-1 text-xs">
                             {kw}
@@ -130,10 +132,10 @@ export default async function AutoReplyPage({
                       </p>
                     )}
                     <p>
-                      Approval required:{" "}
-                      {rule.require_approval ? "Yes" : "No (auto-send)"}
+                      {t("approvalRequired")}:{" "}
+                      {rule.require_approval ? t("approvalYes") : t("approvalNo")}
                     </p>
-                    <p>Rate limit: {rule.max_replies_per_hour}/hour</p>
+                    <p>{t("rateLimit")}: {rule.max_replies_per_hour}{t("perHour")}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -143,14 +145,14 @@ export default async function AutoReplyPage({
       ) : (
         <Card className="flex flex-col items-center justify-center py-16">
           <MessageSquareReply className="h-12 w-12 text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold mb-2">No auto-reply rules</h2>
+          <h2 className="text-xl font-semibold mb-2">{t("emptyTitle")}</h2>
           <p className="text-muted-foreground mb-4">
-            Create rules to automatically respond to comments
+            {t("emptyDescription")}
           </p>
           <Button asChild>
             <Link href={`/dashboard/${projectId}/auto-reply/new`}>
               <Plus className="me-2 h-4 w-4" />
-              Create First Rule
+              {t("createFirstRule")}
             </Link>
           </Button>
         </Card>

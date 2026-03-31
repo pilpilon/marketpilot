@@ -1,10 +1,11 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Copy, Send } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { ArrowLeft, Send } from "lucide-react";
 import { CampaignAssetCard } from "@/components/campaigns/campaign-asset-card";
 
 export default async function CampaignDetailPage({
@@ -12,6 +13,7 @@ export default async function CampaignDetailPage({
 }: {
   params: Promise<{ projectId: string; campaignId: string }>;
 }) {
+  const t = await getTranslations("campaignDetail");
   const { projectId, campaignId } = await params;
   const supabase = await createServerSupabaseClient();
 
@@ -49,10 +51,10 @@ export default async function CampaignDetailPage({
   const assetRows = (assets || []) as Asset[];
 
   const TYPE_LABELS: Record<string, string> = {
-    social_media: "Social Media",
-    email: "Email",
-    video_ad: "Video Ad",
-    content_marketing: "Content Marketing",
+    social_media: t("typeSocialMedia"),
+    email: t("typeEmail"),
+    video_ad: t("typeVideoAd"),
+    content_marketing: t("typeContentMarketing"),
   };
 
   return (
@@ -61,7 +63,7 @@ export default async function CampaignDetailPage({
         <Button variant="ghost" size="sm" asChild>
           <Link href={`/dashboard/${projectId}/campaigns`}>
             <ArrowLeft className="me-2 h-4 w-4" />
-            All Campaigns
+            {t("allCampaigns")}
           </Link>
         </Button>
       </div>
@@ -78,7 +80,7 @@ export default async function CampaignDetailPage({
             </Badge>
             {(campaign.goal as string | null) && (
               <span className="text-sm text-muted-foreground">
-                Goal: {campaign.goal as string}
+                {t("goal", { goal: campaign.goal as string })}
               </span>
             )}
           </div>
@@ -87,7 +89,7 @@ export default async function CampaignDetailPage({
           <Button variant="outline" size="sm" asChild>
             <Link href={`/dashboard/${projectId}/compose?campaignId=${campaignId}`}>
               <Send className="me-2 h-4 w-4" />
-              Publish to Social
+              {t("publishToSocial")}
             </Link>
           </Button>
         </div>
@@ -96,14 +98,16 @@ export default async function CampaignDetailPage({
       {assetRows.length === 0 ? (
         <Card>
           <CardContent className="flex items-center justify-center py-12">
-            <p className="text-muted-foreground">No assets in this campaign yet.</p>
+            <p className="text-muted-foreground">{t("noAssets")}</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-              {assetRows.length} Asset{assetRows.length !== 1 ? "s" : ""}
+              {assetRows.length !== 1
+                ? t("assetCountPlural", { count: assetRows.length })
+                : t("assetCount", { count: assetRows.length })}
             </h2>
           </div>
           {assetRows.map((asset) => (

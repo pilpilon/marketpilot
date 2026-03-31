@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -21,47 +22,15 @@ import { Separator } from "@/components/ui/separator";
 import { IntakeFileUpload } from "@/components/intake-file-upload";
 import { IntakeAttachmentList } from "@/components/intake-attachment-list";
 
-const FILE_TYPES = [
-  {
-    id: "brand",
-    label: "Brand",
-    description: "Positioning, promise, pillars, differentiators, voice & tone",
-  },
-  {
-    id: "product",
-    label: "Product",
-    description: "Value proposition, features, use cases, proof points",
-  },
-  {
-    id: "audience",
-    label: "Audience",
-    description: "Buyer personas, pain points, channels, objections",
-  },
-  {
-    id: "competitors",
-    label: "Competitors",
-    description: "Competitive landscape, positioning gaps, market dynamics",
-  },
-  {
-    id: "character_brief",
-    label: "Character",
-    description: "Brand personality, tone examples, content themes, hashtags",
-  },
-  {
-    id: "visual_style",
-    label: "Visual Style",
-    description: "Color direction, typography, imagery, composition guidance",
-  },
-  {
-    id: "intake",
-    label: "Examples",
-    description: "Upload past successful posts, campaigns, and presentations — AI learns your voice and style patterns",
-  },
-  {
-    id: "sop",
-    label: "SOP",
-    description: "Standard operating procedure for the research & analysis workflow",
-  },
+const FILE_TYPE_IDS = [
+  { id: "brand", labelKey: "labelBrand", descKey: "descBrand" },
+  { id: "product", labelKey: "labelProduct", descKey: "descProduct" },
+  { id: "audience", labelKey: "labelAudience", descKey: "descAudience" },
+  { id: "competitors", labelKey: "labelCompetitors", descKey: "descCompetitors" },
+  { id: "character_brief", labelKey: "labelCharacter", descKey: "descCharacter" },
+  { id: "visual_style", labelKey: "labelVisualStyle", descKey: "descVisualStyle" },
+  { id: "intake", labelKey: "labelExamples", descKey: "descExamples" },
+  { id: "sop", labelKey: "labelSop", descKey: "descSop" },
 ];
 
 type ContextFile = {
@@ -83,9 +52,16 @@ type Attachment = {
 };
 
 export default function IntelligencePage() {
+  const t = useTranslations("intelligence");
   const params = useParams();
   const searchParams = useSearchParams();
   const projectId = params.projectId as string;
+
+  const FILE_TYPES = FILE_TYPE_IDS.map((ft) => ({
+    id: ft.id,
+    label: t(ft.labelKey as any),
+    description: t(ft.descKey as any),
+  }));
   const isOnboarding = searchParams.get("onboarding") === "true";
 
   const [files, setFiles] = useState<Record<string, ContextFile>>({});
@@ -229,15 +205,15 @@ export default function IntelligencePage() {
         <div>
           <h1 className="font-heading text-2xl font-extrabold tracking-tight flex items-center gap-2">
             <Brain className="h-6 w-6 text-primary" />
-            Brand Intelligence
+            {t("title")}
           </h1>
           <p className="text-muted-foreground mt-1">
-            AI-researched context that powers every skill, caption, and campaign.
+            {t("subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Badge variant="secondary">
-            {populatedCount}/{FILE_TYPES.length} populated
+            {t("populated", { count: populatedCount, total: FILE_TYPES.length })}
           </Badge>
           <Button
             onClick={runAnalysis}
@@ -247,12 +223,12 @@ export default function IntelligencePage() {
             {analyzing ? (
               <>
                 <Loader2 className="me-2 h-4 w-4 animate-spin" />
-                Analyzing…
+                {t("analyzing")}
               </>
             ) : (
               <>
                 <RefreshCw className="me-2 h-4 w-4" />
-                {populatedCount > 0 ? "Re-analyze" : "Run Analysis"}
+                {populatedCount > 0 ? t("reAnalyze") : t("runAnalysis")}
               </>
             )}
           </Button>
@@ -264,9 +240,9 @@ export default function IntelligencePage() {
         <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 flex items-start gap-3">
           <Brain className="h-5 w-5 text-primary mt-0.5 shrink-0" />
           <div>
-            <p className="font-heading font-semibold">Start by running the AI analysis</p>
+            <p className="font-heading font-semibold">{t("onboardingTitle")}</p>
             <p className="text-sm text-muted-foreground mt-0.5">
-              MarketPilot will research your brand, competitors, and target audience using Perplexity + Gemini — then generate a full intelligence brief. This takes about 30 seconds.
+              {t("onboardingDescription")}
             </p>
           </div>
         </div>
@@ -282,7 +258,7 @@ export default function IntelligencePage() {
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground">
           <Loader2 className="h-6 w-6 animate-spin me-2" />
-          Loading intelligence…
+          {t("loadingIntelligence")}
         </div>
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -327,7 +303,7 @@ export default function IntelligencePage() {
                           }
                         >
                           <Pencil className="me-2 h-3 w-3" />
-                          Edit
+                          {t("edit")}
                         </Button>
                       )}
                       {isEditing && (
@@ -340,7 +316,7 @@ export default function IntelligencePage() {
                               setDrafts({ ...drafts, [ft.id]: "" });
                             }}
                           >
-                            Cancel
+                            {t("cancel")}
                           </Button>
                           <Button
                             size="sm"
@@ -352,7 +328,7 @@ export default function IntelligencePage() {
                             ) : (
                               <Save className="me-2 h-3 w-3" />
                             )}
-                            Save
+                            {t("save")}
                           </Button>
                         </>
                       )}
@@ -402,17 +378,17 @@ export default function IntelligencePage() {
                               {synthesizing ? (
                                 <>
                                   <Loader2 className="me-2 h-4 w-4 animate-spin" />
-                                  Synthesizing patterns…
+                                  {t("synthesizingPatterns")}
                                 </>
                               ) : (
                                 <>
                                   <Wand2 className="me-2 h-4 w-4" />
-                                  {file ? "Re-synthesize Examples" : "Synthesize Examples"}
+                                  {file ? t("reSynthesizeExamples") : t("synthesizeExamples")}
                                 </>
                               )}
                             </Button>
                             <p className="text-xs text-muted-foreground text-center">
-                              Analyzes all {attachments.length} example{attachments.length !== 1 ? "s" : ""} and generates a unified Voice & Style DNA brief
+                              {t("synthesizeDescription", { count: attachments.length, plural: attachments.length !== 1 ? "s" : "" })}
                             </p>
                           </div>
                         )}
@@ -423,11 +399,11 @@ export default function IntelligencePage() {
                     {!file && !isEditing ? (
                       <div className="flex flex-col items-center justify-center py-12 text-center">
                         <AlertCircle className="h-8 w-8 text-muted-foreground mb-3" />
-                        <p className="font-medium">No {ft.label} data yet</p>
+                        <p className="font-medium">{t("noDataYet", { label: ft.label })}</p>
                         <p className="text-sm text-muted-foreground mt-1">
                           {ft.id === "intake"
-                            ? "Upload examples above, then click Synthesize Examples to generate your style brief."
-                            : `Run the analysis above or manually write your ${ft.label.toLowerCase()} brief.`}
+                            ? t("uploadExamplesHint")
+                            : t("runAnalysisHint", { label: ft.label.toLowerCase() })}
                         </p>
                         <Button
                           size="sm"
@@ -436,7 +412,7 @@ export default function IntelligencePage() {
                           onClick={() => setEditMode({ ...editMode, [ft.id]: true })}
                         >
                           <Pencil className="me-2 h-3 w-3" />
-                          Write manually
+                          {t("writeManually")}
                         </Button>
                       </div>
                     ) : isEditing ? (
@@ -446,7 +422,7 @@ export default function IntelligencePage() {
                           setDrafts({ ...drafts, [ft.id]: e.target.value })
                         }
                         className="min-h-[400px] font-mono text-sm"
-                        placeholder={`Write your ${ft.label.toLowerCase()} brief here…`}
+                        placeholder={t("writePlaceholder", { label: ft.label.toLowerCase() })}
                       />
                     ) : (
                       <div className="prose prose-sm max-w-none dark:prose-invert">

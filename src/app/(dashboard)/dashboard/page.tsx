@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
 import { Plus, FolderKanban, Zap } from "lucide-react";
 import { ProjectCard } from "@/components/dashboard/project-card";
@@ -9,6 +10,7 @@ import type { Database } from "@/types/database";
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 
 export default async function DashboardPage() {
+  const t = await getTranslations("projects");
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -29,11 +31,11 @@ export default async function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-heading text-3xl font-extrabold tracking-tight">Projects</h1>
+          <h1 className="font-heading text-3xl font-extrabold tracking-tight">{t("title")}</h1>
           <p className="text-muted-foreground mt-1">
             {projects.length > 0
-              ? `${projects.length} project${projects.length !== 1 ? "s" : ""}`
-              : "Create your first project to get started"}
+              ? (projects.length !== 1 ? t("projectCountPlural", { count: projects.length }) : t("projectCount", { count: projects.length }))
+              : t("emptySubtitle")}
           </p>
         </div>
         <Button
@@ -42,7 +44,7 @@ export default async function DashboardPage() {
         >
           <Link href="/dashboard/projects/new">
             <Plus className="me-2 h-4 w-4" />
-            New Project
+            {t("newProject")}
           </Link>
         </Button>
       </div>
@@ -59,7 +61,7 @@ export default async function DashboardPage() {
                 <Plus className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
               <span className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">
-                New project
+                {t("newProjectCard")}
               </span>
             </div>
           </Link>
@@ -70,9 +72,9 @@ export default async function DashboardPage() {
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl primary-gradient mb-6">
             <FolderKanban className="h-8 w-8 text-white" />
           </div>
-          <h2 className="font-heading text-2xl font-bold mb-2">Create your first project</h2>
+          <h2 className="font-heading text-2xl font-bold mb-2">{t("emptyTitle")}</h2>
           <p className="text-muted-foreground max-w-sm leading-relaxed mb-8">
-            A project is your brand workspace. Add your website URL, upload brand assets, and let MarketPilot build your content engine.
+            {t("emptyDescription")}
           </p>
           <div className="flex items-center gap-3">
             <Button
@@ -81,13 +83,13 @@ export default async function DashboardPage() {
             >
               <Link href="/dashboard/projects/new">
                 <Plus className="me-2 h-4 w-4" />
-                Create Project
+                {t("createProject")}
               </Link>
             </Button>
           </div>
           <div className="flex items-center gap-2 mt-6 text-xs text-muted-foreground">
             <Zap className="h-3.5 w-3.5 text-primary" />
-            Takes about 2 minutes to set up
+            {t("setupTime")}
           </div>
         </div>
       )}

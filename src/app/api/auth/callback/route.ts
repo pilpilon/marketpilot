@@ -28,6 +28,20 @@ export async function GET(request: Request) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Restore saved locale preference
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("locale")
+          .eq("id", user.id)
+          .single();
+        if (profile?.locale && profile.locale !== "en") {
+          const response = NextResponse.redirect(`${origin}${next}`);
+          response.cookies.set("locale", profile.locale, { path: "/", maxAge: 31536000 });
+          return response;
+        }
+      }
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

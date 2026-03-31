@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Zap } from "lucide-react";
@@ -10,6 +11,7 @@ export default async function CampaignsPage({
 }: {
   params: Promise<{ projectId: string }>;
 }) {
+  const t = await getTranslations("campaigns");
   const { projectId } = await params;
   const supabase = await createServerSupabaseClient();
 
@@ -51,9 +53,9 @@ export default async function CampaignsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-heading text-2xl font-extrabold tracking-tight">Campaigns</h1>
+          <h1 className="font-heading text-2xl font-extrabold tracking-tight">{t("title")}</h1>
           <p className="text-muted-foreground mt-1">
-            All generated assets and campaigns for this project
+            {t("subtitle")}
           </p>
         </div>
         <Button
@@ -62,7 +64,7 @@ export default async function CampaignsPage({
         >
           <Link href={`/dashboard/${projectId}/skills`}>
             <Zap className="me-2 h-4 w-4" />
-            New Campaign
+            {t("newCampaign")}
           </Link>
         </Button>
       </div>

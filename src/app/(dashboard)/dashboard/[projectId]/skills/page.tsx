@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,53 +31,50 @@ import {
   FolderKanban,
 } from "lucide-react";
 
-// Creative Designer routes directly to its own page
-const DIRECT_SKILLS = [
-  {
-    id: "creative_designer",
-    label: "Creative Designer",
-    description:
-      "Generate on-brand visuals for any post using your brand's visual style, color palette, and character brief — powered by Nano Banana (Gemini image models).",
-    icon: ImageIcon,
-    color: "bg-pink-500/10 text-pink-600",
-    href: "skills/creative-designer",
-  },
-];
-
-const SKILLS = [
-  {
-    id: "email",
-    label: "Email Campaign",
-    description:
-      "Write a full nurture email sequence — welcome, education, and conversion — tailored to your audience.",
-    icon: Mail,
-    color: "bg-green-500/10 text-green-600",
-    options: ["goal", "tone"],
-  },
-  {
-    id: "video_script",
-    label: "Video Script",
-    description:
-      "Create a scene-by-scene video ad script with hooks, visuals direction, VO, and CTAs.",
-    icon: Video,
-    color: "bg-purple-500/10 text-purple-600",
-    options: ["goal", "tone"],
-  },
-  {
-    id: "content_calendar",
-    label: "Content Calendar",
-    description:
-      "Build a 4-week content calendar with weekly themes, post types, and platform-specific scheduling.",
-    icon: CalendarDays,
-    color: "bg-orange-500/10 text-orange-600",
-    options: ["platforms", "goal"],
-  },
-];
-
 export default function SkillsPage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.projectId as string;
+  const t = useTranslations("skills");
+
+  // Creative Designer routes directly to its own page
+  const DIRECT_SKILLS = [
+    {
+      id: "creative_designer",
+      label: t("creativeDesignerLabel"),
+      description: t("creativeDesignerDesc"),
+      icon: ImageIcon,
+      color: "bg-pink-500/10 text-pink-600",
+      href: "skills/creative-designer",
+    },
+  ];
+
+  const SKILLS = [
+    {
+      id: "email",
+      label: t("emailLabel"),
+      description: t("emailDesc"),
+      icon: Mail,
+      color: "bg-green-500/10 text-green-600",
+      options: ["goal", "tone"],
+    },
+    {
+      id: "video_script",
+      label: t("videoLabel"),
+      description: t("videoDesc"),
+      icon: Video,
+      color: "bg-purple-500/10 text-purple-600",
+      options: ["goal", "tone"],
+    },
+    {
+      id: "content_calendar",
+      label: t("calendarLabel"),
+      description: t("calendarDesc"),
+      icon: CalendarDays,
+      color: "bg-orange-500/10 text-orange-600",
+      options: ["platforms", "goal"],
+    },
+  ];
 
   const [selected, setSelected] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
@@ -140,7 +138,7 @@ export default function SkillsPage() {
     setRunning(false);
 
     if (!res.ok) {
-      setError(data.error || "Failed to run skill");
+      setError(data.error || t("failedToRun"));
       return;
     }
 
@@ -152,10 +150,10 @@ export default function SkillsPage() {
       <div>
         <h1 className="font-heading text-2xl font-extrabold tracking-tight flex items-center gap-2">
           <Zap className="h-6 w-6 text-primary" />
-          Skills Engine
+          {t("title")}
         </h1>
         <p className="text-muted-foreground mt-1">
-          Generate marketing assets from your brand intelligence. Each skill uses your full research context.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -214,13 +212,13 @@ export default function SkillsPage() {
             <div className="space-y-3 mt-8">
               <div className="flex items-center justify-between">
                 <h2 className="font-heading text-sm font-bold text-muted-foreground uppercase tracking-wider">
-                  Recent generations
+                  {t("recentGenerations")}
                 </h2>
                 <Link
                   href={`/dashboard/${projectId}/campaigns`}
                   className="text-xs text-primary font-medium hover:underline"
                 >
-                  View all campaigns
+                  {t("viewAllCampaigns")}
                 </Link>
               </div>
               <div className="grid gap-2">
@@ -235,7 +233,7 @@ export default function SkillsPage() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{c.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {c.campaign_assets.length} asset{c.campaign_assets.length !== 1 ? "s" : ""}
+                            {c.campaign_assets.length}{" "}{c.campaign_assets.length !== 1 ? t("assets") : t("asset")}
                             {" · "}
                             {new Date(c.created_at).toLocaleDateString()}
                           </p>
@@ -257,20 +255,20 @@ export default function SkillsPage() {
               size="sm"
               onClick={() => { setSelected(null); setError(""); }}
             >
-              ← Back
+              ← {t("back")}
             </Button>
             <Badge variant="secondary">{skill?.label}</Badge>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Configure {skill?.label}</CardTitle>
+              <CardTitle>{t("configure", { skill: skill?.label ?? "" })}</CardTitle>
               <CardDescription>{skill?.description}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {skill?.options.includes("campaignName") || true ? (
                 <div className="space-y-1.5">
-                  <Label htmlFor="campaignName">Campaign name (optional)</Label>
+                  <Label htmlFor="campaignName">{t("campaignNameLabel")}</Label>
                   <Input
                     id="campaignName"
                     placeholder={`${skill?.label} — ${new Date().toLocaleDateString()}`}
@@ -284,7 +282,7 @@ export default function SkillsPage() {
 
               {skill?.options.includes("count") && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="count">Number of posts</Label>
+                  <Label htmlFor="count">{t("numberOfPosts")}</Label>
                   <Input
                     id="count"
                     type="number"
@@ -300,7 +298,7 @@ export default function SkillsPage() {
 
               {skill?.options.includes("platforms") && (
                 <div className="space-y-2">
-                  <Label>Platforms</Label>
+                  <Label>{t("platforms")}</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {AVAILABLE_PLATFORMS.map((p) => {
                       const checked = options.platforms.includes(p.id);
@@ -330,17 +328,17 @@ export default function SkillsPage() {
                     })}
                   </div>
                   {options.platforms.length === 0 && (
-                    <p className="text-xs text-destructive">Select at least one platform</p>
+                    <p className="text-xs text-destructive">{t("selectAtLeastOne")}</p>
                   )}
                 </div>
               )}
 
               {skill?.options.includes("goal") && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="goal">Campaign goal (optional)</Label>
+                  <Label htmlFor="goal">{t("campaignGoal")}</Label>
                   <Input
                     id="goal"
-                    placeholder="e.g. drive signups, product launch, build awareness"
+                    placeholder={t("campaignGoalPlaceholder")}
                     value={options.goal}
                     onChange={(e) =>
                       setOptions({ ...options, goal: e.target.value })
@@ -351,17 +349,17 @@ export default function SkillsPage() {
 
               {skill?.options.includes("tone") && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="tone">Tone override (optional)</Label>
+                  <Label htmlFor="tone">{t("toneOverride")}</Label>
                   <Input
                     id="tone"
-                    placeholder="e.g. more casual, more technical, more urgent"
+                    placeholder={t("toneOverridePlaceholder")}
                     value={options.tone}
                     onChange={(e) =>
                       setOptions({ ...options, tone: e.target.value })
                     }
                   />
                   <p className="text-xs text-muted-foreground">
-                    Leave blank to use your brand character brief
+                    {t("toneHint")}
                   </p>
                 </div>
               )}
@@ -378,12 +376,12 @@ export default function SkillsPage() {
                 {running ? (
                   <>
                     <Loader2 className="me-2 h-4 w-4 animate-spin" />
-                    Generating with AI…
+                    {t("generatingWithAi")}
                   </>
                 ) : (
                   <>
                     <Zap className="me-2 h-4 w-4" />
-                    Run {skill?.label} Skill
+                    {t("runSkill", { skill: skill?.label ?? "" })}
                   </>
                 )}
               </Button>

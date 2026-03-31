@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -95,6 +96,7 @@ export default function CreativeDesignerPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const projectId = params.projectId as string;
+  const t = useTranslations("creativeDesigner");
   const prefillContent = searchParams.get("content") ?? "";
 
   // Mode toggle: freeform vs template (default)
@@ -145,7 +147,7 @@ export default function CreativeDesignerPage() {
     setGenerating(false);
 
     if (!res.ok) {
-      setError(data.error || "Generation failed");
+      setError(data.error || t("generationFailed"));
       return;
     }
 
@@ -166,7 +168,7 @@ export default function CreativeDesignerPage() {
         <Button variant="ghost" size="sm" asChild>
           <Link href={`/dashboard/${projectId}/skills`}>
             <ArrowLeft className="me-2 h-4 w-4" />
-            Skills Engine
+            {t("backToSkills")}
           </Link>
         </Button>
       </div>
@@ -177,9 +179,9 @@ export default function CreativeDesignerPage() {
             <ImageIcon className="h-5 w-5 text-pink-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Creative Designer</h1>
+            <h1 className="text-2xl font-bold">{t("title")}</h1>
             <p className="text-sm text-muted-foreground">
-              Generate on-brand visuals from your post copy using your brand intelligence.
+              {t("subtitle")}
             </p>
           </div>
         </div>
@@ -210,17 +212,17 @@ export default function CreativeDesignerPage() {
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Content & Platform</CardTitle>
+              <CardTitle className="text-base">{t("contentAndPlatform")}</CardTitle>
               <CardDescription>
-                Paste your post copy. The AI will create a matching visual using your brand&apos;s visual style and color palette.
+                {t("contentAndPlatformDesc")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="content">Post copy</Label>
+                <Label htmlFor="content">{t("postCopy")}</Label>
                 <Textarea
                   id="content"
-                  placeholder="Paste the post caption or describe what the image should convey…"
+                  placeholder={t("postCopyPlaceholder")}
                   rows={4}
                   value={postContent}
                   onChange={(e) => setPostContent(e.target.value)}
@@ -228,7 +230,7 @@ export default function CreativeDesignerPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="platform">Platform & format</Label>
+                <Label htmlFor="platform">{t("platformAndFormat")}</Label>
                 <Select value={platform} onValueChange={(val) => val && setPlatform(val)}>
                   <SelectTrigger id="platform">
                     <SelectValue>
@@ -268,7 +270,7 @@ export default function CreativeDesignerPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="model">Image model</Label>
+                <Label htmlFor="model">{t("imageModel")}</Label>
                 <Select value={model} onValueChange={(val) => val && setModel(val)}>
                   <SelectTrigger id="model">
                     <SelectValue />
@@ -288,8 +290,8 @@ export default function CreativeDesignerPage() {
 
               <div className="space-y-1.5">
                 <Label>
-                  Reference image
-                  <span className="ms-1 text-muted-foreground font-normal">(optional)</span>
+                  {t("referenceImage")}
+                  <span className="ms-1 text-muted-foreground font-normal">{t("optional")}</span>
                 </Label>
                 <ReferenceImageUpload
                   value={referenceImage}
@@ -297,24 +299,24 @@ export default function CreativeDesignerPage() {
                   onError={setError}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Upload an app screenshot, product photo, or brand asset — the AI will incorporate it into the generated image.
+                  {t("referenceImageHint")}
                 </p>
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="custom">
-                  Style direction
-                  <span className="ms-1 text-muted-foreground font-normal">(optional)</span>
+                  {t("styleDirection")}
+                  <span className="ms-1 text-muted-foreground font-normal">{t("optional")}</span>
                 </Label>
                 <Textarea
                   id="custom"
-                  placeholder="e.g. 'show a person using a laptop in a modern office', 'abstract geometric pattern', 'outdoor lifestyle photography'"
+                  placeholder={t("styleDirectionPlaceholder")}
                   rows={2}
                   value={customInstruction}
                   onChange={(e) => setCustomInstruction(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Override or extend the brand visual style for this specific image.
+                  {t("styleDirectionHint")}
                 </p>
               </div>
 
@@ -330,12 +332,12 @@ export default function CreativeDesignerPage() {
                 {generating ? (
                   <>
                     <Loader2 className="me-2 h-4 w-4 animate-spin" />
-                    Generating image…
+                    {t("generatingImage")}
                   </>
                 ) : (
                   <>
                     <Sparkles className="me-2 h-4 w-4" />
-                    Generate Visual
+                    {t("generateVisual")}
                   </>
                 )}
               </Button>
@@ -348,7 +350,7 @@ export default function CreativeDesignerPage() {
           <Card className="h-full">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                Output
+                {t("output")}
                 {selectedPlatform && (
                   <Badge variant="secondary" className="text-xs font-mono">
                     {selectedPlatform.ratio}
@@ -362,7 +364,7 @@ export default function CreativeDesignerPage() {
                     onClick={() => setShowPreview(!showPreview)}
                   >
                     {showPreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                    {showPreview ? "Raw image" : "Platform preview"}
+                    {showPreview ? t("rawImage") : t("platformPreview")}
                   </Button>
                 )}
               </CardTitle>
@@ -372,7 +374,7 @@ export default function CreativeDesignerPage() {
                 <div className={`${ratioClass} w-full max-w-sm mx-auto rounded-lg bg-muted flex flex-col items-center justify-center gap-3`}>
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    Generating with Nano Banana…
+                    {t("generatingWithNanoBanana")}
                   </p>
                 </div>
               ) : result ? (
@@ -401,7 +403,7 @@ export default function CreativeDesignerPage() {
                       className="flex-1"
                     >
                       <Download className="me-2 h-4 w-4" />
-                      Download
+                      {t("download")}
                     </Button>
                     <Button
                       variant="outline"
@@ -410,7 +412,7 @@ export default function CreativeDesignerPage() {
                       className="flex-1"
                     >
                       <RefreshCw className="me-2 h-4 w-4" />
-                      Regenerate
+                      {t("regenerate")}
                     </Button>
                     <Button
                       size="sm"
@@ -419,13 +421,13 @@ export default function CreativeDesignerPage() {
                     >
                       <Link href={`/dashboard/${projectId}/campaigns/${result.campaignId}`}>
                         <Send className="me-2 h-4 w-4" />
-                        View Campaign
+                        {t("viewCampaign")}
                       </Link>
                     </Button>
                   </div>
                   <details className="text-xs text-muted-foreground">
                     <summary className="cursor-pointer hover:text-foreground">
-                      View prompt used
+                      {t("viewPromptUsed")}
                     </summary>
                     <pre className="mt-2 whitespace-pre-wrap font-sans bg-muted rounded p-2 leading-relaxed">
                       {result.prompt}
