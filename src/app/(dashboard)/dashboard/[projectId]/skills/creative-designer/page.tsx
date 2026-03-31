@@ -30,21 +30,25 @@ import { TemplateCustomizer } from "@/components/templates/template-customizer";
 import type { ContentTemplate, TemplateRenderResponse } from "@/types/templates";
 
 const PLATFORM_OPTIONS = [
-  { value: "instagram_feed",   label: "Feed",          ratio: "4:5",  platform: "instagram" },
-  { value: "instagram_square", label: "Square",         ratio: "1:1",  platform: "instagram" },
-  { value: "instagram_story",  label: "Story / Reel",   ratio: "9:16", platform: "instagram" },
-  { value: "twitter",          label: "Landscape",      ratio: "16:9", platform: "twitter"   },
-  { value: "twitter_square",   label: "Square",         ratio: "1:1",  platform: "twitter"   },
-  { value: "tiktok",           label: "Vertical",       ratio: "9:16", platform: "tiktok"    },
-  { value: "linkedin",         label: "Square",         ratio: "1:1",  platform: "linkedin"  },
-  { value: "linkedin_landscape",label: "Landscape",     ratio: "16:9", platform: "linkedin"  },
+  { value: "instagram_feed",   labelKey: "formatFeed",       ratio: "4:5",  platform: "instagram" },
+  { value: "instagram_square", labelKey: "formatSquare",     ratio: "1:1",  platform: "instagram" },
+  { value: "instagram_story",  labelKey: "formatStoryReel",  ratio: "9:16", platform: "instagram" },
+  { value: "twitter",          labelKey: "formatLandscape",  ratio: "16:9", platform: "twitter"   },
+  { value: "twitter_square",   labelKey: "formatSquare",     ratio: "1:1",  platform: "twitter"   },
+  { value: "facebook_feed",    labelKey: "formatFeed",       ratio: "4:5",  platform: "facebook"  },
+  { value: "facebook_square",  labelKey: "formatSquare",     ratio: "1:1",  platform: "facebook"  },
+  { value: "facebook_landscape",labelKey: "formatLandscape", ratio: "16:9", platform: "facebook"  },
+  { value: "tiktok",           labelKey: "formatVertical",   ratio: "9:16", platform: "tiktok"    },
+  { value: "linkedin",         labelKey: "formatSquare",     ratio: "1:1",  platform: "linkedin"  },
+  { value: "linkedin_landscape",labelKey: "formatLandscape", ratio: "16:9", platform: "linkedin"  },
 ];
 
-const PLATFORM_META: Record<string, { name: string; color: string }> = {
-  instagram: { name: "Instagram", color: "text-pink-500" },
-  twitter:   { name: "X / Twitter", color: "text-foreground" },
-  tiktok:    { name: "TikTok", color: "text-foreground" },
-  linkedin:  { name: "LinkedIn", color: "text-blue-600" },
+const PLATFORM_META_KEYS: Record<string, { nameKey: string; color: string }> = {
+  instagram: { nameKey: "platformInstagram", color: "text-pink-500" },
+  twitter:   { nameKey: "platformTwitter", color: "text-foreground" },
+  facebook:  { nameKey: "platformFacebook", color: "text-blue-600" },
+  tiktok:    { nameKey: "platformTikTok", color: "text-foreground" },
+  linkedin:  { nameKey: "platformLinkedIn", color: "text-blue-600" },
 };
 
 function PlatformSvg({ platform, className = "h-4 w-4" }: { platform: string; className?: string }) {
@@ -73,6 +77,12 @@ function PlatformSvg({ platform, className = "h-4 w-4" }: { platform: string; cl
           <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
         </svg>
       );
+    case "facebook":
+      return (
+        <svg viewBox="0 0 24 24" className={className} fill="currentColor">
+          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -99,6 +109,18 @@ export default function CreativeDesignerPage() {
   const t = useTranslations("creativeDesigner");
   const prefillContent = searchParams.get("content") ?? "";
 
+  // Resolve translated platform names and format labels
+  const PLATFORM_META = Object.fromEntries(
+    Object.entries(PLATFORM_META_KEYS).map(([key, meta]) => [
+      key,
+      { name: t(meta.nameKey as any), color: meta.color },
+    ])
+  );
+  const resolvedPlatformOptions = PLATFORM_OPTIONS.map((p) => ({
+    ...p,
+    label: t(p.labelKey as any),
+  }));
+
   // Mode toggle: freeform vs template (default)
   const [mode, setMode] = useState<"freeform" | "template">("template");
   const [selectedTemplate, setSelectedTemplate] = useState<ContentTemplate | null>(null);
@@ -119,7 +141,7 @@ export default function CreativeDesignerPage() {
   const [showPreview, setShowPreview] = useState(true);
   const [referenceImage, setReferenceImage] = useState<ReferenceImageData | null>(null);
 
-  const selectedPlatform = PLATFORM_OPTIONS.find((p) => p.value === platform);
+  const selectedPlatform = resolvedPlatformOptions.find((p) => p.value === platform);
   const ratioClass = RATIO_CLASS[selectedPlatform?.ratio ?? "1:1"] ?? "aspect-square";
 
   async function generate() {
@@ -197,7 +219,7 @@ export default function CreativeDesignerPage() {
         <TemplateCustomizer
           template={selectedTemplate}
           projectId={projectId}
-          platformOptions={PLATFORM_OPTIONS}
+          platformOptions={resolvedPlatformOptions}
           platformMeta={PLATFORM_META}
           PlatformSvg={PlatformSvg}
           ratioClassMap={RATIO_CLASS}
@@ -246,7 +268,7 @@ export default function CreativeDesignerPage() {
                   <SelectContent>
                     {Object.keys(PLATFORM_META).map((platformKey) => {
                       const meta = PLATFORM_META[platformKey];
-                      const opts = PLATFORM_OPTIONS.filter((p) => p.platform === platformKey);
+                      const opts = resolvedPlatformOptions.filter((p) => p.platform === platformKey);
                       if (opts.length === 0) return null;
                       return (
                         <div key={platformKey}>

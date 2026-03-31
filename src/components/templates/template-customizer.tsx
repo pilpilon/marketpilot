@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useTranslations } from "next-intl";
 import { ArrowLeft, Loader2, Sparkles, Wand2 } from "lucide-react";
 import { SlideFieldForm } from "./slide-field-form";
 import { OverlayPreview } from "./overlay-preview";
@@ -37,6 +38,7 @@ export function TemplateCustomizer({
   onBack,
   onResult,
 }: TemplateCustomizerProps) {
+  const t = useTranslations("creativeDesigner");
   const isCarousel = template.format === "carousel" && template.slides.length > 1;
 
   const [platform, setPlatform] = useState(
@@ -190,7 +192,7 @@ export function TemplateCustomizer({
               </Badge>
               {isCarousel && (
                 <Badge variant="outline" className="text-xs">
-                  {result.slides.length} slides
+                  {result.slides.length} {t("slides")}
                 </Badge>
               )}
             </CardTitle>
@@ -205,7 +207,7 @@ export function TemplateCustomizer({
         </Card>
         <Button variant="outline" onClick={onBack} className="w-full">
           <ArrowLeft className="me-2 h-4 w-4" />
-          Create Another
+          {t("createAnother")}
         </Button>
       </div>
     );
@@ -232,7 +234,7 @@ export function TemplateCustomizer({
           <CardContent className="space-y-4">
             {/* Platform */}
             <div className="space-y-1.5">
-              <Label>Platform & format</Label>
+              <Label>{t("platformAndFormat")}</Label>
               <Select value={platform} onValueChange={(val) => val && setPlatform(val)}>
                 <SelectTrigger>
                   <SelectValue>
@@ -291,12 +293,12 @@ export function TemplateCustomizer({
               {filling ? (
                 <>
                   <Loader2 className="me-2 h-3.5 w-3.5 animate-spin" />
-                  Filling with brand intelligence…
+                  {t("fillingWithAi")}
                 </>
               ) : (
                 <>
                   <Wand2 className="me-2 h-3.5 w-3.5" />
-                  Regenerate Copy with AI
+                  {t("regenerateCopyWithAi")}
                 </>
               )}
             </Button>
@@ -313,8 +315,8 @@ export function TemplateCustomizer({
             {/* Reference image */}
             <div className="space-y-1.5">
               <Label>
-                Reference image
-                <span className="ms-1 text-muted-foreground font-normal">(optional)</span>
+                {t("referenceImage")}
+                <span className="ms-1 text-muted-foreground font-normal">{t("optional")}</span>
               </Label>
               <ReferenceImageUpload
                 value={referenceImage}
@@ -322,18 +324,18 @@ export function TemplateCustomizer({
                 onError={setError}
               />
               <p className="text-xs text-muted-foreground">
-                Upload an app screenshot, product photo, or brand asset — the AI will incorporate it into the generated image.
+                {t("referenceImageHint")}
               </p>
             </div>
 
             {/* Custom style direction */}
             <div className="space-y-1.5">
               <Label>
-                Style direction
-                <span className="ms-1 text-muted-foreground font-normal">(optional)</span>
+                {t("styleDirection")}
+                <span className="ms-1 text-muted-foreground font-normal">{t("optional")}</span>
               </Label>
               <Textarea
-                placeholder="Override or extend the AI's image style for all slides…"
+                placeholder={t("styleDirectionPlaceholder")}
                 rows={2}
                 value={customInstruction}
                 onChange={(e) => setCustomInstruction(e.target.value)}
@@ -350,12 +352,12 @@ export function TemplateCustomizer({
               {generating ? (
                 <>
                   <Loader2 className="me-2 h-4 w-4 animate-spin" />
-                  Generating{isCarousel ? ` ${template.slides.length} slides` : ""}…
+                  {isCarousel ? t("generatingSlides", { count: template.slides.length }) : t("generatingImage")}
                 </>
               ) : (
                 <>
                   <Sparkles className="me-2 h-4 w-4" />
-                  Generate{isCarousel ? ` ${template.slides.length} Slides` : " Visual"}
+                  {isCarousel ? t("generateSlides", { count: template.slides.length }) : t("generateVisual")}
                 </>
               )}
             </Button>
@@ -368,13 +370,13 @@ export function TemplateCustomizer({
         <Card className="h-full">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              Preview
+              {t("preview")}
               <Badge variant="secondary" className="text-xs font-mono">
                 {selectedPlatform?.ratio}
               </Badge>
               {isCarousel && (
                 <Badge variant="outline" className="text-xs">
-                  Slide {activeSlideIndex + 1}/{template.slides.length}
+                  {t("slide")} {activeSlideIndex + 1}/{template.slides.length}
                 </Badge>
               )}
             </CardTitle>
@@ -385,8 +387,8 @@ export function TemplateCustomizer({
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
                   {isCarousel
-                    ? `Generating slide ${template.slides.length > 0 ? "1" : ""}/${template.slides.length}…`
-                    : "Generating with Nano Banana…"}
+                    ? t("generatingSlide", { count: template.slides.length })
+                    : t("generatingWithNanoBanana")}
                 </p>
               </div>
             ) : activeSlide ? (

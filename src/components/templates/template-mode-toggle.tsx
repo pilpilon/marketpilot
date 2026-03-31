@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import { ImageIcon, LayoutTemplate } from "lucide-react";
 
 interface TemplateModeToggleProps {
@@ -9,6 +10,7 @@ interface TemplateModeToggleProps {
 }
 
 export function TemplateModeToggle({ mode, onModeChange }: TemplateModeToggleProps) {
+  const t = useTranslations("creativeDesigner");
   return (
     <div className="flex rounded-lg border bg-muted p-1 gap-1">
       <button
@@ -21,7 +23,7 @@ export function TemplateModeToggle({ mode, onModeChange }: TemplateModeTogglePro
         )}
       >
         <ImageIcon className="h-4 w-4" />
-        Freeform
+        {t("freeform")}
       </button>
       <button
         onClick={() => onModeChange("template")}
@@ -33,7 +35,7 @@ export function TemplateModeToggle({ mode, onModeChange }: TemplateModeTogglePro
         )}
       >
         <LayoutTemplate className="h-4 w-4" />
-        Templates
+        {t("templates")}
       </button>
     </div>
   );

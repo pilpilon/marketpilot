@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { ContentTemplate, TemplateCategory } from "@/types/templates";
 import { SYSTEM_TEMPLATES } from "@/lib/templates/system-templates";
 import { TemplateCard } from "./template-card";
@@ -10,17 +11,18 @@ interface TemplateSelectorProps {
   onSelect: (template: ContentTemplate) => void;
 }
 
-const CATEGORY_TABS: Array<{ value: TemplateCategory | "all"; label: string }> = [
-  { value: "all", label: "All" },
-  { value: "promotional", label: "Promotional" },
-  { value: "educational", label: "Educational" },
-  { value: "quote", label: "Quote" },
-  { value: "announcement", label: "Announcement" },
-  { value: "product_showcase", label: "Product" },
-  { value: "testimonial", label: "Testimonial" },
+const CATEGORY_TAB_KEYS: Array<{ value: TemplateCategory | "all"; key: string }> = [
+  { value: "all", key: "categoryAll" },
+  { value: "promotional", key: "categoryPromotional" },
+  { value: "educational", key: "categoryEducational" },
+  { value: "quote", key: "categoryQuote" },
+  { value: "announcement", key: "categoryAnnouncement" },
+  { value: "product_showcase", key: "categoryProduct" },
+  { value: "testimonial", key: "categoryTestimonial" },
 ];
 
 export function TemplateSelector({ onSelect }: TemplateSelectorProps) {
+  const t = useTranslations("creativeDesigner");
   const [category, setCategory] = useState<TemplateCategory | "all">("all");
 
   const filtered =
@@ -32,7 +34,7 @@ export function TemplateSelector({ onSelect }: TemplateSelectorProps) {
     <div className="space-y-4">
       {/* Category tabs */}
       <div className="flex gap-1 overflow-x-auto pb-1">
-        {CATEGORY_TABS.map((tab) => (
+        {CATEGORY_TAB_KEYS.map((tab) => (
           <button
             key={tab.value}
             onClick={() => setCategory(tab.value)}
@@ -43,7 +45,7 @@ export function TemplateSelector({ onSelect }: TemplateSelectorProps) {
                 : "bg-muted text-muted-foreground hover:text-foreground"
             )}
           >
-            {tab.label}
+            {t(tab.key as any)}
           </button>
         ))}
       </div>
