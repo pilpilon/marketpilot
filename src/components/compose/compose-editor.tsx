@@ -219,7 +219,7 @@ export function ComposeEditor({
               size="sm"
               onClick={() => setShowAiPanel(!showAiPanel)}
             >
-              <Sparkles className="mr-1 h-4 w-4" />
+              <Sparkles className="me-1 h-4 w-4" />
               AI Assist
             </Button>
           </CardHeader>
@@ -244,7 +244,7 @@ export function ComposeEditor({
                     >
                       <PlatformIcon
                         platform={a.platform}
-                        className="h-3 w-3 mr-1"
+                        className="h-3 w-3 me-1"
                       />
                       {caption.length}/{limit}
                     </Badge>
@@ -320,7 +320,7 @@ export function ComposeEditor({
                   onClick={() => handlePublish("draft")}
                   disabled={isPublishing}
                 >
-                  <Save className="mr-2 h-4 w-4" />
+                  <Save className="me-2 h-4 w-4" />
                   Save Draft
                 </Button>
                 <Button
@@ -328,7 +328,7 @@ export function ComposeEditor({
                   onClick={() => handlePublish("schedule")}
                   disabled={isPublishing || !scheduledAt}
                 >
-                  <Clock className="mr-2 h-4 w-4" />
+                  <Clock className="me-2 h-4 w-4" />
                   Schedule
                 </Button>
                 <Button
@@ -336,9 +336,9 @@ export function ComposeEditor({
                   disabled={isPublishing}
                 >
                   {isPublishing ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="me-2 h-4 w-4 animate-spin" />
                   ) : (
-                    <Send className="mr-2 h-4 w-4" />
+                    <Send className="me-2 h-4 w-4" />
                   )}
                   Post Now
                 </Button>

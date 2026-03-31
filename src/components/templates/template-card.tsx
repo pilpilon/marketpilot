@@ -81,7 +81,7 @@ function OverlayThumbnail({
 
       {/* Carousel indicator */}
       {isCarousel && (
-        <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-black/50 rounded-full px-2 py-0.5">
+        <div className="absolute top-2 end-2 z-10 flex items-center gap-1 bg-black/50 rounded-full px-2 py-0.5">
           <Layers className="h-2.5 w-2.5 text-white" />
           <span className="text-[9px] text-white font-medium">Carousel</span>
         </div>
@@ -191,7 +191,7 @@ export function TemplateCard({ template, onSelect }: TemplateCardProps) {
             </Badge>
           )}
           <Badge variant="outline" className="text-[10px]">
-            <SlidersHorizontal className="h-2.5 w-2.5 mr-1" />
+            <SlidersHorizontal className="h-2.5 w-2.5 me-1" />
             {OVERLAY_LABELS[template.defaultOverlayStyle] || template.defaultOverlayStyle}
           </Badge>
         </div>

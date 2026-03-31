@@ -115,7 +115,7 @@ export function ProjectCard({ project }: { project: Project }) {
         size="sm"
         onClick={handleDelete}
         disabled={deleting}
-        className="absolute bottom-3 right-3 h-7 px-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+        className="absolute bottom-3 end-3 h-7 px-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
         title={confirming ? "Click again to confirm deletion" : "Delete project"}
       >
         {deleting ? (

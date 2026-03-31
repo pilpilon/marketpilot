@@ -19,7 +19,7 @@ export function SlideFieldForm({ slide, values, onChange }: SlideFieldFormProps)
           <Label htmlFor={`${slide.id}-${field.id}`} className="text-sm">
             {field.label}
             {!field.required && (
-              <span className="ml-1 text-muted-foreground font-normal">(optional)</span>
+              <span className="ms-1 text-muted-foreground font-normal">(optional)</span>
             )}
           </Label>
           {field.type === "textarea" ? (
@@ -41,7 +41,7 @@ export function SlideFieldForm({ slide, values, onChange }: SlideFieldFormProps)
             />
           )}
           {field.maxLength && values[field.id] && (
-            <p className="text-[10px] text-muted-foreground text-right">
+            <p className="text-[10px] text-muted-foreground text-end">
               {values[field.id].length}/{field.maxLength}
             </p>
           )}

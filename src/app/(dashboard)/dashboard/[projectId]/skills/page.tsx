@@ -187,7 +187,7 @@ export default function SkillsPage() {
               <button
                 key={s.id}
                 onClick={() => setSelected(s.id)}
-                className="text-left"
+                className="text-start"
               >
                 <Card className="hover:border-primary transition-colors cursor-pointer h-full">
                   <CardContent className="flex items-start gap-4 p-5">
@@ -377,12 +377,12 @@ export default function SkillsPage() {
               >
                 {running ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="me-2 h-4 w-4 animate-spin" />
                     Generating with AI…
                   </>
                 ) : (
                   <>
-                    <Zap className="mr-2 h-4 w-4" />
+                    <Zap className="me-2 h-4 w-4" />
                     Run {skill?.label} Skill
                   </>
                 )}

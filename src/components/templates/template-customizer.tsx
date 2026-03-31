@@ -204,7 +204,7 @@ export function TemplateCustomizer({
           </CardContent>
         </Card>
         <Button variant="outline" onClick={onBack} className="w-full">
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="me-2 h-4 w-4" />
           Create Another
         </Button>
       </div>
@@ -240,7 +240,7 @@ export function TemplateCustomizer({
                       <span className="flex items-center gap-2">
                         <PlatformSvg platform={selectedPlatform.platform} className={`h-4 w-4 ${platformMeta[selectedPlatform.platform]?.color}`} />
                         <span>{platformMeta[selectedPlatform.platform]?.name} — {selectedPlatform.label}</span>
-                        <span className="text-muted-foreground text-xs ml-1">({selectedPlatform.ratio})</span>
+                        <span className="text-muted-foreground text-xs ms-1">({selectedPlatform.ratio})</span>
                       </span>
                     )}
                   </SelectValue>
@@ -290,12 +290,12 @@ export function TemplateCustomizer({
             >
               {filling ? (
                 <>
-                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="me-2 h-3.5 w-3.5 animate-spin" />
                   Filling with brand intelligence…
                 </>
               ) : (
                 <>
-                  <Wand2 className="mr-2 h-3.5 w-3.5" />
+                  <Wand2 className="me-2 h-3.5 w-3.5" />
                   Regenerate Copy with AI
                 </>
               )}
@@ -314,7 +314,7 @@ export function TemplateCustomizer({
             <div className="space-y-1.5">
               <Label>
                 Reference image
-                <span className="ml-1 text-muted-foreground font-normal">(optional)</span>
+                <span className="ms-1 text-muted-foreground font-normal">(optional)</span>
               </Label>
               <ReferenceImageUpload
                 value={referenceImage}
@@ -330,7 +330,7 @@ export function TemplateCustomizer({
             <div className="space-y-1.5">
               <Label>
                 Style direction
-                <span className="ml-1 text-muted-foreground font-normal">(optional)</span>
+                <span className="ms-1 text-muted-foreground font-normal">(optional)</span>
               </Label>
               <Textarea
                 placeholder="Override or extend the AI's image style for all slides…"
@@ -349,12 +349,12 @@ export function TemplateCustomizer({
             >
               {generating ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="me-2 h-4 w-4 animate-spin" />
                   Generating{isCarousel ? ` ${template.slides.length} slides` : ""}…
                 </>
               ) : (
                 <>
-                  <Sparkles className="mr-2 h-4 w-4" />
+                  <Sparkles className="me-2 h-4 w-4" />
                   Generate{isCarousel ? ` ${template.slides.length} Slides` : " Visual"}
                 </>
               )}

@@ -165,7 +165,7 @@ export default function CreativeDesignerPage() {
       <div>
         <Button variant="ghost" size="sm" asChild>
           <Link href={`/dashboard/${projectId}/skills`}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="me-2 h-4 w-4" />
             Skills Engine
           </Link>
         </Button>
@@ -236,7 +236,7 @@ export default function CreativeDesignerPage() {
                         <span className="flex items-center gap-2">
                           <PlatformSvg platform={selectedPlatform.platform} className={`h-4 w-4 ${PLATFORM_META[selectedPlatform.platform]?.color}`} />
                           <span>{PLATFORM_META[selectedPlatform.platform]?.name} — {selectedPlatform.label}</span>
-                          <span className="text-muted-foreground text-xs ml-1">({selectedPlatform.ratio})</span>
+                          <span className="text-muted-foreground text-xs ms-1">({selectedPlatform.ratio})</span>
                         </span>
                       )}
                     </SelectValue>
@@ -289,7 +289,7 @@ export default function CreativeDesignerPage() {
               <div className="space-y-1.5">
                 <Label>
                   Reference image
-                  <span className="ml-1 text-muted-foreground font-normal">(optional)</span>
+                  <span className="ms-1 text-muted-foreground font-normal">(optional)</span>
                 </Label>
                 <ReferenceImageUpload
                   value={referenceImage}
@@ -304,7 +304,7 @@ export default function CreativeDesignerPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="custom">
                   Style direction
-                  <span className="ml-1 text-muted-foreground font-normal">(optional)</span>
+                  <span className="ms-1 text-muted-foreground font-normal">(optional)</span>
                 </Label>
                 <Textarea
                   id="custom"
@@ -329,12 +329,12 @@ export default function CreativeDesignerPage() {
               >
                 {generating ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="me-2 h-4 w-4 animate-spin" />
                     Generating image…
                   </>
                 ) : (
                   <>
-                    <Sparkles className="mr-2 h-4 w-4" />
+                    <Sparkles className="me-2 h-4 w-4" />
                     Generate Visual
                   </>
                 )}
@@ -358,7 +358,7 @@ export default function CreativeDesignerPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="ml-auto h-7 text-xs gap-1.5"
+                    className="ms-auto h-7 text-xs gap-1.5"
                     onClick={() => setShowPreview(!showPreview)}
                   >
                     {showPreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -400,7 +400,7 @@ export default function CreativeDesignerPage() {
                       onClick={downloadImage}
                       className="flex-1"
                     >
-                      <Download className="mr-2 h-4 w-4" />
+                      <Download className="me-2 h-4 w-4" />
                       Download
                     </Button>
                     <Button
@@ -409,7 +409,7 @@ export default function CreativeDesignerPage() {
                       onClick={generate}
                       className="flex-1"
                     >
-                      <RefreshCw className="mr-2 h-4 w-4" />
+                      <RefreshCw className="me-2 h-4 w-4" />
                       Regenerate
                     </Button>
                     <Button
@@ -418,7 +418,7 @@ export default function CreativeDesignerPage() {
                       className="flex-1"
                     >
                       <Link href={`/dashboard/${projectId}/campaigns/${result.campaignId}`}>
-                        <Send className="mr-2 h-4 w-4" />
+                        <Send className="me-2 h-4 w-4" />
                         View Campaign
                       </Link>
                     </Button>

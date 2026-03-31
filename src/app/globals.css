@@ -152,7 +152,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+    font-family: var(--font-inter), var(--font-heebo), system-ui, -apple-system, sans-serif;
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
     padding-bottom: env(safe-area-inset-bottom);
@@ -166,7 +166,7 @@
     font-size: 16px; /* prevents iOS auto-zoom on focus */
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-manrope), system-ui, -apple-system, sans-serif;
+    font-family: var(--font-manrope), var(--font-heebo), system-ui, -apple-system, sans-serif;
     font-weight: 700;
     letter-spacing: -0.02em;
   }
@@ -174,7 +174,7 @@
 
 @layer utilities {
   .font-heading {
-    font-family: var(--font-manrope), system-ui, -apple-system, sans-serif;
+    font-family: var(--font-manrope), var(--font-heebo), system-ui, -apple-system, sans-serif;
   }
   .primary-gradient {
     background: linear-gradient(135deg, #2b3896 0%, #4551af 100%);

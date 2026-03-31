@@ -7,12 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { CheckCircle2, Zap, Brain, Share2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
-const perks = [
-  { icon: Brain, text: "AI brand intelligence built automatically" },
-  { icon: Zap, text: "Generate campaigns in seconds" },
-  { icon: Share2, text: "Publish to all platforms at once" },
-];
+const perkIcons = [Brain, Zap, Share2];
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -22,6 +19,13 @@ export default function SignupPage() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
+  const t = useTranslations("signup");
+
+  const perks = [
+    { icon: perkIcons[0], text: t("perk1") },
+    { icon: perkIcons[1], text: t("perk2") },
+    { icon: perkIcons[2], text: t("perk3") },
+  ];
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -55,15 +59,15 @@ export default function SignupPage() {
             </div>
           </div>
           <div className="space-y-2">
-            <h2 className="font-heading text-3xl font-extrabold tracking-tight">Check your email</h2>
+            <h2 className="font-heading text-3xl font-extrabold tracking-tight">{t("checkEmail")}</h2>
             <p className="text-muted-foreground">
-              We sent a confirmation link to <strong className="text-foreground">{email}</strong>
+              {t("confirmationSent")} <strong className="text-foreground">{email}</strong>
             </p>
           </div>
           <p className="text-sm text-muted-foreground">
-            Already confirmed?{" "}
+            {t("alreadyConfirmed")}{" "}
             <Link href="/login" className="text-primary font-medium hover:underline">
-              Sign in
+              {t("signIn")}
             </Link>
           </p>
         </div>
@@ -76,8 +80,8 @@ export default function SignupPage() {
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 primary-gradient p-12 flex-col justify-between relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-1/4 -left-20 w-80 h-80 rounded-full bg-white blur-3xl" />
-          <div className="absolute bottom-1/4 right-0 w-96 h-96 rounded-full bg-white blur-3xl" />
+          <div className="absolute top-1/4 -start-20 w-80 h-80 rounded-full bg-white blur-3xl" />
+          <div className="absolute bottom-1/4 end-0 w-96 h-96 rounded-full bg-white blur-3xl" />
         </div>
         <div className="relative z-10">
           <div className="flex items-center gap-2.5">
@@ -90,10 +94,10 @@ export default function SignupPage() {
         <div className="relative z-10 space-y-8">
           <div className="space-y-3">
             <h2 className="font-heading text-3xl font-extrabold text-white tracking-tight leading-tight">
-              Your AI marketing team,<br />ready on day one.
+              {t("leftPanelTitle")}
             </h2>
             <p className="text-white/70 leading-relaxed">
-              No more briefing agencies. No more blank page moments. MarketPilot thinks in your brand&apos;s voice and publishes while you sleep.
+              {t("leftPanelSubtitle")}
             </p>
           </div>
           <div className="space-y-4">
@@ -121,42 +125,42 @@ export default function SignupPage() {
           </div>
 
           <div className="space-y-2">
-            <h1 className="font-heading text-3xl font-extrabold tracking-tight">Create your account</h1>
-            <p className="text-muted-foreground">Start your free 14-day trial. No credit card required.</p>
+            <h1 className="font-heading text-3xl font-extrabold tracking-tight">{t("createAccount")}</h1>
+            <p className="text-muted-foreground">{t("subtitle")}</p>
           </div>
 
           <form onSubmit={handleSignup} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="name" className="text-sm font-medium">Full name</Label>
+              <Label htmlFor="name" className="text-sm font-medium">{t("fullName")}</Label>
               <Input
                 id="name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Jane Smith"
+                placeholder={t("fullNamePlaceholder")}
                 className="h-11"
                 required
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-sm font-medium">Work email</Label>
+              <Label htmlFor="email" className="text-sm font-medium">{t("workEmail")}</Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="jane@company.com"
+                placeholder={t("emailPlaceholder")}
                 className="h-11"
                 required
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+              <Label htmlFor="password" className="text-sm font-medium">{t("password")}</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min. 6 characters"
+                placeholder={t("passwordPlaceholder")}
                 className="h-11"
                 minLength={6}
                 required
@@ -174,21 +178,21 @@ export default function SignupPage() {
               className="w-full h-11 primary-gradient text-white border-0 hover:opacity-90 font-heading font-semibold"
               disabled={loading}
             >
-              {loading ? "Creating account…" : "Create free account"}
+              {loading ? t("creatingAccount") : t("createFreeAccount")}
             </Button>
           </form>
 
           <p className="text-center text-xs text-muted-foreground">
-            By signing up you agree to our{" "}
-            <a href="#" className="underline hover:text-foreground">Terms of Service</a>
-            {" "}and{" "}
-            <a href="#" className="underline hover:text-foreground">Privacy Policy</a>
+            {t("termsAgreement")}{" "}
+            <a href="#" className="underline hover:text-foreground">{t("termsOfService")}</a>
+            {" "}{t("and")}{" "}
+            <a href="#" className="underline hover:text-foreground">{t("privacyPolicy")}</a>
           </p>
 
           <p className="text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
+            {t("alreadyHaveAccount")}{" "}
             <Link href="/login" className="text-primary font-medium hover:underline">
-              Sign in
+              {t("signIn")}
             </Link>
           </p>
         </div>

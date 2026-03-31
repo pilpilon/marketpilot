@@ -88,7 +88,7 @@ function TikTokFrame({ children }: { children: React.ReactNode }) {
       {/* Image fills the frame */}
       <div className="relative">{children}</div>
       {/* Right-side action buttons overlay */}
-      <div className="absolute right-2 bottom-16 flex flex-col items-center gap-4">
+      <div className="absolute end-2 bottom-16 flex flex-col items-center gap-4">
         {[Heart, MessageCircle, Bookmark, Share2].map((Icon, i) => (
           <div key={i} className="flex flex-col items-center gap-0.5">
             <div className="h-9 w-9 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
@@ -99,7 +99,7 @@ function TikTokFrame({ children }: { children: React.ReactNode }) {
         ))}
       </div>
       {/* Bottom caption overlay */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-8">
+      <div className="absolute bottom-0 start-0 end-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-8">
         <p className="text-xs font-semibold text-white">@your_brand</p>
         <p className="text-[11px] text-white/80 mt-0.5 line-clamp-2">Your caption here... #fyp</p>
       </div>

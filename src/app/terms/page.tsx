@@ -17,7 +17,7 @@ export default function TermsOfServicePage() {
 
         <section>
           <h2 className="text-xl font-semibold mt-8 mb-3">3. User Accounts</h2>
-          <ul className="list-disc pl-6 space-y-2">
+          <ul className="list-disc ps-6 space-y-2">
             <li>You must provide accurate information when creating an account.</li>
             <li>You are responsible for maintaining the security of your account credentials.</li>
             <li>You must be at least 18 years old to use the Service.</li>
@@ -26,7 +26,7 @@ export default function TermsOfServicePage() {
 
         <section>
           <h2 className="text-xl font-semibold mt-8 mb-3">4. Content and Intellectual Property</h2>
-          <ul className="list-disc pl-6 space-y-2">
+          <ul className="list-disc ps-6 space-y-2">
             <li>You retain ownership of the content you create and upload to MarketPilot.</li>
             <li>AI-generated content (images, captions) created through the Service may be used freely by you for any purpose.</li>
             <li>You grant us a limited license to process your content as necessary to provide the Service.</li>
@@ -36,7 +36,7 @@ export default function TermsOfServicePage() {
 
         <section>
           <h2 className="text-xl font-semibold mt-8 mb-3">5. Social Media Accounts</h2>
-          <ul className="list-disc pl-6 space-y-2">
+          <ul className="list-disc ps-6 space-y-2">
             <li>By connecting social media accounts, you authorize MarketPilot to post content on your behalf.</li>
             <li>You are responsible for complying with each platform&apos;s terms of service.</li>
             <li>You can disconnect your accounts at any time through the Service.</li>
@@ -46,7 +46,7 @@ export default function TermsOfServicePage() {
         <section>
           <h2 className="text-xl font-semibold mt-8 mb-3">6. Acceptable Use</h2>
           <p>You agree not to:</p>
-          <ul className="list-disc pl-6 space-y-2">
+          <ul className="list-disc ps-6 space-y-2">
             <li>Use the Service for any unlawful purpose.</li>
             <li>Generate or distribute harmful, misleading, or offensive content.</li>
             <li>Attempt to gain unauthorized access to the Service or its systems.</li>

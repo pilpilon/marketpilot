@@ -206,7 +206,7 @@ export default async function ProjectOverviewPage({
         <h2 className="font-heading text-lg font-bold">Campaigns</h2>
         <Button variant="outline" size="sm" asChild>
           <Link href={`/dashboard/${projectId}/campaigns`}>
-            <FolderKanban className="mr-2 h-4 w-4" />
+            <FolderKanban className="me-2 h-4 w-4" />
             View all
           </Link>
         </Button>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,13 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Globe, Loader2, Zap, Plus, X, Share2, Link2, Hash, Play } from "lucide-react";
 import type { BrandUrlType } from "@/types/database";
 
-const SOCIAL_OPTIONS: { value: BrandUrlType; label: string; placeholder: string }[] = [
+const SOCIAL_OPTIONS: { value: BrandUrlType; labelKey?: string; label: string; placeholder: string }[] = [
   { value: "facebook", label: "Facebook", placeholder: "https://facebook.com/yourbrand" },
   { value: "instagram", label: "Instagram", placeholder: "https://instagram.com/yourbrand" },
   { value: "linkedin", label: "LinkedIn", placeholder: "https://linkedin.com/company/yourbrand" },
   { value: "tiktok", label: "TikTok", placeholder: "https://tiktok.com/@yourbrand" },
   { value: "youtube", label: "YouTube", placeholder: "https://youtube.com/@yourbrand" },
-  { value: "other", label: "Other URL", placeholder: "https://..." },
+  { value: "other", labelKey: "otherUrl", label: "Other URL", placeholder: "https://..." },
 ];
 
 function SocialIcon({ type, className }: { type: BrandUrlType; className?: string }) {
@@ -40,6 +41,7 @@ type BrandUrlEntry = { url: string; type: BrandUrlType };
 
 export default function NewProjectPage() {
   const router = useRouter();
+  const t = useTranslations("newProject");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ name: "", url: "", description: "", market: "global" });
@@ -98,24 +100,24 @@ export default function NewProjectPage() {
       <Button variant="ghost" size="sm" asChild>
         <Link href="/dashboard">
           <ArrowLeft className="me-2 h-4 w-4" />
-          Back to projects
+          {t("backToProjects")}
         </Link>
       </Button>
 
       <div className="space-y-1">
-        <h1 className="font-heading text-2xl font-extrabold tracking-tight">Create a new project</h1>
+        <h1 className="font-heading text-2xl font-extrabold tracking-tight">{t("title")}</h1>
         <p className="text-muted-foreground text-sm">
-          MarketPilot will research your brand and generate a full marketing intelligence brief.
+          {t("subtitle")}
         </p>
       </div>
 
       <div className="bg-card rounded-xl border border-border p-6">
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
-            <Label htmlFor="name" className="text-sm font-medium">Project name</Label>
+            <Label htmlFor="name" className="text-sm font-medium">{t("projectName")}</Label>
             <Input
               id="name"
-              placeholder="Acme Corp"
+              placeholder={t("projectNamePlaceholder")}
               className="h-11"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -125,22 +127,22 @@ export default function NewProjectPage() {
 
           <div className="space-y-1.5">
             <Label htmlFor="url" className="text-sm font-medium">
-              Website URL{" "}
-              <span className="text-muted-foreground font-normal">(recommended)</span>
+              {t("websiteUrl")}{" "}
+              <span className="text-muted-foreground font-normal">({t("recommended")})</span>
             </Label>
             <div className="relative">
               <Globe className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="url"
                 type="url"
-                placeholder="https://acme.com"
+                placeholder={t("websiteUrlPlaceholder")}
                 className="ps-9 h-11"
                 value={form.url}
                 onChange={(e) => setForm({ ...form, url: e.target.value })}
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Used to research your brand, competitors, and market positioning automatically.
+              {t("websiteUrlHint")}
             </p>
           </div>
 
@@ -148,8 +150,8 @@ export default function NewProjectPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">
-                Social Profiles{" "}
-                <span className="text-muted-foreground font-normal">(optional)</span>
+                {t("socialProfiles")}{" "}
+                <span className="text-muted-foreground font-normal">({t("optional")})</span>
               </Label>
               <Button
                 type="button"
@@ -159,13 +161,13 @@ export default function NewProjectPage() {
                 onClick={addBrandUrl}
               >
                 <Plus className="h-3.5 w-3.5" />
-                Add source
+                {t("addSource")}
               </Button>
             </div>
 
             {brandUrls.length === 0 ? (
               <p className="text-xs text-muted-foreground">
-                Add your social media pages to enrich the brand analysis. Great if you don&apos;t have a website yet.
+                {t("socialProfilesHint")}
               </p>
             ) : (
               <div className="space-y-2">
@@ -186,7 +188,7 @@ export default function NewProjectPage() {
                         <SelectContent>
                           {SOCIAL_OPTIONS.map((opt) => (
                             <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
+                              {opt.labelKey ? t(opt.labelKey) : opt.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -215,32 +217,32 @@ export default function NewProjectPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="market" className="text-sm font-medium">Target Market</Label>
+            <Label htmlFor="market" className="text-sm font-medium">{t("targetMarket")}</Label>
             <Select
               value={form.market}
               onValueChange={(val) => val && setForm({ ...form, market: val })}
             >
               <SelectTrigger id="market" className="h-11">
-                <SelectValue placeholder="Select market" />
+                <SelectValue placeholder={t("selectMarket")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="global">Global (English)</SelectItem>
-                <SelectItem value="il">Israel (Hebrew)</SelectItem>
+                <SelectItem value="global">{t("globalEnglish")}</SelectItem>
+                <SelectItem value="il">{t("israelHebrew")}</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Focuses research on your target market — competitors, audience, and content strategies.
+              {t("targetMarketHint")}
             </p>
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="description" className="text-sm font-medium">
-              Description{" "}
-              <span className="text-muted-foreground font-normal">(optional)</span>
+              {t("description")}{" "}
+              <span className="text-muted-foreground font-normal">({t("optional")})</span>
             </Label>
             <Textarea
               id="description"
-              placeholder="What does your product do? Who is it for?"
+              placeholder={t("descriptionPlaceholder")}
               rows={3}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -261,10 +263,10 @@ export default function NewProjectPage() {
             {loading ? (
               <>
                 <Loader2 className="me-2 h-4 w-4 animate-spin" />
-                Creating project…
+                {t("creatingProject")}
               </>
             ) : (
-              "Create project"
+              t("createProject")
             )}
           </Button>
         </form>
@@ -272,7 +274,7 @@ export default function NewProjectPage() {
 
       <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
         <Zap className="h-3.5 w-3.5 text-primary" />
-        Takes about 2 minutes to set up
+        {t("setupTime")}
       </div>
     </div>
   );

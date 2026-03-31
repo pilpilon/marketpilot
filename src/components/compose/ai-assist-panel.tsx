@@ -97,9 +97,9 @@ export function AiAssistPanel({
             disabled={isGenerating}
           >
             {isGenerating ? (
-              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+              <Loader2 className="me-1 h-3 w-3 animate-spin" />
             ) : (
-              <Sparkles className="mr-1 h-3 w-3" />
+              <Sparkles className="me-1 h-3 w-3" />
             )}
             Generate Caption
           </Button>
@@ -110,9 +110,9 @@ export function AiAssistPanel({
             disabled={isGenerating}
           >
             {isGenerating ? (
-              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+              <Loader2 className="me-1 h-3 w-3 animate-spin" />
             ) : (
-              <Hash className="mr-1 h-3 w-3" />
+              <Hash className="me-1 h-3 w-3" />
             )}
             Suggest Hashtags
           </Button>

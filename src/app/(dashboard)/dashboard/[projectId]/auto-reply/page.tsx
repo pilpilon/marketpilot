@@ -72,10 +72,10 @@ export default async function AutoReplyPage({
         <div className="flex gap-2">
           <Button variant="outline" asChild>
             <Link href={`/dashboard/${projectId}/auto-reply/queue`}>
-              <Inbox className="mr-2 h-4 w-4" />
+              <Inbox className="me-2 h-4 w-4" />
               Approval Queue
               {(pendingCount || 0) > 0 && (
-                <Badge variant="destructive" className="ml-2">
+                <Badge variant="destructive" className="ms-2">
                   {pendingCount}
                 </Badge>
               )}
@@ -83,7 +83,7 @@ export default async function AutoReplyPage({
           </Button>
           <Button className="primary-gradient text-white border-0 hover:opacity-90 font-heading font-semibold" asChild>
             <Link href={`/dashboard/${projectId}/auto-reply/new`}>
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="me-2 h-4 w-4" />
               New Rule
             </Link>
           </Button>
@@ -123,7 +123,7 @@ export default async function AutoReplyPage({
                       <p>
                         Keywords:{" "}
                         {(rule.trigger_keywords || []).map((kw) => (
-                          <Badge key={kw} variant="secondary" className="mr-1 text-xs">
+                          <Badge key={kw} variant="secondary" className="me-1 text-xs">
                             {kw}
                           </Badge>
                         ))}
@@ -149,7 +149,7 @@ export default async function AutoReplyPage({
           </p>
           <Button asChild>
             <Link href={`/dashboard/${projectId}/auto-reply/new`}>
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="me-2 h-4 w-4" />
               Create First Rule
             </Link>
           </Button>

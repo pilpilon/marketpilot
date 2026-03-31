@@ -61,7 +61,7 @@ export default async function CampaignsPage({
           asChild
         >
           <Link href={`/dashboard/${projectId}/skills`}>
-            <Zap className="mr-2 h-4 w-4" />
+            <Zap className="me-2 h-4 w-4" />
             New Campaign
           </Link>
         </Button>

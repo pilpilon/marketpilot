@@ -246,12 +246,12 @@ export default function IntelligencePage() {
           >
             {analyzing ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="me-2 h-4 w-4 animate-spin" />
                 Analyzing…
               </>
             ) : (
               <>
-                <RefreshCw className="mr-2 h-4 w-4" />
+                <RefreshCw className="me-2 h-4 w-4" />
                 {populatedCount > 0 ? "Re-analyze" : "Run Analysis"}
               </>
             )}
@@ -281,7 +281,7 @@ export default function IntelligencePage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin mr-2" />
+          <Loader2 className="h-6 w-6 animate-spin me-2" />
           Loading intelligence…
         </div>
       ) : (
@@ -326,7 +326,7 @@ export default function IntelligencePage() {
                             setEditMode({ ...editMode, [ft.id]: true })
                           }
                         >
-                          <Pencil className="mr-2 h-3 w-3" />
+                          <Pencil className="me-2 h-3 w-3" />
                           Edit
                         </Button>
                       )}
@@ -348,9 +348,9 @@ export default function IntelligencePage() {
                             disabled={saving[ft.id]}
                           >
                             {saving[ft.id] ? (
-                              <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                              <Loader2 className="me-2 h-3 w-3 animate-spin" />
                             ) : (
-                              <Save className="mr-2 h-3 w-3" />
+                              <Save className="me-2 h-3 w-3" />
                             )}
                             Save
                           </Button>
@@ -401,12 +401,12 @@ export default function IntelligencePage() {
                             >
                               {synthesizing ? (
                                 <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  <Loader2 className="me-2 h-4 w-4 animate-spin" />
                                   Synthesizing patterns…
                                 </>
                               ) : (
                                 <>
-                                  <Wand2 className="mr-2 h-4 w-4" />
+                                  <Wand2 className="me-2 h-4 w-4" />
                                   {file ? "Re-synthesize Examples" : "Synthesize Examples"}
                                 </>
                               )}
@@ -435,7 +435,7 @@ export default function IntelligencePage() {
                           className="mt-4"
                           onClick={() => setEditMode({ ...editMode, [ft.id]: true })}
                         >
-                          <Pencil className="mr-2 h-3 w-3" />
+                          <Pencil className="me-2 h-3 w-3" />
                           Write manually
                         </Button>
                       </div>

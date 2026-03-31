@@ -14,6 +14,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -36,27 +37,28 @@ function useProjectId() {
 export function AppSidebar() {
   const pathname = usePathname();
   const projectId = useProjectId();
+  const t = useTranslations("sidebar");
 
   const mainNav = [
-    { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { title: t("dashboard"), href: "/dashboard", icon: LayoutDashboard },
   ];
 
   const projectNav = projectId
     ? [
-        { title: "Overview", href: `/dashboard/${projectId}`, icon: FolderKanban, group: "core" },
-        { title: "Intelligence", href: `/dashboard/${projectId}/intelligence`, icon: Brain, group: "core" },
-        { title: "Skills Engine", href: `/dashboard/${projectId}/skills`, icon: Zap, group: "core" },
-        { title: "Campaigns", href: `/dashboard/${projectId}/campaigns`, icon: FolderKanban, group: "core" },
-        { title: "Social Accounts", href: `/dashboard/${projectId}/social`, icon: Share2, group: "publish" },
-        { title: "Compose", href: `/dashboard/${projectId}/compose`, icon: PenSquare, group: "publish" },
-        { title: "Calendar", href: `/dashboard/${projectId}/calendar`, icon: CalendarDays, group: "publish" },
-        { title: "Auto Reply", href: `/dashboard/${projectId}/auto-reply`, icon: MessageSquareReply, group: "publish" },
+        { title: t("overview"), href: `/dashboard/${projectId}`, icon: FolderKanban, group: "core" },
+        { title: t("intelligence"), href: `/dashboard/${projectId}/intelligence`, icon: Brain, group: "core" },
+        { title: t("skillsEngine"), href: `/dashboard/${projectId}/skills`, icon: Zap, group: "core" },
+        { title: t("campaigns"), href: `/dashboard/${projectId}/campaigns`, icon: FolderKanban, group: "core" },
+        { title: t("socialAccounts"), href: `/dashboard/${projectId}/social`, icon: Share2, group: "publish" },
+        { title: t("compose"), href: `/dashboard/${projectId}/compose`, icon: PenSquare, group: "publish" },
+        { title: t("calendar"), href: `/dashboard/${projectId}/calendar`, icon: CalendarDays, group: "publish" },
+        { title: t("autoReply"), href: `/dashboard/${projectId}/auto-reply`, icon: MessageSquareReply, group: "publish" },
       ]
     : [];
 
   const settingsNav = [
-    { title: "Settings", href: "/dashboard/settings", icon: Settings },
-    { title: "Billing", href: "/dashboard/settings/billing", icon: CreditCard },
+    { title: t("settings"), href: "/dashboard/settings", icon: Settings },
+    { title: t("billing"), href: "/dashboard/settings/billing", icon: CreditCard },
   ];
 
   return (
@@ -98,7 +100,7 @@ export function AppSidebar() {
           <>
             <SidebarGroup className="p-0 mt-4">
               <SidebarGroupLabel className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-1">
-                MarketPilot
+                {t("marketpilot")}
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
@@ -121,7 +123,7 @@ export function AppSidebar() {
 
             <SidebarGroup className="p-0 mt-4">
               <SidebarGroupLabel className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-1">
-                Publishing
+                {t("publishing")}
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>

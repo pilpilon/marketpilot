@@ -124,18 +124,18 @@ export function CarouselPreview({ slides, ratioClass, platform, onSendToComposer
       {/* Actions */}
       <div className="flex gap-2">
         <Button variant="outline" size="sm" onClick={downloadCurrent} className="flex-1">
-          <Download className="mr-2 h-4 w-4" />
+          <Download className="me-2 h-4 w-4" />
           Download{slides.length > 1 ? " This" : ""}
         </Button>
         {slides.length > 1 && (
           <Button variant="outline" size="sm" onClick={downloadAll} className="flex-1">
-            <Download className="mr-2 h-4 w-4" />
+            <Download className="me-2 h-4 w-4" />
             All
           </Button>
         )}
         {onRegenerate && (
           <Button variant="outline" size="sm" onClick={onRegenerate} className="flex-1">
-            <RefreshCw className="mr-2 h-4 w-4" />
+            <RefreshCw className="me-2 h-4 w-4" />
             Regenerate
           </Button>
         )}
@@ -145,7 +145,7 @@ export function CarouselPreview({ slides, ratioClass, platform, onSendToComposer
             onClick={() => onSendToComposer(slides.map((s) => s.imageUrl))}
             className="flex-1"
           >
-            <Send className="mr-2 h-4 w-4" />
+            <Send className="me-2 h-4 w-4" />
             Composer
           </Button>
         )}

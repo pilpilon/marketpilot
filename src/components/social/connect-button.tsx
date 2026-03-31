@@ -24,7 +24,7 @@ export function ConnectButton({ platform, projectId }: ConnectButtonProps) {
         <p className="text-sm text-muted-foreground">{platform.description}</p>
         <Button variant="outline" className="w-full" asChild>
           <a href={`/api/social/connect/${platform.id}?projectId=${projectId}`}>
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="me-2 h-4 w-4" />
             Connect {platform.name}
           </a>
         </Button>

@@ -60,7 +60,7 @@ export default async function CampaignDetailPage({
       <div>
         <Button variant="ghost" size="sm" asChild>
           <Link href={`/dashboard/${projectId}/campaigns`}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="me-2 h-4 w-4" />
             All Campaigns
           </Link>
         </Button>
@@ -86,7 +86,7 @@ export default async function CampaignDetailPage({
         <div className="flex gap-2 shrink-0">
           <Button variant="outline" size="sm" asChild>
             <Link href={`/dashboard/${projectId}/compose?campaignId=${campaignId}`}>
-              <Send className="mr-2 h-4 w-4" />
+              <Send className="me-2 h-4 w-4" />
               Publish to Social
             </Link>
           </Button>

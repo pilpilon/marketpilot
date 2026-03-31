@@ -146,7 +146,7 @@ export function CampaignAssetCard({
                     }}
                   >
                     {captionCopied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
-                    <span className="ml-1">{captionCopied ? "Copied" : "Copy"}</span>
+                    <span className="ms-1">{captionCopied ? "Copied" : "Copy"}</span>
                   </Button>
                 </div>
                 <div className="rounded-md bg-muted/50 p-3">

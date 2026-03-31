@@ -110,7 +110,7 @@ export function CampaignList({
           asChild
         >
           <Link href={`/dashboard/${projectId}/skills`}>
-            <Zap className="mr-2 h-4 w-4" />
+            <Zap className="me-2 h-4 w-4" />
             Run Skills Engine
           </Link>
         </Button>
@@ -133,9 +133,9 @@ export function CampaignList({
             disabled={deleting}
           >
             {deleting ? (
-              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="me-2 h-3.5 w-3.5 animate-spin" />
             ) : (
-              <Trash2 className="mr-2 h-3.5 w-3.5" />
+              <Trash2 className="me-2 h-3.5 w-3.5" />
             )}
             Delete{selected.size > 1 ? ` (${selected.size})` : ""}
           </Button>
@@ -144,10 +144,10 @@ export function CampaignList({
             size="sm"
             onClick={() => setSelected(new Set())}
           >
-            <X className="mr-1 h-3.5 w-3.5" />
+            <X className="me-1 h-3.5 w-3.5" />
             Cancel
           </Button>
-          <div className="ml-auto">
+          <div className="ms-auto">
             <Button variant="ghost" size="sm" onClick={toggleAll}>
               {allSelected ? "Deselect all" : "Select all"}
             </Button>

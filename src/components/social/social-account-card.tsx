@@ -47,9 +47,9 @@ export function SocialAccountCard({
         </div>
         <Badge variant={isHealthy ? "default" : "destructive"}>
           {isHealthy ? (
-            <><CheckCircle2 className="mr-1 h-3 w-3" /> Connected</>
+            <><CheckCircle2 className="me-1 h-3 w-3" /> Connected</>
           ) : (
-            <><AlertCircle className="mr-1 h-3 w-3" /> {account.status}</>
+            <><AlertCircle className="me-1 h-3 w-3" /> {account.status}</>
           )}
         </Badge>
       </CardHeader>
@@ -89,7 +89,7 @@ export function SocialAccountCard({
           className="w-full text-destructive"
           onClick={handleDisconnect}
         >
-          <Unplug className="mr-2 h-4 w-4" />
+          <Unplug className="me-2 h-4 w-4" />
           Disconnect
         </Button>
       </CardContent>

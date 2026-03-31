@@ -12,7 +12,7 @@ export default function PrivacyPolicyPage() {
 
         <section>
           <h2 className="text-xl font-semibold mt-8 mb-3">2. Information We Collect</h2>
-          <ul className="list-disc pl-6 space-y-2">
+          <ul className="list-disc ps-6 space-y-2">
             <li><strong>Account information:</strong> Email address and password when you sign up.</li>
             <li><strong>Brand information:</strong> Business name, brand guidelines, visual assets, and content you provide to create marketing materials.</li>
             <li><strong>Social media data:</strong> When you connect social accounts (Instagram, Twitter/X, TikTok), we receive an access token and basic profile information (username, profile picture). We do not store your social media password.</li>
@@ -23,7 +23,7 @@ export default function PrivacyPolicyPage() {
 
         <section>
           <h2 className="text-xl font-semibold mt-8 mb-3">3. How We Use Your Information</h2>
-          <ul className="list-disc pl-6 space-y-2">
+          <ul className="list-disc ps-6 space-y-2">
             <li>To provide and improve our services.</li>
             <li>To generate AI-powered content tailored to your brand.</li>
             <li>To publish content to your connected social media accounts on your behalf.</li>
@@ -34,7 +34,7 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className="text-xl font-semibold mt-8 mb-3">4. Third-Party Services</h2>
           <p>We use the following third-party services:</p>
-          <ul className="list-disc pl-6 space-y-2">
+          <ul className="list-disc ps-6 space-y-2">
             <li><strong>Supabase:</strong> Database and authentication.</li>
             <li><strong>Google AI (Gemini):</strong> AI-powered image and text generation. Content you provide may be sent to Google&apos;s API for processing.</li>
             <li><strong>Meta/Instagram API:</strong> To publish content and manage your Instagram presence.</li>
@@ -55,7 +55,7 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className="text-xl font-semibold mt-8 mb-3">7. Your Rights</h2>
           <p>You have the right to:</p>
-          <ul className="list-disc pl-6 space-y-2">
+          <ul className="list-disc ps-6 space-y-2">
             <li>Access the personal data we hold about you.</li>
             <li>Request correction of inaccurate data.</li>
             <li>Request deletion of your data.</li>

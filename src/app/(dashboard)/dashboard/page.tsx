@@ -41,7 +41,7 @@ export default async function DashboardPage() {
           asChild
         >
           <Link href="/dashboard/projects/new">
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="me-2 h-4 w-4" />
             New Project
           </Link>
         </Button>
@@ -80,7 +80,7 @@ export default async function DashboardPage() {
               asChild
             >
               <Link href="/dashboard/projects/new">
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="me-2 h-4 w-4" />
                 Create Project
               </Link>
             </Button>

@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope, Inter } from "next/font/google";
+import { Manrope, Inter, Heebo } from "next/font/google";
 import { Geist_Mono } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages } from "next-intl/server";
+import { cookies } from "next/headers";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -13,6 +16,12 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+});
+
+const heebo = Heebo({
+  variable: "--font-heebo",
+  subsets: ["hebrew"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 const geistMono = Geist_Mono({
@@ -53,17 +62,27 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const locale = cookieStore.get("locale")?.value === "he" ? "he" : "en";
+  const dir = locale === "he" ? "rtl" : "ltr";
+  const messages = await getMessages();
+
   return (
     <html
-      lang="en"
-      className={`${manrope.variable} ${inter.variable} ${geistMono.variable} h-full antialiased`}
+      lang={locale}
+      dir={dir}
+      className={`${manrope.variable} ${inter.variable} ${heebo.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          {children}
+        </NextIntlClientProvider>
+      </body>
     </html>
   );
 }
