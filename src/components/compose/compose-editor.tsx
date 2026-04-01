@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,6 +48,7 @@ export function ComposeEditor({
   const [scheduledAt, setScheduledAt] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
   const [showAiPanel, setShowAiPanel] = useState(false);
+  const router = useRouter();
 
   const selectedPlatforms = accounts.filter((a) => selectedAccounts.has(a.id));
 
@@ -124,6 +126,7 @@ export function ComposeEditor({
           toast.error(failedPlatforms || "Publishing failed. Check your posts page.");
         } else {
           toast.success("Published successfully!");
+          router.push(`/dashboard/${projectId}/campaigns`);
         }
       } else if (mode === "schedule") {
         toast.success("Post scheduled!");
