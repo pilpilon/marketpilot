@@ -72,6 +72,7 @@ export default function IntelligencePage() {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [analyzeError, setAnalyzeError] = useState("");
+  const [progress, setProgress] = useState<{ step: string; current: number; total: number } | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploadError, setUploadError] = useState("");
   const [synthesizing, setSynthesizing] = useState(false);
@@ -97,13 +98,17 @@ export default function IntelligencePage() {
   const pollStatus = useCallback(async () => {
     const res = await fetch(`/api/projects/${projectId}/analyze`);
     const data = await res.json();
-    const run = data.run as { status: string; error_message?: string } | null;
+    const run = data.run as { status: string; error_message?: string; metadata?: { step?: string; current?: number; total?: number } } | null;
     if (!run || run.status === "completed") {
+      setProgress(null);
       await fetchFiles();
       setAnalyzing(false);
     } else if (run.status === "failed") {
+      setProgress(null);
       setAnalyzeError(run.error_message || "Analysis failed");
       setAnalyzing(false);
+    } else if (run.metadata?.step) {
+      setProgress({ step: run.metadata.step, current: run.metadata.current ?? 0, total: run.metadata.total ?? 7 });
     }
     // still "running" — caller will poll again
     return run?.status ?? null;
@@ -252,6 +257,35 @@ export default function IntelligencePage() {
         <div className="flex items-center gap-2 text-sm text-destructive rounded-lg border border-destructive/30 bg-destructive/5 p-3">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {analyzeError}
+        </div>
+      )}
+
+      {/* Progress bar during analysis */}
+      {analyzing && (
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 space-y-3">
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-5 w-5 animate-spin text-primary shrink-0" />
+            <div className="flex-1">
+              <p className="font-heading font-semibold text-sm">
+                {progress
+                  ? `${t("analyzing")} — ${FILE_TYPES.find((ft) => ft.id === progress.step)?.label ?? progress.step}`
+                  : t("analyzing")}
+              </p>
+              {progress && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {progress.current}/{progress.total}
+                </p>
+              )}
+            </div>
+          </div>
+          {progress && (
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-500"
+                style={{ width: `${Math.round((progress.current / progress.total) * 100)}%` }}
+              />
+            </div>
+          )}
         </div>
       )}
 

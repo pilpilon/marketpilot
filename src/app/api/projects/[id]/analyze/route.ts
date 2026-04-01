@@ -17,7 +17,7 @@ export async function GET(
 
   const { data: run } = await supabase
     .from("analysis_runs")
-    .select("id, status, error_message, completed_at, created_at")
+    .select("id, status, error_message, completed_at, created_at, metadata")
     .eq("project_id", projectId)
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
@@ -85,7 +85,23 @@ export async function POST(
 
   const runId = (run as { id: string } | null)?.id;
 
+  // Helper to update progress
+  async function setProgress(step: string, current: number, total: number) {
+    if (!runId) return;
+    await supabase
+      .from("analysis_runs")
+      .update({ metadata: { step, current, total } })
+      .eq("id", runId);
+  }
+
   try {
+    // Clear old context files so stale data doesn't persist on re-run
+    await supabase
+      .from("context_files")
+      .delete()
+      .eq("project_id", projectId)
+      .neq("file_type", "intake"); // Keep user-uploaded examples
+
     // Build context from all available brand sources
     const TYPE_LABELS: Record<string, string> = {
       facebook: "Facebook Page",
@@ -110,6 +126,7 @@ export async function POST(
       : "";
 
     // 1. Competitor research via Perplexity
+    await setProgress("competitors", 1, 7);
     const competitorResearch = await perplexityResearch(
       `${websiteInstruction}
 
@@ -126,6 +143,7 @@ Research the top 3-5 direct competitors of "${projectName}" based on what the co
     );
 
     // 2. Audience research via Perplexity
+    await setProgress("audience", 2, 7);
     const audienceResearch = await perplexityResearch(
       `${websiteInstruction}
 
@@ -160,6 +178,7 @@ Provide:
     }
 
     // 3. Brand positioning via Gemini (synthesis)
+    await setProgress("brand", 3, 7);
     const brandDoc = await geminiGenerate(
       `You are a senior brand strategist. Based on the following research, create a comprehensive brand positioning document for "${projectName}".
 IMPORTANT: The product description and website content below define what this company ACTUALLY does. Do NOT guess from the company name.
@@ -194,6 +213,7 @@ Be specific and actionable. Base everything on real market positioning gaps you 
     );
 
     // 4. Product brief via Gemini
+    await setProgress("product", 4, 7);
     const productDoc = await geminiGenerate(
       `You are a product marketer. Create a Product Brief for "${projectName}".
 
@@ -223,6 +243,7 @@ Keep it tight and focused on what matters for marketing.`
     );
 
     // 5. Character brief via Gemini
+    await setProgress("character", 5, 7);
     const characterDoc = await geminiGenerate(
       `You are a brand identity strategist. Create a Character Brief for "${projectName}" — a guide for anyone creating content for this brand.
 
@@ -251,6 +272,7 @@ This will guide the skills engine when generating posts and campaigns.`
     );
 
     // 6. Visual style via Gemini
+    await setProgress("visual_style", 6, 7);
     const visualDoc = await geminiGenerate(
       `You are a visual brand consultant. Create a Visual Style Guide brief for "${projectName}" based on their positioning.
 
@@ -278,6 +300,7 @@ This guides image selection and creative direction for social posts.`
     );
 
     // 7. Generate SOP document
+    await setProgress("sop", 7, 7);
     const sopDoc = generateSOP(
       projectName,
       settings,
