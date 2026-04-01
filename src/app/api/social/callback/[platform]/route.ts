@@ -55,10 +55,11 @@ export async function GET(
   const oauthState = oauthStates?.[0];
 
   if (!oauthState) {
-    console.log(`[social-callback] Invalid state token. stateError=${stateError?.message}`);
-    return NextResponse.redirect(
-      `${appUrl}/dashboard?error=invalid_oauth_state`
-    );
+    // State already consumed (likely a double-redirect from the platform).
+    // Instead of showing an error, just redirect to dashboard — the account
+    // was probably saved by the first callback.
+    console.log(`[social-callback] State already consumed (double-redirect). Redirecting to dashboard.`);
+    return NextResponse.redirect(`${appUrl}/dashboard`);
   }
 
   // Check expiry
