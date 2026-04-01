@@ -87,17 +87,63 @@ export async function GET(
 
     console.log(`[social-callback] Token exchange OK. Getting profile...`);
     let profile: { id: string; username: string; displayName: string; avatarUrl: string };
+    let pageAccessToken = tokens.accessToken;
 
-    if (platform === "instagram" && tokens.platformUserId) {
-      // Instagram: graph.instagram.com /me endpoint is broken.
-      // Use the user_id from the token exchange response instead.
-      console.log(`[social-callback] Instagram: using user_id from token exchange: ${tokens.platformUserId}`);
-      profile = {
-        id: tokens.platformUserId,
-        username: tokens.platformUserId,
-        displayName: "",
-        avatarUrl: "",
-      };
+    if (platform === "instagram") {
+      // Instagram via Facebook Login: discover the IG Business Account via Pages API
+      console.log(`[social-callback] Instagram: discovering IG Business Account via Facebook Pages API`);
+
+      // 1. Get user's Facebook Pages
+      const pagesRes = await fetch(
+        `https://graph.facebook.com/v22.0/me/accounts?access_token=${tokens.accessToken}`
+      );
+      if (!pagesRes.ok) {
+        const pagesErr = await pagesRes.text();
+        throw new Error(`Failed to get Facebook Pages: ${pagesErr}`);
+      }
+      const pagesData = await pagesRes.json();
+      const pages = pagesData.data || [];
+      console.log(`[social-callback] Instagram: found ${pages.length} Facebook Page(s)`);
+
+      // 2. Find the page with an instagram_business_account
+      let igAccountId = "";
+      for (const page of pages) {
+        const igRes = await fetch(
+          `https://graph.facebook.com/v22.0/${page.id}?fields=instagram_business_account&access_token=${tokens.accessToken}`
+        );
+        if (igRes.ok) {
+          const igData = await igRes.json();
+          if (igData.instagram_business_account?.id) {
+            igAccountId = igData.instagram_business_account.id;
+            pageAccessToken = page.access_token;
+            console.log(`[social-callback] Instagram: found IG Business Account ${igAccountId} on page ${page.name} (${page.id})`);
+            break;
+          }
+        }
+      }
+
+      if (!igAccountId) {
+        throw new Error("No Instagram Business Account found on any of your Facebook Pages. Make sure your Instagram Professional account is linked to a Facebook Page.");
+      }
+
+      // 3. Get the IG account profile
+      const igProfileRes = await fetch(
+        `https://graph.facebook.com/v22.0/${igAccountId}?fields=username,name,profile_picture_url&access_token=${pageAccessToken}`
+      );
+      if (igProfileRes.ok) {
+        const igProfile = await igProfileRes.json();
+        profile = {
+          id: igAccountId,
+          username: igProfile.username || igAccountId,
+          displayName: igProfile.name || "",
+          avatarUrl: igProfile.profile_picture_url || "",
+        };
+      } else {
+        profile = { id: igAccountId, username: igAccountId, displayName: "", avatarUrl: "" };
+      }
+
+      // Use the Page access token for publishing (not the user token)
+      tokens.accessToken = pageAccessToken;
     } else {
       const client = getPlatformClient(platform as Platform);
       profile = await client.getUserProfile(tokens.accessToken);

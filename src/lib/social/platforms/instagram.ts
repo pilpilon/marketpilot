@@ -7,8 +7,8 @@ import type {
 export class InstagramClient implements SocialPlatformClient {
   platform = "instagram" as const;
 
-  // Instagram Content Publishing API
-  private graphUrl = "https://graph.instagram.com";
+  // Instagram Content Publishing via Facebook Graph API
+  private graphUrl = "https://graph.facebook.com/v22.0";
 
   private async get(path: string, accessToken: string) {
     const separator = path.includes("?") ? "&" : "?";
@@ -156,11 +156,11 @@ export class InstagramClient implements SocialPlatformClient {
     refreshToken?: string;
     expiresAt: Date;
   }> {
-    const params = new URLSearchParams({
-      grant_type: "ig_refresh_token",
-      access_token: refreshToken,
-    });
-    const res = await fetch(`https://graph.instagram.com/refresh_access_token?${params.toString()}`);
+    // Facebook Page tokens obtained with a long-lived user token don't expire
+    // But if refresh is needed, exchange via Facebook Graph API
+    const res = await fetch(
+      `https://graph.facebook.com/v22.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${process.env.FACEBOOK_APP_ID}&client_secret=${process.env.FACEBOOK_APP_SECRET}&fb_exchange_token=${refreshToken}`
+    );
 
     if (!res.ok) {
       throw new Error(`Instagram token refresh failed: ${await res.text()}`);
@@ -169,6 +169,7 @@ export class InstagramClient implements SocialPlatformClient {
     const data = await res.json();
     return {
       accessToken: data.access_token,
+      refreshToken: data.access_token,
       expiresAt: new Date(Date.now() + (data.expires_in || 5184000) * 1000),
     };
   }
