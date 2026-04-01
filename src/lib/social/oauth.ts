@@ -162,20 +162,27 @@ export async function exchangeCodeForTokens(
   }
 
   const data = await res.json();
+  console.log(`[oauth] ${platform} token exchange response keys: ${Object.keys(data).join(", ")}`);
 
   // Instagram Business Login: exchange short-lived token for long-lived token
   if (platform === "instagram") {
+    console.log(`[oauth] Instagram: exchanging for long-lived token...`);
     const longLivedRes = await fetch(
       `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${config.clientSecret}&access_token=${data.access_token}`
     );
 
     if (longLivedRes.ok) {
       const longLivedData = await longLivedRes.json();
+      console.log(`[oauth] Instagram: long-lived token obtained, expires_in=${longLivedData.expires_in}`);
       return {
         accessToken: longLivedData.access_token,
         refreshToken: longLivedData.access_token,
         expiresIn: longLivedData.expires_in || 5184000, // 60 days
       };
+    } else {
+      const errText = await longLivedRes.text();
+      console.error(`[oauth] Instagram: long-lived token exchange failed: ${errText}`);
+      // Fall through to return short-lived token
     }
   }
 

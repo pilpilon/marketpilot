@@ -43,13 +43,16 @@ export async function GET(
     return NextResponse.redirect(`${appUrl}/login`);
   }
 
-  // Validate state token
-  const { data: oauthState, error: stateError } = await supabase
+  // Validate state token (use .limit(1) to handle duplicates from retries)
+  const { data: oauthStates, error: stateError } = await supabase
     .from("oauth_states")
     .select("*")
     .eq("state_token", state)
     .eq("user_id", user.id)
-    .single();
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  const oauthState = oauthStates?.[0];
 
   if (!oauthState) {
     console.log(`[social-callback] Invalid state token. stateError=${stateError?.message}`);
@@ -67,8 +70,8 @@ export async function GET(
     );
   }
 
-  // Delete the used state
-  await supabase.from("oauth_states").delete().eq("id", oauthState.id);
+  // Delete the used state (and any duplicates for this token)
+  await supabase.from("oauth_states").delete().eq("state_token", state);
 
   try {
     const redirectUri = `${appUrl}/api/social/callback/${platform}`;
