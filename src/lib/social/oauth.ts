@@ -170,23 +170,32 @@ export async function exchangeCodeForTokens(
   if (platform === "instagram") {
     console.log(`[oauth] Instagram: short-lived token obtained. user_id=${data.user_id}`);
 
-    const longLivedRes = await fetch(
-      `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${config.clientSecret}&access_token=${data.access_token}`
-    );
+    // Try long-lived exchange with version prefix first, then without
+    const exchangeUrls = [
+      `https://graph.instagram.com/v22.0/access_token?grant_type=ig_exchange_token&client_secret=${config.clientSecret}&access_token=${data.access_token}`,
+      `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${config.clientSecret}&access_token=${data.access_token}`,
+    ];
 
-    if (longLivedRes.ok) {
-      const longLivedData = await longLivedRes.json();
-      console.log(`[oauth] Instagram: long-lived token obtained. expires_in=${longLivedData.expires_in}`);
-      return {
-        accessToken: longLivedData.access_token,
-        refreshToken: longLivedData.access_token,
-        expiresIn: longLivedData.expires_in || 5184000,
-        platformUserId: data.user_id,
-      };
+    for (const exchangeUrl of exchangeUrls) {
+      console.log(`[oauth] Instagram: trying long-lived exchange: ${exchangeUrl.split("?")[0]}`);
+      const longLivedRes = await fetch(exchangeUrl);
+      const longLivedBody = await longLivedRes.text();
+      console.log(`[oauth] Instagram: exchange response status=${longLivedRes.status} body=${longLivedBody.substring(0, 200)}`);
+
+      if (longLivedRes.ok) {
+        const longLivedData = JSON.parse(longLivedBody);
+        console.log(`[oauth] Instagram: long-lived token obtained. expires_in=${longLivedData.expires_in}`);
+        return {
+          accessToken: longLivedData.access_token,
+          refreshToken: longLivedData.access_token,
+          expiresIn: longLivedData.expires_in || 5184000,
+          platformUserId: data.user_id,
+        };
+      }
     }
 
-    // Fallback to short-lived token if long-lived exchange fails
-    console.warn(`[oauth] Instagram: long-lived token exchange failed, using short-lived token. Status: ${longLivedRes.status}`);
+    // Fallback to short-lived token if all exchange attempts fail
+    console.warn(`[oauth] Instagram: ALL long-lived token exchanges failed, using short-lived token`);
     return {
       accessToken: data.access_token,
       expiresIn: 3600,
