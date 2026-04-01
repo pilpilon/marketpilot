@@ -168,16 +168,14 @@ export async function exchangeCodeForTokens(
   // Per docs: GET https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret={secret}&access_token={short_lived_token}
   if (platform === "instagram") {
     console.log(`[oauth] Instagram: short-lived token obtained. user_id=${data.user_id}. Exchanging for long-lived token...`);
-    // Try POST (Instagram may have changed from GET to POST)
-    const longLivedRes = await fetch("https://graph.instagram.com/access_token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "ig_exchange_token",
-        client_secret: config.clientSecret,
-        access_token: data.access_token,
-      }),
+    console.log(`[oauth] Instagram: using client_secret length=${config.clientSecret?.length}, app_id=${config.clientId}`);
+    // GET per official docs
+    const llParams = new URLSearchParams({
+      grant_type: "ig_exchange_token",
+      client_secret: config.clientSecret,
+      access_token: data.access_token,
     });
+    const longLivedRes = await fetch(`https://graph.instagram.com/access_token?${llParams.toString()}`);
 
     if (longLivedRes.ok) {
       const longLivedData = await longLivedRes.json();

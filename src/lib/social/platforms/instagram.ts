@@ -11,18 +11,11 @@ export class InstagramClient implements SocialPlatformClient {
   private graphUrl = "https://graph.instagram.com";
 
   private async get(path: string, accessToken: string) {
-    // Instagram now rejects GET requests on graph.instagram.com.
-    // Convert to POST with form-urlencoded body.
-    const url = new URL(`${this.graphUrl}${path}`);
-    const params = new URLSearchParams(url.search);
-    params.set("access_token", accessToken);
-    url.search = "";
+    const separator = path.includes("?") ? "&" : "?";
+    const url = `${this.graphUrl}${path}${separator}access_token=${accessToken}`;
+    console.log(`[instagram] GET ${this.graphUrl}${path.split("?")[0]}`);
 
-    const res = await fetch(url.toString(), {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params,
-    });
+    const res = await fetch(url);
 
     if (!res.ok) {
       const error = await res.text();
@@ -151,15 +144,11 @@ export class InstagramClient implements SocialPlatformClient {
     refreshToken?: string;
     expiresAt: Date;
   }> {
-    // Use POST since graph.instagram.com rejects GET
-    const res = await fetch("https://graph.instagram.com/refresh_access_token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "ig_refresh_token",
-        access_token: refreshToken,
-      }),
+    const params = new URLSearchParams({
+      grant_type: "ig_refresh_token",
+      access_token: refreshToken,
     });
+    const res = await fetch(`https://graph.instagram.com/refresh_access_token?${params.toString()}`);
 
     if (!res.ok) {
       throw new Error(`Instagram token refresh failed: ${await res.text()}`);
