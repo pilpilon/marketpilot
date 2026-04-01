@@ -7,21 +7,34 @@ import type {
 export class InstagramClient implements SocialPlatformClient {
   platform = "instagram" as const;
 
-  // Instagram API endpoints are migrating to graph.facebook.com
-  private graphUrl = "https://graph.facebook.com/v22.0";
+  // Per Meta docs: Instagram API uses graph.instagram.com (no version prefix for some endpoints)
+  private graphUrl = "https://graph.instagram.com";
 
-  private async request(path: string, accessToken: string, options: RequestInit = {}) {
+  private async get(path: string, accessToken: string) {
     const separator = path.includes("?") ? "&" : "?";
     const url = `${this.graphUrl}${path}${separator}access_token=${accessToken}`;
 
-    const headers: Record<string, string> = {};
-    if (options.method && options.method !== "GET") {
-      headers["Content-Type"] = "application/json";
+    // Pure GET — no headers (Instagram rejects GET with Content-Type)
+    const res = await fetch(url);
+
+    if (!res.ok) {
+      const error = await res.text();
+      throw new Error(`Instagram API error (${res.status}): ${error}`);
     }
 
+    return res.json();
+  }
+
+  private async post(path: string, accessToken: string, body: Record<string, unknown>) {
+    const url = `${this.graphUrl}${path}`;
+
     const res = await fetch(url, {
-      ...options,
-      headers: { ...headers, ...options.headers as Record<string, string> },
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        ...Object.fromEntries(Object.entries(body).map(([k, v]) => [k, String(v)])),
+        access_token: accessToken,
+      }),
     });
 
     if (!res.ok) {
@@ -45,23 +58,17 @@ export class InstagramClient implements SocialPlatformClient {
     mediaUrls: string[]
   ): Promise<PlatformPublishResult> {
     // Get the Instagram user ID
-    const me = await this.request("/me?fields=id,instagram_business_account", accessToken);
-    const igAccountId = me.instagram_business_account?.id || me.id;
+    const profile = await this.get("/me?fields=user_id", accessToken);
+    const igAccountId = profile.user_id || profile.id;
     if (!igAccountId) {
-      throw new Error("Could not get Instagram account ID");
+      throw new Error("Could not get Instagram user ID");
     }
 
     // Create media container
-    const container = await this.request(
+    const container = await this.post(
       `/${igAccountId}/media`,
       accessToken,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          image_url: mediaUrls[0],
-          caption,
-        }),
-      }
+      { image_url: mediaUrls[0], caption }
     );
 
     const creationId = container.id;
@@ -70,7 +77,7 @@ export class InstagramClient implements SocialPlatformClient {
     let ready = false;
     let attempts = 0;
     while (!ready && attempts < 10) {
-      const status = await this.request(
+      const status = await this.get(
         `/${creationId}?fields=status_code`,
         accessToken
       );
@@ -89,13 +96,10 @@ export class InstagramClient implements SocialPlatformClient {
     }
 
     // Publish
-    const published = await this.request(
+    const published = await this.post(
       `/${igAccountId}/media_publish`,
       accessToken,
-      {
-        method: "POST",
-        body: JSON.stringify({ creation_id: creationId }),
-      }
+      { creation_id: creationId }
     );
 
     return {
@@ -109,12 +113,10 @@ export class InstagramClient implements SocialPlatformClient {
     postId: string,
     sinceId?: string
   ): Promise<PlatformComment[]> {
-    const params = new URLSearchParams({
-      fields: "id,text,username,timestamp",
-    });
-    if (sinceId) params.set("after", sinceId);
+    let path = `/${postId}/comments?fields=id,text,username,timestamp`;
+    if (sinceId) path += `&after=${sinceId}`;
 
-    const data = await this.request(`/${postId}/comments?${params}`, accessToken);
+    const data = await this.get(path, accessToken);
     if (!data.data) return [];
 
     return data.data.map(
@@ -133,10 +135,7 @@ export class InstagramClient implements SocialPlatformClient {
     commentId: string,
     text: string
   ): Promise<string> {
-    const data = await this.request(`/${commentId}/replies`, accessToken, {
-      method: "POST",
-      body: JSON.stringify({ message: text }),
-    });
+    const data = await this.post(`/${commentId}/replies`, accessToken, { message: text });
     return data.id;
   }
 
@@ -145,9 +144,9 @@ export class InstagramClient implements SocialPlatformClient {
     refreshToken?: string;
     expiresAt: Date;
   }> {
-    // Use Facebook Graph API for token refresh
+    // Per docs: GET https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token={token}
     const res = await fetch(
-      `https://graph.facebook.com/v22.0/oauth/access_token?grant_type=ig_refresh_token&access_token=${refreshToken}`
+      `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${encodeURIComponent(refreshToken)}`
     );
 
     if (!res.ok) {
@@ -162,31 +161,19 @@ export class InstagramClient implements SocialPlatformClient {
   }
 
   async getUserProfile(accessToken: string) {
-    // Get user info via Facebook Graph API
-    const me = await this.request(
-      "/me?fields=id,name,picture{url},instagram_business_account{id,username,name,profile_picture_url}",
+    // Per docs: GET /me?fields=user_id,username,name,profile_picture_url
+    const profile = await this.get(
+      "/me?fields=user_id,username,name,profile_picture_url,account_type",
       accessToken
     );
 
-    console.log(`[instagram] getUserProfile response keys: ${Object.keys(me).join(", ")}`);
+    console.log(`[instagram] getUserProfile: id=${profile.user_id || profile.id} username=${profile.username}`);
 
-    // If linked IG business account exists, use it
-    const ig = me.instagram_business_account;
-    if (ig) {
-      return {
-        id: ig.id,
-        username: ig.username || "",
-        displayName: ig.name || ig.username || me.name || "",
-        avatarUrl: ig.profile_picture_url || me.picture?.data?.url || "",
-      };
-    }
-
-    // Fallback to Facebook profile
     return {
-      id: me.id,
-      username: me.name || me.id,
-      displayName: me.name || "",
-      avatarUrl: me.picture?.data?.url || "",
+      id: profile.user_id || profile.id,
+      username: profile.username || "",
+      displayName: profile.name || profile.username || "",
+      avatarUrl: profile.profile_picture_url || "",
     };
   }
 }

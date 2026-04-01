@@ -165,33 +165,30 @@ export async function exchangeCodeForTokens(
   console.log(`[oauth] ${platform} token exchange response keys: ${Object.keys(data).join(", ")}`);
 
   // Instagram Business Login: exchange short-lived token for long-lived token
+  // Per docs: GET https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret={secret}&access_token={short_lived_token}
   if (platform === "instagram") {
-    console.log(`[oauth] Instagram: exchanging for long-lived token via graph.facebook.com...`);
-    // Use Facebook Graph API for long-lived token exchange (graph.instagram.com is deprecated for this)
-    const longLivedRes = await fetch(
-      `https://graph.facebook.com/v22.0/oauth/access_token?grant_type=ig_exchange_token&client_secret=${config.clientSecret}&access_token=${data.access_token}`
-    );
+    console.log(`[oauth] Instagram: short-lived token obtained. user_id=${data.user_id}. Exchanging for long-lived token...`);
+    const llUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(config.clientSecret)}&access_token=${encodeURIComponent(data.access_token)}`;
+    const longLivedRes = await fetch(llUrl);
 
     if (longLivedRes.ok) {
       const longLivedData = await longLivedRes.json();
-      console.log(`[oauth] Instagram: long-lived token obtained, expires_in=${longLivedData.expires_in}`);
+      console.log(`[oauth] Instagram: long-lived token OK, expires_in=${longLivedData.expires_in}`);
       return {
         accessToken: longLivedData.access_token,
         refreshToken: longLivedData.access_token,
-        expiresIn: longLivedData.expires_in || 5184000, // 60 days
-        // Pass through user_id from initial exchange for profile
-        scope: data.user_id ? `user_id:${data.user_id}` : undefined,
+        expiresIn: longLivedData.expires_in || 5184000,
       };
     } else {
       const errText = await longLivedRes.text();
-      console.error(`[oauth] Instagram: long-lived token exchange failed: ${errText}`);
-      // Return short-lived token with user_id
-      return {
-        accessToken: data.access_token,
-        expiresIn: 3600,
-        scope: data.user_id ? `user_id:${data.user_id}` : undefined,
-      };
+      console.error(`[oauth] Instagram: long-lived exchange failed (${longLivedRes.status}): ${errText}`);
+      // Fall through — return short-lived token (valid ~1 hour)
     }
+
+    return {
+      accessToken: data.access_token,
+      expiresIn: 3600,
+    };
   }
 
   // Facebook: exchange short-lived token for long-lived token (~60 days)
