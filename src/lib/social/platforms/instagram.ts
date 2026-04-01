@@ -8,7 +8,7 @@ export class InstagramClient implements SocialPlatformClient {
   platform = "instagram" as const;
 
   // Per Meta docs: Instagram API uses graph.instagram.com (no version prefix for some endpoints)
-  private graphUrl = "https://graph.instagram.com/v25.0";
+  private graphUrl = "https://graph.instagram.com";
 
   private async get(path: string, accessToken: string) {
     const separator = path.includes("?") ? "&" : "?";
