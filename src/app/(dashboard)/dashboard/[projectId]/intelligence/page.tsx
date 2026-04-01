@@ -94,69 +94,51 @@ export default function IntelligencePage() {
     setLoading(false);
   }, [projectId]);
 
-  // Poll analysis_runs status every 3s while analyzing
-  const pollStatus = useCallback(async () => {
-    const res = await fetch(`/api/projects/${projectId}/analyze`);
-    const data = await res.json();
-    const run = data.run as { status: string; error_message?: string; metadata?: { step?: string; current?: number; total?: number } } | null;
-    if (!run || run.status === "completed") {
-      setProgress(null);
-      await fetchFiles();
-      setAnalyzing(false);
-    } else if (run.status === "failed") {
-      setProgress(null);
-      setAnalyzeError(run.error_message || "Analysis failed");
-      setAnalyzing(false);
-    } else if (run.metadata?.step) {
-      setProgress({ step: run.metadata.step, current: run.metadata.current ?? 0, total: run.metadata.total ?? 7 });
-    }
-    // still "running" — caller will poll again
-    return run?.status ?? null;
-  }, [projectId, fetchFiles]);
 
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
+    fetchFiles();
+  }, [fetchFiles]);
 
-    async function init() {
-      // Check if an analysis is already running (e.g. user navigated away mid-run)
-      const res = await fetch(`/api/projects/${projectId}/analyze`);
-      const data = await res.json();
-      const run = data.run as { status: string } | null;
-      if (run?.status === "running") {
-        setAnalyzing(true);
-        schedulePoll();
-      } else {
-        await fetchFiles();
+  const ANALYSIS_STEPS = [
+    "start", "competitors", "audience", "social",
+    "brand", "product", "character", "visual_style", "sop", "complete",
+  ];
+
+  async function runAnalysis() {
+    setAnalyzing(true);
+    setAnalyzeError("");
+    setProgress(null);
+
+    for (let i = 0; i < ANALYSIS_STEPS.length; i++) {
+      const step = ANALYSIS_STEPS[i];
+      // Map step to display label using FILE_TYPES
+      const displayStep = FILE_TYPES.find((ft) => ft.id === step)?.label ?? step;
+      const stepNum = Math.min(i, 7);
+      setProgress({ step: displayStep, current: stepNum, total: 7 });
+
+      try {
+        const res = await fetch(`/api/projects/${projectId}/analyze`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ step }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({ error: "Request failed" }));
+          throw new Error(data.error || `Step "${step}" failed`);
+        }
+      } catch (err) {
+        setAnalyzeError(err instanceof Error ? err.message : "Analysis failed");
+        setAnalyzing(false);
+        setProgress(null);
+        await fetchFiles(); // Show whatever was saved before the error
+        return;
       }
     }
 
-    function schedulePoll() {
-      timer = setTimeout(async () => {
-        const status = await pollStatus();
-        if (status === "running") schedulePoll();
-      }, 3000);
-    }
-
-    init();
-    return () => clearTimeout(timer);
-  }, [projectId, fetchFiles, pollStatus]);
-
-  function runAnalysis() {
-    setAnalyzing(true);
-    setAnalyzeError("");
-
-    // Fire the POST — server runs to completion even if client navigates away
-    fetch(`/api/projects/${projectId}/analyze`, { method: "POST" }).catch(() => {});
-
-    // Poll for completion
-    let timer: ReturnType<typeof setTimeout>;
-    function poll() {
-      timer = setTimeout(async () => {
-        const status = await pollStatus();
-        if (status === "running") poll();
-      }, 3000);
-    }
-    poll();
+    setProgress(null);
+    setAnalyzing(false);
+    await fetchFiles();
   }
 
   async function saveFile(fileType: string) {

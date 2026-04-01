@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { perplexityResearch } from "@/lib/ai/perplexity";
+import { perplexityResearch, perplexitySynthesize } from "@/lib/ai/perplexity";
 import { parseProjectSettings, buildLocaleContext } from "@/lib/ai/locale-context";
 import { generateSOP } from "@/lib/ai/sop-template";
 
-// Allow up to 5 minutes for the full analysis pipeline
-export const maxDuration = 300;
+// Each step should complete within 60s
+export const maxDuration = 60;
 
 export async function GET(
   _request: Request,
@@ -30,15 +29,46 @@ export async function GET(
   return NextResponse.json({ run: run ?? null });
 }
 
-// Gemini for synthesis and structured output
-async function geminiGenerate(prompt: string): Promise<string> {
-  const apiKey = process.env.GOOGLE_AI_API_KEY;
-  if (!apiKey) throw new Error("GOOGLE_AI_API_KEY not configured");
+// Helper: read a context file from DB
+async function readContextFile(supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>, projectId: string, fileType: string): Promise<string> {
+  const { data } = await supabase
+    .from("context_files")
+    .select("content")
+    .eq("project_id", projectId)
+    .eq("file_type", fileType)
+    .single();
+  return (data as { content: string } | null)?.content ?? "";
+}
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-  const result = await model.generateContent(prompt);
-  return result.response.text().trim();
+// Helper: save a context file to DB
+async function saveContextFile(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  projectId: string,
+  userId: string,
+  fileType: string,
+  content: string
+) {
+  const { data: existing } = await supabase
+    .from("context_files")
+    .select("id")
+    .eq("project_id", projectId)
+    .eq("file_type", fileType)
+    .single();
+
+  if (existing) {
+    await supabase
+      .from("context_files")
+      .update({ content, source: "auto", version: 1 })
+      .eq("id", (existing as { id: string }).id);
+  } else {
+    await supabase.from("context_files").insert({
+      project_id: projectId,
+      user_id: userId,
+      file_type: fileType,
+      content,
+      source: "auto",
+    });
+  }
 }
 
 export async function POST(
@@ -48,12 +78,17 @@ export async function POST(
   const { id: projectId } = await params;
   const supabase = await createServerSupabaseClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Verify ownership
+  const body = await request.json().catch(() => ({}));
+  const step = body.step as string;
+
+  if (!step) {
+    return NextResponse.json({ error: "Missing step parameter" }, { status: 400 });
+  }
+
+  // Verify ownership + load project
   const { data: project } = await supabase
     .from("projects")
     .select("*")
@@ -67,109 +102,104 @@ export async function POST(
   const projectName = project.name as string;
   const projectUrl = project.url as string | null;
   const projectDesc = project.description as string | null;
-  const brandUrls = (project.brand_urls ?? []) as Array<{ url: string; type: string; label?: string }>;
-
-  // Parse locale settings
+  const brandUrls = (project.brand_urls ?? []) as Array<{ url: string; type: string }>;
   const settings = parseProjectSettings(project.settings);
   const localeCtx = buildLocaleContext(settings);
 
-  // Create analysis run record
-  const { data: run } = await supabase
-    .from("analysis_runs")
-    .insert({
-      project_id: projectId,
-      user_id: user.id,
-      run_type: "full_brand_analysis",
-      provider: "perplexity",
-      status: "running",
-    })
-    .select()
-    .single();
+  const TYPE_LABELS: Record<string, string> = {
+    facebook: "Facebook Page",
+    instagram: "Instagram Profile",
+    linkedin: "LinkedIn Page",
+    tiktok: "TikTok Profile",
+    youtube: "YouTube Channel",
+    other: "Online Presence",
+  };
 
-  const runId = (run as { id: string } | null)?.id;
+  const contextLines = [
+    projectUrl ? `Website: ${projectUrl}` : null,
+    ...brandUrls.map((b) => `${TYPE_LABELS[b.type] ?? "Online Presence"}: ${b.url}`),
+    projectDesc ? `Description: ${projectDesc}` : null,
+  ];
+  const context = contextLines.filter(Boolean).join("\n");
 
-  // Helper to update progress
-  async function setProgress(step: string, current: number, total: number) {
-    if (!runId) return;
-    await supabase
-      .from("analysis_runs")
-      .update({ metadata: { step, current, total } })
-      .eq("id", runId);
-  }
+  const websiteInstruction = projectUrl
+    ? `IMPORTANT: First visit and read the website at ${projectUrl} to understand exactly what "${projectName}" does. Base your analysis on the ACTUAL website content, not assumptions from the name.`
+    : "";
 
   try {
-    // Clear old context files so stale data doesn't persist on re-run
-    await supabase
-      .from("context_files")
-      .delete()
-      .eq("project_id", projectId)
-      .neq("file_type", "intake"); // Keep user-uploaded examples
+    switch (step) {
+      // ─── Step 1: Start ────────────────────────────────────────
+      case "start": {
+        // Clear old context files (keep user uploads)
+        await supabase
+          .from("context_files")
+          .delete()
+          .eq("project_id", projectId)
+          .neq("file_type", "intake");
 
-    // Build context from all available brand sources
-    const TYPE_LABELS: Record<string, string> = {
-      facebook: "Facebook Page",
-      instagram: "Instagram Profile",
-      linkedin: "LinkedIn Page",
-      tiktok: "TikTok Profile",
-      youtube: "YouTube Channel",
-      other: "Online Presence",
-    };
+        // Mark any stuck runs as failed
+        await supabase
+          .from("analysis_runs")
+          .update({ status: "failed", error_message: "Superseded by new run" })
+          .eq("project_id", projectId)
+          .eq("status", "running");
 
-    const contextLines = [
-      projectUrl ? `Website: ${projectUrl}` : null,
-      ...brandUrls.map((b) => `${TYPE_LABELS[b.type] ?? "Online Presence"}: ${b.url}`),
-      projectDesc ? `Description: ${projectDesc}` : null,
-    ];
-    const context = contextLines.filter(Boolean).join("\n");
-    const hasSocialUrls = brandUrls.length > 0;
+        // Create new run
+        const { data: run } = await supabase
+          .from("analysis_runs")
+          .insert({
+            project_id: projectId,
+            user_id: user.id,
+            run_type: "full_brand_analysis",
+            provider: "perplexity",
+            status: "running",
+            metadata: { step: "start", current: 0, total: 7 },
+          })
+          .select("id")
+          .single();
 
-    // Build a clear instruction to read the website first
-    const websiteInstruction = projectUrl
-      ? `IMPORTANT: First visit and read the website at ${projectUrl} to understand exactly what "${projectName}" does. Base your analysis on the ACTUAL website content, not assumptions from the name.`
-      : "";
+        return NextResponse.json({ runId: (run as { id: string })?.id });
+      }
 
-    // 1. Competitor research via Perplexity
-    await setProgress("competitors", 1, 7);
-    const competitorResearch = await perplexityResearch(
-      `${websiteInstruction}
+      // ─── Step 2: Competitors ──────────────────────────────────
+      case "competitors": {
+        const result = await perplexityResearch(
+          `${websiteInstruction}\n\n${context}\n\nResearch the top 3-5 direct competitors of "${projectName}" based on what the company ACTUALLY does (as described on their website).
+For each competitor provide:
+- Company name and website
+- Core product/service and positioning
+- Target audience
+- Key differentiators and weaknesses
+- Estimated market share or traction signals
+- Their social media presence and content strategy${localeCtx.researchContext}`
+        );
+        await saveContextFile(supabase, projectId, user.id, "competitors", result);
+        return NextResponse.json({ done: true });
+      }
 
-${context}
-
-Research the top 3-5 direct competitors of "${projectName}" based on what the company ACTUALLY does (as described on their website).
-      For each competitor provide:
-      - Company name and website
-      - Core product/service and positioning
-      - Target audience
-      - Key differentiators and weaknesses
-      - Estimated market share or traction signals
-      - Their social media presence and content strategy${localeCtx.researchContext}`
-    );
-
-    // 2. Audience research via Perplexity
-    await setProgress("audience", 2, 7);
-    const audienceResearch = await perplexityResearch(
-      `${websiteInstruction}
-
-${context}
-
-Research the target audience and market for "${projectName}" based on what the company ACTUALLY does (as described on their website).
-      Provide:
-      - Primary buyer personas (demographics, psychographics, job titles if B2B)
-      - Key pain points and motivations
-      - Where they spend time online (platforms, communities, publications)
-      - How they evaluate and buy products like this
-      - Common objections and concerns${localeCtx.researchContext}`
-    );
-
-    // 2b. Social media presence research (only when social URLs are provided)
-    let socialResearch = "";
-    if (hasSocialUrls) {
-      const socialUrlList = brandUrls.map((b) => `${TYPE_LABELS[b.type] ?? b.type}: ${b.url}`).join("\n");
-      socialResearch = await perplexityResearch(
-        `Analyze the social media presence of "${projectName}" based on their profiles:
-${socialUrlList}
-
+      // ─── Step 3: Audience ─────────────────────────────────────
+      case "audience": {
+        const result = await perplexityResearch(
+          `${websiteInstruction}\n\n${context}\n\nResearch the target audience and market for "${projectName}" based on what the company ACTUALLY does (as described on their website).
 Provide:
+- Primary buyer personas (demographics, psychographics, job titles if B2B)
+- Key pain points and motivations
+- Where they spend time online (platforms, communities, publications)
+- How they evaluate and buy products like this
+- Common objections and concerns${localeCtx.researchContext}`
+        );
+        await saveContextFile(supabase, projectId, user.id, "audience", result);
+        return NextResponse.json({ done: true });
+      }
+
+      // ─── Step 4: Social ───────────────────────────────────────
+      case "social": {
+        if (brandUrls.length === 0) {
+          return NextResponse.json({ done: true, skipped: true });
+        }
+        const socialUrlList = brandUrls.map((b) => `${TYPE_LABELS[b.type] ?? b.type}: ${b.url}`).join("\n");
+        const result = await perplexityResearch(
+          `Analyze the social media presence of "${projectName}" based on their profiles:\n${socialUrlList}\n\nProvide:
 - Content themes and topics they post about most
 - Posting frequency and consistency patterns
 - Engagement levels and audience interaction style
@@ -177,22 +207,42 @@ Provide:
 - Top-performing content types (video, images, text, stories)
 - Hashtag usage and community building approach
 - Strengths and gaps in their current social strategy${localeCtx.researchContext}`
-      );
-    }
+        );
+        // Store as metadata on the run (used by brand synthesis step)
+        await supabase
+          .from("analysis_runs")
+          .update({ metadata: { socialResearch: result } })
+          .eq("project_id", projectId)
+          .eq("status", "running");
+        return NextResponse.json({ done: true });
+      }
 
-    // 3. Brand positioning via Gemini (synthesis)
-    await setProgress("brand", 3, 7);
-    const brandDoc = await geminiGenerate(
-      `You are a senior brand strategist. Based on the following research, create a comprehensive brand positioning document for "${projectName}".
+      // ─── Step 5: Brand ────────────────────────────────────────
+      case "brand": {
+        const competitors = await readContextFile(supabase, projectId, "competitors");
+        const audience = await readContextFile(supabase, projectId, "audience");
+
+        // Read social research from run metadata if available
+        const { data: currentRun } = await supabase
+          .from("analysis_runs")
+          .select("metadata")
+          .eq("project_id", projectId)
+          .eq("status", "running")
+          .limit(1)
+          .single();
+        const socialResearch = (currentRun as { metadata?: { socialResearch?: string } } | null)?.metadata?.socialResearch ?? "";
+
+        const result = await perplexitySynthesize(
+          `You are a senior brand strategist. Create a comprehensive brand positioning document for "${projectName}".
 IMPORTANT: The product description and website content below define what this company ACTUALLY does. Do NOT guess from the company name.
 
 ${context}
 
 Competitor landscape:
-${competitorResearch}
+${competitors}
 
 Target audience:
-${audienceResearch}
+${audience}
 ${socialResearch ? `\nSocial media presence analysis:\n${socialResearch}` : ""}
 ${localeCtx.synthesisContext}
 
@@ -213,163 +263,121 @@ Write a Brand Positioning document with these sections:
 (Personality traits, communication style, what to avoid)
 
 Be specific and actionable. Base everything on real market positioning gaps you identified.`
-    );
+        );
+        await saveContextFile(supabase, projectId, user.id, "brand", result);
+        return NextResponse.json({ done: true });
+      }
 
-    // 4. Product brief via Gemini
-    await setProgress("product", 4, 7);
-    const productDoc = await geminiGenerate(
-      `You are a product marketer. Create a Product Brief for "${projectName}".
+      // ─── Step 6: Product ──────────────────────────────────────
+      case "product": {
+        const competitors = await readContextFile(supabase, projectId, "competitors");
+
+        const result = await perplexitySynthesize(
+          `You are a product marketer. Create a Product Brief for "${projectName}".
 
 ${context}
 
 Market context:
-${competitorResearch.slice(0, 1000)}
+${competitors.slice(0, 1500)}
 ${localeCtx.synthesisContext}
 
 Write a Product Brief with these sections:
 ## Core Value Proposition
-(The primary problem solved and outcome delivered)
-
-## Feature Highlights
-(3-5 key capabilities with their customer benefits - not just features)
-
-## Use Cases
-(3 concrete scenarios where customers use this)
-
-## Proof Points
-(Claims, metrics, or credibility signals that support the value prop)
-
-## Pricing Context
-(Where it fits in the market - premium, value, mid-market)
+## Feature Highlights (3-5 key capabilities with customer benefits)
+## Use Cases (3 concrete scenarios)
+## Proof Points (claims, metrics, credibility signals)
+## Pricing Context (market positioning)
 
 Keep it tight and focused on what matters for marketing.`
-    );
+        );
+        await saveContextFile(supabase, projectId, user.id, "product", result);
+        return NextResponse.json({ done: true });
+      }
 
-    // 5. Character brief via Gemini
-    await setProgress("character", 5, 7);
-    const characterDoc = await geminiGenerate(
-      `You are a brand identity strategist. Create a Character Brief for "${projectName}" — a guide for anyone creating content for this brand.
+      // ─── Step 7: Character ────────────────────────────────────
+      case "character": {
+        const brand = await readContextFile(supabase, projectId, "brand");
+
+        const result = await perplexitySynthesize(
+          `You are a brand identity strategist. Create a Character Brief for "${projectName}" — a guide for anyone creating content for this brand.
 
 Brand positioning context:
-${brandDoc.slice(0, 800)}
-${socialResearch ? `\nCurrent social media activity:\n${socialResearch.slice(0, 600)}` : ""}
+${brand.slice(0, 1200)}
 ${localeCtx.synthesisContext}
 
 Write a Character Brief with these sections:
-## Brand Personality
-(5-6 personality adjectives with brief explanations)
-
-## Content Tone Examples
-(3 pairs of "We say / We don't say" examples)
-
-## Content Themes
-(4-5 recurring topics/angles this brand owns)
-
-## Hashtag Strategy
-(10-15 hashtags: mix of branded, category, and community tags)
-
-## Content Calendar Themes
-(Suggested weekly/monthly content rhythms)
+## Brand Personality (5-6 personality adjectives with explanations)
+## Content Tone Examples (3 pairs of "We say / We don't say")
+## Content Themes (4-5 recurring topics/angles)
+## Hashtag Strategy (10-15 hashtags: branded, category, community)
+## Content Calendar Themes (weekly/monthly rhythms)
 
 This will guide the skills engine when generating posts and campaigns.`
-    );
+        );
+        await saveContextFile(supabase, projectId, user.id, "character_brief", result);
+        return NextResponse.json({ done: true });
+      }
 
-    // 6. Visual style via Gemini
-    await setProgress("visual_style", 6, 7);
-    const visualDoc = await geminiGenerate(
-      `You are a visual brand consultant. Create a Visual Style Guide brief for "${projectName}" based on their positioning.
+      // ─── Step 8: Visual Style ─────────────────────────────────
+      case "visual_style": {
+        const brand = await readContextFile(supabase, projectId, "brand");
+
+        const result = await perplexitySynthesize(
+          `You are a visual brand consultant. Create a Visual Style Guide brief for "${projectName}".
 
 Brand context:
-${brandDoc.slice(0, 600)}
+${brand.slice(0, 800)}
 ${localeCtx.synthesisContext}
 
 Write a Visual Style Guide with:
-## Color Palette Direction
-(Primary emotional associations and suggested directions, not hex codes)
-
-## Typography Personality
-(Serif vs sans-serif, modern vs classic, formal vs playful guidance)
-
-## Imagery Style
-(Photography style, illustration vs photo, mood, subjects)
-
-## Layout & Composition
-(Clean vs busy, whitespace usage, grid preferences)
-
+## Color Palette Direction (emotional associations, suggested directions)
+## Typography Personality (serif vs sans-serif, modern vs classic)
+## Imagery Style (photography, illustration, mood, subjects)
+## Layout & Composition (clean vs busy, whitespace, grid)
 ## Visual Dos and Don'ts
-(What visual choices reinforce the brand vs undermine it)
 
 This guides image selection and creative direction for social posts.`
-    );
-
-    // 7. Generate SOP document
-    await setProgress("sop", 7, 7);
-    const sopDoc = generateSOP(
-      projectName,
-      settings,
-      new Date().toISOString().split("T")[0]
-    );
-
-    // Upsert all context files
-    const contextUpserts = [
-      { file_type: "brand", content: brandDoc },
-      { file_type: "product", content: productDoc },
-      { file_type: "audience", content: audienceResearch },
-      { file_type: "competitors", content: competitorResearch },
-      { file_type: "character_brief", content: characterDoc },
-      { file_type: "visual_style", content: visualDoc },
-      { file_type: "sop", content: sopDoc },
-    ];
-
-    for (const cf of contextUpserts) {
-      // Check if exists
-      const { data: existing } = await supabase
-        .from("context_files")
-        .select("id")
-        .eq("project_id", projectId)
-        .eq("file_type", cf.file_type)
-        .single();
-
-      if (existing) {
-        await supabase
-          .from("context_files")
-          .update({ content: cf.content, source: "auto", version: 1 })
-          .eq("id", (existing as { id: string }).id);
-      } else {
-        await supabase.from("context_files").insert({
-          project_id: projectId,
-          user_id: user.id,
-          file_type: cf.file_type,
-          content: cf.content,
-          source: "auto",
-        });
+        );
+        await saveContextFile(supabase, projectId, user.id, "visual_style", result);
+        return NextResponse.json({ done: true });
       }
+
+      // ─── Step 9: SOP ──────────────────────────────────────────
+      case "sop": {
+        const sopDoc = generateSOP(projectName, settings, new Date().toISOString().split("T")[0]);
+        await saveContextFile(supabase, projectId, user.id, "sop", sopDoc);
+        return NextResponse.json({ done: true });
+      }
+
+      // ─── Step 10: Complete ────────────────────────────────────
+      case "complete": {
+        await supabase
+          .from("projects")
+          .update({ status: "active" })
+          .eq("id", projectId);
+
+        await supabase
+          .from("analysis_runs")
+          .update({ status: "completed", completed_at: new Date().toISOString() })
+          .eq("project_id", projectId)
+          .eq("status", "running");
+
+        return NextResponse.json({ done: true });
+      }
+
+      default:
+        return NextResponse.json({ error: `Unknown step: ${step}` }, { status: 400 });
     }
-
-    // Mark project active
-    await supabase
-      .from("projects")
-      .update({ status: "active" })
-      .eq("id", projectId);
-
-    // Complete the analysis run
-    if (runId) {
-      await supabase
-        .from("analysis_runs")
-        .update({ status: "completed", completed_at: new Date().toISOString() })
-        .eq("id", runId);
-    }
-
-    return NextResponse.json({ success: true, filesGenerated: contextUpserts.length });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Analysis failed";
+    const message = err instanceof Error ? err.message : "Analysis step failed";
+    console.error(`[analyze] Step "${step}" failed:`, message);
 
-    if (runId) {
-      await supabase
-        .from("analysis_runs")
-        .update({ status: "failed", error_message: message })
-        .eq("id", runId);
-    }
+    // Mark run as failed
+    await supabase
+      .from("analysis_runs")
+      .update({ status: "failed", error_message: `Step "${step}": ${message}` })
+      .eq("project_id", projectId)
+      .eq("status", "running");
 
     return NextResponse.json({ error: message }, { status: 500 });
   }
