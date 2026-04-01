@@ -119,6 +119,7 @@ export async function exchangeCodeForTokens(
   refreshToken?: string;
   expiresIn: number;
   scope?: string;
+  platformUserId?: string;
 }> {
   const config = getOAuthConfig(platform);
 
@@ -167,33 +168,14 @@ export async function exchangeCodeForTokens(
   // Instagram Business Login: exchange short-lived token for long-lived token
   // Per docs: GET https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret={secret}&access_token={short_lived_token}
   if (platform === "instagram") {
-    console.log(`[oauth] Instagram: short-lived token obtained. user_id=${data.user_id}. Exchanging for long-lived token...`);
-    console.log(`[oauth] Instagram: using client_secret length=${config.clientSecret?.length}, app_id=${config.clientId}`);
-    // GET per official docs
-    const llParams = new URLSearchParams({
-      grant_type: "ig_exchange_token",
-      client_secret: config.clientSecret,
-      access_token: data.access_token,
-    });
-    const longLivedRes = await fetch(`https://graph.instagram.com/access_token?${llParams.toString()}`);
-
-    if (longLivedRes.ok) {
-      const longLivedData = await longLivedRes.json();
-      console.log(`[oauth] Instagram: long-lived token OK, expires_in=${longLivedData.expires_in}`);
-      return {
-        accessToken: longLivedData.access_token,
-        refreshToken: longLivedData.access_token,
-        expiresIn: longLivedData.expires_in || 5184000,
-      };
-    } else {
-      const errText = await longLivedRes.text();
-      console.error(`[oauth] Instagram: long-lived exchange failed (${longLivedRes.status}): ${errText}`);
-      // Fall through — return short-lived token (valid ~1 hour)
-    }
-
+    console.log(`[oauth] Instagram: short-lived token obtained. user_id=${data.user_id}`);
+    // graph.instagram.com is currently rejecting GET requests.
+    // Return the short-lived token with the user_id from the initial exchange.
+    // The token is valid for ~1 hour — enough to save the account.
     return {
       accessToken: data.access_token,
       expiresIn: 3600,
+      platformUserId: data.user_id,
     };
   }
 

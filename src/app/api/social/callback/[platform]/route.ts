@@ -86,8 +86,22 @@ export async function GET(
     );
 
     console.log(`[social-callback] Token exchange OK. Getting profile...`);
-    const client = getPlatformClient(platform as Platform);
-    const profile = await client.getUserProfile(tokens.accessToken);
+    let profile: { id: string; username: string; displayName: string; avatarUrl: string };
+
+    if (platform === "instagram" && tokens.platformUserId) {
+      // Instagram: graph.instagram.com /me endpoint is broken.
+      // Use the user_id from the token exchange response instead.
+      console.log(`[social-callback] Instagram: using user_id from token exchange: ${tokens.platformUserId}`);
+      profile = {
+        id: tokens.platformUserId,
+        username: tokens.platformUserId,
+        displayName: "",
+        avatarUrl: "",
+      };
+    } else {
+      const client = getPlatformClient(platform as Platform);
+      profile = await client.getUserProfile(tokens.accessToken);
+    }
     console.log(`[social-callback] Profile: id=${profile.id} username=${profile.username}`);
 
     // Store tokens in Vault
