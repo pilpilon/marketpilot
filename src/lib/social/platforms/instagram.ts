@@ -11,11 +11,18 @@ export class InstagramClient implements SocialPlatformClient {
   private graphUrl = "https://graph.instagram.com";
 
   private async get(path: string, accessToken: string) {
-    const separator = path.includes("?") ? "&" : "?";
-    const url = `${this.graphUrl}${path}${separator}access_token=${accessToken}`;
+    // Instagram now rejects GET requests on graph.instagram.com.
+    // Convert to POST with form-urlencoded body.
+    const url = new URL(`${this.graphUrl}${path}`);
+    const params = new URLSearchParams(url.search);
+    params.set("access_token", accessToken);
+    url.search = "";
 
-    // Pure GET — no headers (Instagram rejects GET with Content-Type)
-    const res = await fetch(url);
+    const res = await fetch(url.toString(), {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params,
+    });
 
     if (!res.ok) {
       const error = await res.text();
@@ -144,10 +151,15 @@ export class InstagramClient implements SocialPlatformClient {
     refreshToken?: string;
     expiresAt: Date;
   }> {
-    // Per docs: GET https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token={token}
-    const res = await fetch(
-      `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${encodeURIComponent(refreshToken)}`
-    );
+    // Use POST since graph.instagram.com rejects GET
+    const res = await fetch("https://graph.instagram.com/refresh_access_token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "ig_refresh_token",
+        access_token: refreshToken,
+      }),
+    });
 
     if (!res.ok) {
       throw new Error(`Instagram token refresh failed: ${await res.text()}`);
