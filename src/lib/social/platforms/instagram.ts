@@ -7,15 +7,16 @@ import type {
 export class InstagramClient implements SocialPlatformClient {
   platform = "instagram" as const;
 
-  // Per Meta docs: Instagram API uses graph.instagram.com (no version prefix for some endpoints)
-  private graphUrl = "https://graph.facebook.com/v25.0";
+  // Instagram Login uses graph.instagram.com per Meta Content Publishing docs
+  private graphUrl = "https://graph.instagram.com/v22.0";
 
   private async get(path: string, accessToken: string) {
-    const separator = path.includes("?") ? "&" : "?";
-    const url = `${this.graphUrl}${path}${separator}access_token=${accessToken}`;
-    console.log(`[instagram] GET ${this.graphUrl}${path.split("?")[0]}`);
+    const url = `${this.graphUrl}${path}`;
+    console.log(`[instagram] GET ${url}`);
 
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      headers: { "Authorization": `Bearer ${accessToken}` },
+    });
 
     if (!res.ok) {
       const error = await res.text();
@@ -26,14 +27,17 @@ export class InstagramClient implements SocialPlatformClient {
   }
 
   private async post(path: string, accessToken: string, body: Record<string, unknown>) {
-    const params = new URLSearchParams({
-      ...Object.fromEntries(Object.entries(body).map(([k, v]) => [k, String(v)])),
-      access_token: accessToken,
-    });
-    const url = `${this.graphUrl}${path}?${params.toString()}`;
-    console.log(`[instagram] POST ${this.graphUrl}${path}`);
+    const url = `${this.graphUrl}${path}`;
+    console.log(`[instagram] POST ${url}`);
 
-    const res = await fetch(url, { method: "POST" });
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(body),
+    });
 
     if (!res.ok) {
       const error = await res.text();

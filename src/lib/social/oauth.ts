@@ -171,7 +171,7 @@ export async function exchangeCodeForTokens(
     console.log(`[oauth] Instagram: short-lived token obtained. user_id=${data.user_id}`);
 
     const longLivedRes = await fetch(
-      `https://graph.facebook.com/v25.0/access_token?grant_type=ig_exchange_token&client_secret=${config.clientSecret}&access_token=${data.access_token}`
+      `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${config.clientSecret}&access_token=${data.access_token}`
     );
 
     if (longLivedRes.ok) {
