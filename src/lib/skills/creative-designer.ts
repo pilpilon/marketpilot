@@ -16,6 +16,8 @@ export interface GenerateCreativeImageParams {
   platform: string; // e.g. "instagram_feed"
   brandContext: BrandContext;
   customInstruction?: string;
+  /** Locale context string (e.g. "Write in Hebrew", posting times, etc.) */
+  localeContext?: string;
 }
 
 export interface GenerateCreativeImageResult {
@@ -41,6 +43,7 @@ export async function generateCreativeImage(
     platform,
     brandContext,
     customInstruction,
+    localeContext,
   } = params;
 
   const ratio = PLATFORM_RATIOS[platform] || "1:1";
@@ -134,7 +137,7 @@ ${postContent}
 ${getCondensedStorytellingGuidance()}
 
 PLATFORM: ${platformLabel}
-
+${localeContext ? `\n${localeContext}\n` : ""}
 OUTPUT FORMAT (follow exactly):
 CAPTION: [your caption — ready to publish, no quotes]
 HASHTAGS: [comma-separated hashtags without # prefix]

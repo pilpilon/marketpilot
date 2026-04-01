@@ -291,6 +291,7 @@ async function runPipeline(params: {
           platform: slot.platformKey,
           brandContext,
           customInstruction: `Content category: ${planItem.category}. Headline: ${planItem.headline}. ${planItem.subheadline || ""}`,
+          localeContext: localeCtx.skillContext,
         });
 
         return {

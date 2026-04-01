@@ -163,7 +163,7 @@ export default function SkillsPage() {
           stopPolling();
           // Redirect to campaign page after a brief moment
           setTimeout(() => {
-            router.push(`/dashboard/${projectId}/campaigns/${data.campaignId}`);
+            router.push(`/dashboard/${projectId}/campaigns`);
           }, 1500);
         } else if (data.status === "failed") {
           stopPolling();
