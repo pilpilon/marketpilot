@@ -62,8 +62,8 @@ export async function GET(
     codeChallenge = generateCodeChallenge(codeVerifier);
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const redirectUri = `${appUrl}/api/social/callback/${platform}`;
+  const { origin } = new URL(request.url);
+  const redirectUri = `${origin}/api/social/callback/${platform}`;
 
   // Store state for CSRF validation
   await supabase.from("oauth_states").insert({
