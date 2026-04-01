@@ -47,7 +47,8 @@ async function publishToPlatform(ctx: PublishContext): Promise<void> {
       result = await client.publishMedia(
         accessToken,
         fullText,
-        postPlatform.media_urls
+        postPlatform.media_urls,
+        socialAccount.platform_user_id || undefined
       );
     } else {
       result = await client.publishText(accessToken, fullText);

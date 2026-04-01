@@ -23,7 +23,8 @@ export interface SocialPlatformClient {
   publishMedia(
     accessToken: string,
     text: string,
-    mediaUrls: string[]
+    mediaUrls: string[],
+    platformUserId?: string
   ): Promise<PlatformPublishResult>;
   getComments(
     accessToken: string,

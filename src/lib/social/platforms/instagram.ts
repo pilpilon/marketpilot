@@ -55,11 +55,17 @@ export class InstagramClient implements SocialPlatformClient {
   async publishMedia(
     accessToken: string,
     caption: string,
-    mediaUrls: string[]
+    mediaUrls: string[],
+    platformUserId?: string
   ): Promise<PlatformPublishResult> {
-    // Get the Instagram user ID
-    const profile = await this.get("/me?fields=user_id", accessToken);
-    const igAccountId = profile.user_id || profile.id;
+    // Use the stored platform user ID (from OAuth) — avoids calling GET /me which
+    // is unreliable on graph.instagram.com for Instagram Login tokens
+    let igAccountId = platformUserId;
+    if (!igAccountId) {
+      console.log(`[instagram] no platformUserId provided, falling back to GET /me`);
+      const profile = await this.get("/me?fields=user_id", accessToken);
+      igAccountId = profile.user_id || profile.id;
+    }
     if (!igAccountId) {
       throw new Error("Could not get Instagram user ID");
     }
