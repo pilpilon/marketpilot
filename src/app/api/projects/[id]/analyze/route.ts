@@ -7,7 +7,7 @@ import { generateSOP } from "@/lib/ai/sop-template";
 // Each step should complete within 60s
 export const maxDuration = 60;
 
-// Scrape website text content (best-effort)
+// Scrape website content — extracts meta tags + body text
 async function scrapeWebsite(url: string): Promise<string> {
   try {
     const res = await fetch(url, {
@@ -16,15 +16,43 @@ async function scrapeWebsite(url: string): Promise<string> {
     });
     if (!res.ok) return "";
     const html = await res.text();
-    // Strip HTML tags, scripts, styles — extract text
-    const text = html
+
+    // Extract meta tags (critical for SPAs that render client-side)
+    const metaParts: string[] = [];
+    const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    if (titleMatch) metaParts.push(`Title: ${titleMatch[1].trim()}`);
+
+    const metaRegex = /<meta\s+(?:[^>]*?)(?:name|property)="([^"]*)"[^>]*content="([^"]*)"[^>]*>/gi;
+    let match;
+    while ((match = metaRegex.exec(html)) !== null) {
+      const name = match[1].toLowerCase();
+      if (["description", "keywords", "og:description", "og:title", "twitter:description", "twitter:title"].includes(name)) {
+        metaParts.push(`${match[1]}: ${match[2]}`);
+      }
+    }
+
+    // Also try content attr before name attr (different order in HTML)
+    const metaRegex2 = /<meta\s+content="([^"]*)"[^>]*(?:name|property)="([^"]*)"[^>]*>/gi;
+    while ((match = metaRegex2.exec(html)) !== null) {
+      const name = match[2].toLowerCase();
+      if (["description", "keywords", "og:description", "og:title", "twitter:description", "twitter:title"].includes(name)) {
+        metaParts.push(`${match[2]}: ${match[1]}`);
+      }
+    }
+
+    // Extract visible body text (for non-SPA sites)
+    const bodyText = html
       .replace(/<script[\s\S]*?<\/script>/gi, "")
       .replace(/<style[\s\S]*?<\/style>/gi, "")
       .replace(/<[^>]+>/g, " ")
       .replace(/\s+/g, " ")
       .trim();
-    // Return first 3000 chars (enough for product description)
-    return text.slice(0, 3000);
+
+    // If body has real content (>200 chars after stripping), use it
+    const bodyContent = bodyText.length > 200 ? `\nPage content: ${bodyText.slice(0, 3000)}` : "";
+
+    const result = metaParts.join("\n") + bodyContent;
+    return result || bodyText.slice(0, 3000);
   } catch {
     return "";
   }
