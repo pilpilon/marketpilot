@@ -7,16 +7,15 @@ import type {
 export class InstagramClient implements SocialPlatformClient {
   platform = "instagram" as const;
 
-  // Instagram Login uses graph.instagram.com per Meta Content Publishing docs
-  private graphUrl = "https://graph.instagram.com/v22.0";
+  // Instagram Content Publishing API
+  private graphUrl = "https://graph.instagram.com";
 
   private async get(path: string, accessToken: string) {
-    const url = `${this.graphUrl}${path}`;
-    console.log(`[instagram] GET ${url}`);
+    const separator = path.includes("?") ? "&" : "?";
+    const url = `${this.graphUrl}${path}${separator}access_token=${accessToken}`;
+    console.log(`[instagram] GET ${this.graphUrl}${path.split("?")[0]}`);
 
-    const res = await fetch(url, {
-      headers: { "Authorization": `Bearer ${accessToken}` },
-    });
+    const res = await fetch(url);
 
     if (!res.ok) {
       const error = await res.text();
@@ -32,11 +31,11 @@ export class InstagramClient implements SocialPlatformClient {
 
     const res = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(body),
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        ...Object.fromEntries(Object.entries(body).map(([k, v]) => [k, String(v)])),
+        access_token: accessToken,
+      }),
     });
 
     if (!res.ok) {
