@@ -166,9 +166,10 @@ export async function exchangeCodeForTokens(
 
   // Instagram Business Login: exchange short-lived token for long-lived token
   if (platform === "instagram") {
-    console.log(`[oauth] Instagram: exchanging for long-lived token...`);
+    console.log(`[oauth] Instagram: exchanging for long-lived token via graph.facebook.com...`);
+    // Use Facebook Graph API for long-lived token exchange (graph.instagram.com is deprecated for this)
     const longLivedRes = await fetch(
-      `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${config.clientSecret}&access_token=${data.access_token}`
+      `https://graph.facebook.com/v22.0/oauth/access_token?grant_type=ig_exchange_token&client_secret=${config.clientSecret}&access_token=${data.access_token}`
     );
 
     if (longLivedRes.ok) {
@@ -178,11 +179,18 @@ export async function exchangeCodeForTokens(
         accessToken: longLivedData.access_token,
         refreshToken: longLivedData.access_token,
         expiresIn: longLivedData.expires_in || 5184000, // 60 days
+        // Pass through user_id from initial exchange for profile
+        scope: data.user_id ? `user_id:${data.user_id}` : undefined,
       };
     } else {
       const errText = await longLivedRes.text();
       console.error(`[oauth] Instagram: long-lived token exchange failed: ${errText}`);
-      // Fall through to return short-lived token
+      // Return short-lived token with user_id
+      return {
+        accessToken: data.access_token,
+        expiresIn: 3600,
+        scope: data.user_id ? `user_id:${data.user_id}` : undefined,
+      };
     }
   }
 

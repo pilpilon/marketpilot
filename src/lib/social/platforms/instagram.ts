@@ -7,7 +7,8 @@ import type {
 export class InstagramClient implements SocialPlatformClient {
   platform = "instagram" as const;
 
-  private graphUrl = "https://graph.instagram.com/v22.0";
+  // Instagram API endpoints are migrating to graph.facebook.com
+  private graphUrl = "https://graph.facebook.com/v22.0";
 
   private async request(path: string, accessToken: string, options: RequestInit = {}) {
     const separator = path.includes("?") ? "&" : "?";
@@ -43,12 +44,14 @@ export class InstagramClient implements SocialPlatformClient {
     caption: string,
     mediaUrls: string[]
   ): Promise<PlatformPublishResult> {
-    const profile = await this.request("/me?fields=user_id", accessToken);
-    const igAccountId = profile.user_id || profile.id;
+    // Get the Instagram user ID
+    const me = await this.request("/me?fields=id,instagram_business_account", accessToken);
+    const igAccountId = me.instagram_business_account?.id || me.id;
     if (!igAccountId) {
-      throw new Error("Could not get Instagram user ID");
+      throw new Error("Could not get Instagram account ID");
     }
 
+    // Create media container
     const container = await this.request(
       `/${igAccountId}/media`,
       accessToken,
@@ -63,6 +66,7 @@ export class InstagramClient implements SocialPlatformClient {
 
     const creationId = container.id;
 
+    // Wait for container to be ready
     let ready = false;
     let attempts = 0;
     while (!ready && attempts < 10) {
@@ -81,12 +85,10 @@ export class InstagramClient implements SocialPlatformClient {
     }
 
     if (!ready) {
-      return {
-        platformPostId: creationId,
-        platformPostUrl: "",
-      };
+      return { platformPostId: creationId, platformPostUrl: "" };
     }
 
+    // Publish
     const published = await this.request(
       `/${igAccountId}/media_publish`,
       accessToken,
@@ -110,23 +112,17 @@ export class InstagramClient implements SocialPlatformClient {
     const params = new URLSearchParams({
       fields: "id,text,username,timestamp",
     });
-    if (sinceId) {
-      params.set("after", sinceId);
-    }
+    if (sinceId) params.set("after", sinceId);
 
-    const data = await this.request(
-      `/${postId}/comments?${params}`,
-      accessToken
-    );
-
+    const data = await this.request(`/${postId}/comments?${params}`, accessToken);
     if (!data.data) return [];
 
     return data.data.map(
-      (comment: { id: string; text: string; username: string; timestamp: string }) => ({
-        id: comment.id,
-        text: comment.text,
-        author: comment.username,
-        createdAt: comment.timestamp,
+      (c: { id: string; text: string; username: string; timestamp: string }) => ({
+        id: c.id,
+        text: c.text,
+        author: c.username,
+        createdAt: c.timestamp,
         postId,
       })
     );
@@ -141,7 +137,6 @@ export class InstagramClient implements SocialPlatformClient {
       method: "POST",
       body: JSON.stringify({ message: text }),
     });
-
     return data.id;
   }
 
@@ -150,8 +145,9 @@ export class InstagramClient implements SocialPlatformClient {
     refreshToken?: string;
     expiresAt: Date;
   }> {
+    // Use Facebook Graph API for token refresh
     const res = await fetch(
-      `${this.graphUrl}/refresh_access_token?grant_type=ig_refresh_token&access_token=${refreshToken}`
+      `https://graph.facebook.com/v22.0/oauth/access_token?grant_type=ig_refresh_token&access_token=${refreshToken}`
     );
 
     if (!res.ok) {
@@ -161,22 +157,36 @@ export class InstagramClient implements SocialPlatformClient {
     const data = await res.json();
     return {
       accessToken: data.access_token,
-      expiresAt: new Date(Date.now() + data.expires_in * 1000),
+      expiresAt: new Date(Date.now() + (data.expires_in || 5184000) * 1000),
     };
   }
 
   async getUserProfile(accessToken: string) {
-    // Use Instagram Graph API /me endpoint
-    const profile = await this.request(
-      "/me?fields=user_id,username,name,profile_picture_url",
+    // Get user info via Facebook Graph API
+    const me = await this.request(
+      "/me?fields=id,name,picture{url},instagram_business_account{id,username,name,profile_picture_url}",
       accessToken
     );
 
+    console.log(`[instagram] getUserProfile response keys: ${Object.keys(me).join(", ")}`);
+
+    // If linked IG business account exists, use it
+    const ig = me.instagram_business_account;
+    if (ig) {
+      return {
+        id: ig.id,
+        username: ig.username || "",
+        displayName: ig.name || ig.username || me.name || "",
+        avatarUrl: ig.profile_picture_url || me.picture?.data?.url || "",
+      };
+    }
+
+    // Fallback to Facebook profile
     return {
-      id: profile.user_id || profile.id,
-      username: profile.username || "",
-      displayName: profile.name || profile.username || "",
-      avatarUrl: profile.profile_picture_url || "",
+      id: me.id,
+      username: me.name || me.id,
+      displayName: me.name || "",
+      avatarUrl: me.picture?.data?.url || "",
     };
   }
 }
