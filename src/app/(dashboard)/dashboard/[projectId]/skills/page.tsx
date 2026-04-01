@@ -1,16 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const AVAILABLE_PLATFORMS = [
   { id: "twitter", label: "X (Twitter)" },
@@ -29,7 +35,15 @@ import {
   Zap,
   ArrowRight,
   FolderKanban,
+  AlertTriangle,
 } from "lucide-react";
+
+const TIME_RANGE_OPTIONS = [
+  { value: "1_week", labelKey: "timeRange1Week" },
+  { value: "2_weeks", labelKey: "timeRange2Weeks" },
+  { value: "3_weeks", labelKey: "timeRange3Weeks" },
+  { value: "1_month", labelKey: "timeRange1Month" },
+] as const;
 
 export default function SkillsPage() {
   const params = useParams();
@@ -72,7 +86,7 @@ export default function SkillsPage() {
       description: t("calendarDesc"),
       icon: CalendarDays,
       color: "bg-orange-500/10 text-orange-600",
-      options: ["platforms", "goal"],
+      options: ["platforms", "timeRange"],
     },
   ];
 
@@ -85,7 +99,21 @@ export default function SkillsPage() {
     goal: "",
     tone: "",
     campaignName: "",
+    timeRange: "2_weeks",
   });
+
+  // Pipeline progress state
+  const [pipelineJobId, setPipelineJobId] = useState<string | null>(null);
+  const [pipelineStatus, setPipelineStatus] = useState<{
+    status: string;
+    totalPosts: number;
+    completedPosts: number;
+    currentStep: string;
+    campaignId: string;
+    error: string | null;
+    warnings: string[];
+  } | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const skill = SKILLS.find((s) => s.id === selected);
 
@@ -113,10 +141,55 @@ export default function SkillsPage() {
     content_marketing: CalendarDays,
   };
 
+  // Poll pipeline status
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!pipelineJobId) return;
+
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/skills/content-calendar/status?jobId=${pipelineJobId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setPipelineStatus(data);
+
+        if (data.status === "completed") {
+          stopPolling();
+          // Redirect to campaign page after a brief moment
+          setTimeout(() => {
+            router.push(`/dashboard/${projectId}/campaigns/${data.campaignId}`);
+          }, 1500);
+        } else if (data.status === "failed") {
+          stopPolling();
+          setRunning(false);
+          setError(data.error || t("failedToRun"));
+        }
+      } catch {
+        // Polling error — just retry next interval
+      }
+    };
+
+    poll(); // Immediate first poll
+    pollRef.current = setInterval(poll, 3000);
+
+    return () => stopPolling();
+  }, [pipelineJobId, projectId, router, stopPolling, t]);
+
   async function runSkill() {
     if (!selected) return;
     setRunning(true);
     setError("");
+
+    // Content Calendar uses the new pipeline endpoint
+    if (selected === "content_calendar") {
+      return runContentCalendarPipeline();
+    }
 
     const res = await fetch("/api/skills", {
       method: "POST",
@@ -145,6 +218,164 @@ export default function SkillsPage() {
     router.push(`/dashboard/${projectId}/campaigns/${data.campaign.id}`);
   }
 
+  async function runContentCalendarPipeline() {
+    try {
+      const res = await fetch("/api/skills/content-calendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId,
+          platforms: options.platforms,
+          timeRange: options.timeRange,
+          campaignName: options.campaignName || undefined,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setRunning(false);
+        setError(data.error || t("failedToRun"));
+        return;
+      }
+
+      // Start polling for progress
+      setPipelineJobId(data.jobId);
+      setPipelineStatus({
+        status: "pending",
+        totalPosts: 0,
+        completedPosts: 0,
+        currentStep: t("planningContent"),
+        campaignId: data.campaignId,
+        error: null,
+        warnings: [],
+      });
+    } catch {
+      setRunning(false);
+      setError(t("failedToRun"));
+    }
+  }
+
+  // Pipeline progress UI
+  const renderPipelineProgress = () => {
+    if (!pipelineStatus) return null;
+
+    const statusStepMap: Record<string, string> = {
+      pending: t("planningContent"),
+      planning: t("planningContent"),
+      generating: t("generatingImages"),
+      scheduling: t("schedulingPosts"),
+      completed: t("pipelineComplete"),
+      failed: t("pipelineFailed"),
+    };
+
+    const stepLabel = statusStepMap[pipelineStatus.status] || pipelineStatus.currentStep;
+    const progress =
+      pipelineStatus.totalPosts > 0
+        ? Math.round((pipelineStatus.completedPosts / pipelineStatus.totalPosts) * 100)
+        : 0;
+
+    const isComplete = pipelineStatus.status === "completed";
+    const isFailed = pipelineStatus.status === "failed";
+
+    return (
+      <div className="max-w-lg space-y-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              stopPolling();
+              setPipelineJobId(null);
+              setPipelineStatus(null);
+              setSelected(null);
+              setRunning(false);
+              setError("");
+            }}
+          >
+            ← {t("back")}
+          </Button>
+          <Badge variant="secondary">{t("calendarLabel")}</Badge>
+        </div>
+
+        <Card>
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              {!isComplete && !isFailed && (
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              )}
+              {isComplete && (
+                <div className="h-5 w-5 rounded-full bg-green-500 flex items-center justify-center">
+                  <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none">
+                    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              )}
+              {isFailed && <AlertTriangle className="h-5 w-5 text-destructive" />}
+              <div>
+                <p className="font-semibold">{stepLabel}</p>
+                {pipelineStatus.totalPosts > 0 && !isComplete && !isFailed && (
+                  <p className="text-sm text-muted-foreground">
+                    {pipelineStatus.completedPosts} / {pipelineStatus.totalPosts} {t("assets")}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            {pipelineStatus.totalPosts > 0 && (
+              <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    isComplete ? "bg-green-500" : isFailed ? "bg-destructive" : "bg-primary"
+                  }`}
+                  style={{ width: `${isComplete ? 100 : progress}%` }}
+                />
+              </div>
+            )}
+
+            {/* Warnings */}
+            {pipelineStatus.warnings.length > 0 && (
+              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 space-y-1">
+                {pipelineStatus.warnings.map((w, i) => (
+                  <p key={i} className="text-xs text-yellow-700 dark:text-yellow-400 flex items-start gap-1.5">
+                    <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                    {w}
+                  </p>
+                ))}
+              </div>
+            )}
+
+            {/* Error */}
+            {isFailed && pipelineStatus.error && (
+              <div className="space-y-2">
+                <p className="text-sm text-destructive">{pipelineStatus.error}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setPipelineJobId(null);
+                    setPipelineStatus(null);
+                    setRunning(false);
+                    setError("");
+                  }}
+                >
+                  {t("back")}
+                </Button>
+              </div>
+            )}
+
+            {isComplete && (
+              <p className="text-sm text-muted-foreground">
+                {t("redirecting")}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -157,8 +388,10 @@ export default function SkillsPage() {
         </p>
       </div>
 
-      {/* Skill selection */}
-      {!selected ? (
+      {/* Pipeline progress view */}
+      {pipelineJobId ? (
+        renderPipelineProgress()
+      ) : !selected ? (
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             {DIRECT_SKILLS.map((s) => (
@@ -330,6 +563,30 @@ export default function SkillsPage() {
                   {options.platforms.length === 0 && (
                     <p className="text-xs text-destructive">{t("selectAtLeastOne")}</p>
                   )}
+                </div>
+              )}
+
+              {skill?.options.includes("timeRange") && (
+                <div className="space-y-1.5">
+                  <Label>{t("timeRangeLabel")}</Label>
+                  <Select
+                    value={options.timeRange}
+                    onValueChange={(val) => val && setOptions({ ...options, timeRange: val })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIME_RANGE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {t(opt.labelKey)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {t("timeRangeHint")}
+                  </p>
                 </div>
               )}
 

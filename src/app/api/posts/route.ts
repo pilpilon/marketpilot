@@ -11,7 +11,7 @@ const createPostSchema = z.object({
   platforms: z.array(
     z.object({
       socialAccountId: z.string().uuid(),
-      platform: z.enum(["twitter", "instagram", "tiktok"]),
+      platform: z.enum(["twitter", "instagram", "tiktok", "facebook"]),
       caption: z.string().optional(),
       hashtags: z.array(z.string()).default([]),
       mediaUrls: z.array(z.string()).default([]),
