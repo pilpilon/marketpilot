@@ -15,7 +15,9 @@ export class InstagramClient implements SocialPlatformClient {
     const url = `${this.graphUrl}${path}${separator}access_token=${accessToken}`;
     console.log(`[instagram] GET ${this.graphUrl}${path.split("?")[0]}`);
 
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      headers: { "Authorization": `Bearer ${accessToken}` },
+    });
 
     if (!res.ok) {
       const error = await res.text();
@@ -27,14 +29,15 @@ export class InstagramClient implements SocialPlatformClient {
 
   private async post(path: string, accessToken: string, body: Record<string, unknown>) {
     const url = `${this.graphUrl}${path}`;
+    console.log(`[instagram] POST ${url}`);
 
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        ...Object.fromEntries(Object.entries(body).map(([k, v]) => [k, String(v)])),
-        access_token: accessToken,
-      }),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(body),
     });
 
     if (!res.ok) {
