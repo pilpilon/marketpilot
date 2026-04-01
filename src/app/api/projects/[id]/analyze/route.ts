@@ -7,6 +7,29 @@ import { generateSOP } from "@/lib/ai/sop-template";
 // Each step should complete within 60s
 export const maxDuration = 60;
 
+// Scrape website text content (best-effort)
+async function scrapeWebsite(url: string): Promise<string> {
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": "MarketPilot-Bot/1.0" },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) return "";
+    const html = await res.text();
+    // Strip HTML tags, scripts, styles — extract text
+    const text = html
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    // Return first 3000 chars (enough for product description)
+    return text.slice(0, 3000);
+  } catch {
+    return "";
+  }
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -122,9 +145,24 @@ export async function POST(
   ];
   const context = contextLines.filter(Boolean).join("\n");
 
-  const websiteInstruction = projectUrl
-    ? `IMPORTANT: First visit and read the website at ${projectUrl} to understand exactly what "${projectName}" does. Base your analysis on the ACTUAL website content, not assumptions from the name.`
-    : "";
+  // Load scraped website content from the running analysis run
+  let websiteContent = "";
+  if (step !== "start") {
+    const { data: runMeta } = await supabase
+      .from("analysis_runs")
+      .select("metadata")
+      .eq("project_id", projectId)
+      .eq("status", "running")
+      .limit(1)
+      .single();
+    websiteContent = (runMeta as { metadata?: { websiteContent?: string } } | null)?.metadata?.websiteContent ?? "";
+  }
+
+  const websiteInstruction = websiteContent
+    ? `CRITICAL: Here is the ACTUAL content from ${projectUrl}. Use ONLY this to understand what the product does. Do NOT guess from the name "${projectName}":\n\n--- WEBSITE CONTENT ---\n${websiteContent}\n--- END WEBSITE CONTENT ---`
+    : projectUrl
+      ? `Visit ${projectUrl} to understand what "${projectName}" does.`
+      : "";
 
   try {
     switch (step) {
@@ -144,7 +182,15 @@ export async function POST(
           .eq("project_id", projectId)
           .eq("status", "running");
 
-        // Create new run
+        // Scrape the actual website content so AI has real data
+        let websiteContent = "";
+        if (projectUrl) {
+          console.log(`[analyze] Scraping website: ${projectUrl}`);
+          websiteContent = await scrapeWebsite(projectUrl);
+          console.log(`[analyze] Scraped ${websiteContent.length} chars from website`);
+        }
+
+        // Create new run with scraped content in metadata
         const { data: run } = await supabase
           .from("analysis_runs")
           .insert({
@@ -153,7 +199,7 @@ export async function POST(
             run_type: "full_brand_analysis",
             provider: "perplexity",
             status: "running",
-            metadata: { step: "start", current: 0, total: 7 },
+            metadata: { step: "start", current: 0, total: 7, websiteContent },
           })
           .select("id")
           .single();
