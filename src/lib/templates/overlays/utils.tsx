@@ -62,7 +62,7 @@ export function RtlTextBlock(props: {
       {words.map((word, i) => (
         <span key={i} style={{
           whiteSpace: "pre",
-          marginLeft: i < words.length - 1 ? "0.25em" : undefined,
+          ...(i < words.length - 1 ? { marginLeft: "0.25em" } : {}),
         }}>
           {HEBREW_PATTERN.test(word) ? reverseGraphemes(word) : word}
         </span>
