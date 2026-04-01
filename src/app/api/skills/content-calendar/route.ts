@@ -232,10 +232,33 @@ async function runPipeline(params: {
   const niche = extractNiche(contextFiles as Array<{ file_type: string; content: string }>);
   const trendingContext = await researchTrendingTopics(niche, settings.market);
 
-  // Build schedule slots
+  // Build schedule slots — start after the last existing scheduled post to avoid overlap
   await updateJob(serviceSupabase, jobId, { current_step: "Building posting schedule..." });
+
+  const { data: lastPost } = await serviceSupabase
+    .from("posts")
+    .select("scheduled_at")
+    .eq("project_id", projectId)
+    .eq("user_id", userId)
+    .in("status", ["scheduled", "publishing"])
+    .not("scheduled_at", "is", null)
+    .order("scheduled_at", { ascending: false })
+    .limit(1)
+    .single();
+
   const startDate = new Date();
-  startDate.setDate(startDate.getDate() + 1); // Start tomorrow
+  startDate.setDate(startDate.getDate() + 1); // Default: tomorrow
+
+  if (lastPost?.scheduled_at) {
+    const lastScheduled = new Date(lastPost.scheduled_at);
+    const tomorrow = new Date(startDate);
+    if (lastScheduled > tomorrow) {
+      // Start the day after the last scheduled post
+      startDate.setTime(lastScheduled.getTime());
+      startDate.setDate(startDate.getDate() + 1);
+      startDate.setHours(0, 0, 0, 0);
+    }
+  }
 
   const slots = buildScheduleSlots({
     platforms,
