@@ -14,7 +14,14 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "ids array is required" }, { status: 400 });
   }
 
-  // Delete campaign assets first (foreign key)
+  // Delete posts linked to these campaigns (post_platforms + post_media cascade from posts)
+  await supabase
+    .from("posts")
+    .delete()
+    .in("campaign_id", ids)
+    .eq("user_id", user.id);
+
+  // Delete campaign assets (foreign key)
   await supabase
     .from("campaign_assets")
     .delete()
