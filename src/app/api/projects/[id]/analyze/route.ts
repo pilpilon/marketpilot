@@ -104,9 +104,18 @@ export async function POST(
     const context = contextLines.filter(Boolean).join("\n");
     const hasSocialUrls = brandUrls.length > 0;
 
+    // Build a clear instruction to read the website first
+    const websiteInstruction = projectUrl
+      ? `IMPORTANT: First visit and read the website at ${projectUrl} to understand exactly what "${projectName}" does. Base your analysis on the ACTUAL website content, not assumptions from the name.`
+      : "";
+
     // 1. Competitor research via Perplexity
     const competitorResearch = await perplexityResearch(
-      `Research the top 3-5 direct competitors of "${projectName}". ${context}
+      `${websiteInstruction}
+
+${context}
+
+Research the top 3-5 direct competitors of "${projectName}" based on what the company ACTUALLY does (as described on their website).
       For each competitor provide:
       - Company name and website
       - Core product/service and positioning
@@ -118,7 +127,11 @@ export async function POST(
 
     // 2. Audience research via Perplexity
     const audienceResearch = await perplexityResearch(
-      `Research the target audience and market for "${projectName}". ${context}
+      `${websiteInstruction}
+
+${context}
+
+Research the target audience and market for "${projectName}" based on what the company ACTUALLY does (as described on their website).
       Provide:
       - Primary buyer personas (demographics, psychographics, job titles if B2B)
       - Key pain points and motivations
@@ -149,6 +162,7 @@ Provide:
     // 3. Brand positioning via Gemini (synthesis)
     const brandDoc = await geminiGenerate(
       `You are a senior brand strategist. Based on the following research, create a comprehensive brand positioning document for "${projectName}".
+IMPORTANT: The product description and website content below define what this company ACTUALLY does. Do NOT guess from the company name.
 
 ${context}
 
