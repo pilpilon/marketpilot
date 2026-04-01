@@ -5,6 +5,9 @@ import { perplexityResearch } from "@/lib/ai/perplexity";
 import { parseProjectSettings, buildLocaleContext } from "@/lib/ai/locale-context";
 import { generateSOP } from "@/lib/ai/sop-template";
 
+// Allow up to 5 minutes for the full analysis pipeline
+export const maxDuration = 300;
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
