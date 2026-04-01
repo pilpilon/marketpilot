@@ -13,12 +13,15 @@ export class InstagramClient implements SocialPlatformClient {
     const separator = path.includes("?") ? "&" : "?";
     const url = `${this.graphUrl}${path}${separator}access_token=${accessToken}`;
 
+    const headers: Record<string, string> = { ...options.headers as Record<string, string> };
+    // Only set Content-Type for non-GET requests (Instagram rejects GET with Content-Type)
+    if (options.method && options.method !== "GET") {
+      headers["Content-Type"] = "application/json";
+    }
+
     const res = await fetch(url, {
       ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
+      headers,
     });
 
     if (!res.ok) {
