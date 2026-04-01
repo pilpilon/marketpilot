@@ -43,6 +43,7 @@ const platformConfigs: Record<Platform, () => OAuthConfig> = {
       "instagram_content_publish",
       "pages_show_list",
       "pages_read_engagement",
+      "business_management",
     ],
     usePKCE: false,
   }),
