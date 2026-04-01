@@ -165,13 +165,28 @@ export async function exchangeCodeForTokens(
   const data = await res.json();
   console.log(`[oauth] ${platform} token exchange response keys: ${Object.keys(data).join(", ")}`);
 
-  // Instagram Business Login: exchange short-lived token for long-lived token
+  // Instagram Business Login: exchange short-lived token for long-lived token (~60 days)
   // Per docs: GET https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret={secret}&access_token={short_lived_token}
   if (platform === "instagram") {
     console.log(`[oauth] Instagram: short-lived token obtained. user_id=${data.user_id}`);
-    // graph.instagram.com is currently rejecting GET requests.
-    // Return the short-lived token with the user_id from the initial exchange.
-    // The token is valid for ~1 hour — enough to save the account.
+
+    const longLivedRes = await fetch(
+      `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${config.clientSecret}&access_token=${data.access_token}`
+    );
+
+    if (longLivedRes.ok) {
+      const longLivedData = await longLivedRes.json();
+      console.log(`[oauth] Instagram: long-lived token obtained. expires_in=${longLivedData.expires_in}`);
+      return {
+        accessToken: longLivedData.access_token,
+        refreshToken: longLivedData.access_token,
+        expiresIn: longLivedData.expires_in || 5184000,
+        platformUserId: data.user_id,
+      };
+    }
+
+    // Fallback to short-lived token if long-lived exchange fails
+    console.warn(`[oauth] Instagram: long-lived token exchange failed, using short-lived token. Status: ${longLivedRes.status}`);
     return {
       accessToken: data.access_token,
       expiresIn: 3600,
