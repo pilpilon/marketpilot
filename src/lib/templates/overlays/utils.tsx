@@ -45,7 +45,7 @@ export function RtlTextBlock(props: {
   const words = text.split(/\s+/).filter(Boolean);
 
   // Build the flex container — row-reverse handles RTL word ordering + line wrapping
-  // Satori doesn't support `gap` on flex containers, so we add a trailing space to each word
+  // Satori doesn't support `gap` on flex containers, so we use marginLeft for word spacing
   const { direction: _dir, textAlign: _ta, ...restStyle } = style;
 
   return (
@@ -60,8 +60,11 @@ export function RtlTextBlock(props: {
       }}
     >
       {words.map((word, i) => (
-        <span key={i} style={{ whiteSpace: "pre" }}>
-          {(HEBREW_PATTERN.test(word) ? reverseGraphemes(word) : word) + (i < words.length - 1 ? " " : "")}
+        <span key={i} style={{
+          whiteSpace: "pre",
+          marginLeft: i < words.length - 1 ? "0.25em" : undefined,
+        }}>
+          {HEBREW_PATTERN.test(word) ? reverseGraphemes(word) : word}
         </span>
       ))}
     </div>
@@ -74,9 +77,12 @@ export function RtlTextBlock(props: {
  */
 export function toVisualRtl(text: string): string {
   if (!text) return text;
-  return text.split(/(\s+)/).map((token) => {
+  const tokens = text.split(/(\s+)/);
+  const processed = tokens.map((token) => {
     if (/^\s+$/.test(token)) return token;
     if (!HEBREW_PATTERN.test(token)) return token;
     return reverseGraphemes(token);
-  }).join("");
+  });
+  // Reverse the entire array so word order is correct in LTR rendering
+  return processed.reverse().join("");
 }

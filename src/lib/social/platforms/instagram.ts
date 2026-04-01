@@ -8,7 +8,7 @@ export class InstagramClient implements SocialPlatformClient {
   platform = "instagram" as const;
 
   // Per Meta docs: Instagram API uses graph.instagram.com (no version prefix for some endpoints)
-  private graphUrl = "https://graph.instagram.com";
+  private graphUrl = "https://graph.instagram.com/v25.0";
 
   private async get(path: string, accessToken: string) {
     const separator = path.includes("?") ? "&" : "?";
@@ -63,6 +63,7 @@ export class InstagramClient implements SocialPlatformClient {
     if (!igAccountId) {
       throw new Error("Could not get Instagram user ID");
     }
+    console.log(`[instagram] publishMedia: igAccountId=${igAccountId}, mediaUrl=${mediaUrls[0]?.substring(0, 80)}...`);
 
     // Create media container
     const container = await this.post(
@@ -72,6 +73,7 @@ export class InstagramClient implements SocialPlatformClient {
     );
 
     const creationId = container.id;
+    console.log(`[instagram] container created: id=${creationId}`);
 
     // Wait for container to be ready
     let ready = false;
@@ -81,6 +83,7 @@ export class InstagramClient implements SocialPlatformClient {
         `/${creationId}?fields=status_code`,
         accessToken
       );
+      console.log(`[instagram] container status (attempt ${attempts + 1}): ${status.status_code}`);
       if (status.status_code === "FINISHED") {
         ready = true;
       } else if (status.status_code === "ERROR") {
@@ -92,15 +95,17 @@ export class InstagramClient implements SocialPlatformClient {
     }
 
     if (!ready) {
-      return { platformPostId: creationId, platformPostUrl: "" };
+      throw new Error("Instagram media container timed out — image may be too large or unsupported");
     }
 
     // Publish
+    console.log(`[instagram] publishing container ${creationId}...`);
     const published = await this.post(
       `/${igAccountId}/media_publish`,
       accessToken,
       { creation_id: creationId }
     );
+    console.log(`[instagram] published! id=${published.id}`);
 
     return {
       platformPostId: published.id,

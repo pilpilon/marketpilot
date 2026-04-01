@@ -219,11 +219,11 @@ export async function POST(request: Request) {
     const finalImage = await compositeImage(backgroundBuffer, overlayPng, dims.width, dims.height);
 
     // 5. Upload to Supabase Storage
-    const fileName = `${user.id}/${projectId}/${Date.now()}-${template.id}-${slideDef.id}.png`;
+    const fileName = `${user.id}/${projectId}/${Date.now()}-${template.id}-${slideDef.id}.jpg`;
     const { error: uploadError } = await serviceSupabase.storage
       .from("generated-images")
       .upload(fileName, finalImage, {
-        contentType: "image/png",
+        contentType: "image/jpeg",
         upsert: false,
       });
 
@@ -254,7 +254,7 @@ export async function POST(request: Request) {
           aspect_ratio: dims.aspectRatio,
           model_tier: modelTier,
           overlay_style: slideDef.overlayStyle,
-          mime_type: "image/png",
+          mime_type: "image/jpeg",
           file_name: fileName,
         },
         status: "draft",

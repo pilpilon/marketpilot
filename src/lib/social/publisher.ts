@@ -40,6 +40,8 @@ async function publishToPlatform(ctx: PublishContext): Promise<void> {
       ? `${caption}\n\n${hashtags.map((h) => `#${h}`).join(" ")}`
       : caption;
 
+    console.log(`[publisher] publishing to ${socialAccount.platform}, media_urls=${JSON.stringify(postPlatform.media_urls)}, caption_length=${fullText.length}`);
+
     let result;
     if (postPlatform.media_urls && postPlatform.media_urls.length > 0) {
       result = await client.publishMedia(
@@ -50,6 +52,7 @@ async function publishToPlatform(ctx: PublishContext): Promise<void> {
     } else {
       result = await client.publishText(accessToken, fullText);
     }
+    console.log(`[publisher] result:`, JSON.stringify(result));
 
     // Update with success
     await supabase
@@ -100,6 +103,7 @@ export async function publishPost(postId: string): Promise<{
     .in("status", ["pending", "failed"]);
 
   if (ppError || !postPlatforms || postPlatforms.length === 0) {
+    console.log(`[publisher] no post_platforms found for post ${postId}, error: ${ppError?.message || "none"}, count: ${postPlatforms?.length ?? "null"}`);
     await supabase
       .from("posts")
       .update({ status: "failed" })
@@ -107,6 +111,7 @@ export async function publishPost(postId: string): Promise<{
 
     return { success: false, results: [] };
   }
+  console.log(`[publisher] found ${postPlatforms.length} platform target(s) for post ${postId}`);
 
   // Get the post record
   const { data: post } = await supabase

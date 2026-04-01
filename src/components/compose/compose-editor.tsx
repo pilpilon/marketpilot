@@ -114,8 +114,14 @@ export function ComposeEditor({
           method: "POST",
         });
 
-        if (!publishRes.ok) {
-          toast.error("Post created but publishing failed. Check your posts page.");
+        const publishResult = await publishRes.json();
+
+        if (!publishRes.ok || !publishResult.success) {
+          const failedPlatforms = publishResult.results
+            ?.filter((r: { success: boolean }) => !r.success)
+            .map((r: { platform: string; error?: string }) => `${r.platform}: ${r.error || "unknown error"}`)
+            .join("; ");
+          toast.error(failedPlatforms || "Publishing failed. Check your posts page.");
         } else {
           toast.success("Published successfully!");
         }

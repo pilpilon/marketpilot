@@ -2,7 +2,7 @@ import sharp from "sharp";
 
 /**
  * Composites a transparent text overlay PNG onto a background image.
- * Returns the final composited image as a PNG buffer.
+ * Returns the final composited image as a JPEG buffer (Instagram requires JPEG).
  */
 export async function compositeImage(
   backgroundBuffer: Buffer,
@@ -25,7 +25,7 @@ export async function compositeImage(
         left: 0,
       },
     ])
-    .png({ quality: 95 })
+    .jpeg({ quality: 92 })
     .toBuffer();
 
   return result;
