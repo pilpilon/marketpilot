@@ -21,6 +21,20 @@ function reverseGraphemes(s: string): string {
 }
 
 /**
+ * Reverse only Hebrew character runs within a mixed token, keeping digits
+ * and Latin chars in their original LTR order.
+ * e.g. "ל-800" → the Hebrew part reverses but "800" stays as-is.
+ */
+function reverseHebrewOnly(s: string): string {
+  // Split into runs of Hebrew chars vs non-Hebrew chars
+  const runs = s.match(/([\u0590-\u05FF]+|[^\u0590-\u05FF]+)/g);
+  if (!runs) return s;
+  return runs
+    .map((run) => (HEBREW_PATTERN.test(run) ? reverseGraphemes(run) : run))
+    .join("");
+}
+
+/**
  * Satori does not implement the Unicode Bidi Algorithm.
  * `direction: rtl` CSS does NOT reorder characters or handle multi-line wrapping.
  *
@@ -64,7 +78,7 @@ export function RtlTextBlock(props: {
           whiteSpace: "pre",
           ...(i < words.length - 1 ? { marginLeft: "0.25em" } : {}),
         }}>
-          {HEBREW_PATTERN.test(word) ? reverseGraphemes(word) : word}
+          {HEBREW_PATTERN.test(word) ? reverseHebrewOnly(word) : word}
         </span>
       ))}
     </div>
@@ -111,7 +125,7 @@ export function toVisualRtl(text: string): string {
   const processed = tokens.map((token) => {
     if (/^\s+$/.test(token)) return token;
     if (!HEBREW_PATTERN.test(token)) return token;
-    return reverseGraphemes(token);
+    return reverseHebrewOnly(token);
   });
   // Reverse the entire array so word order is correct in LTR rendering
   return processed.reverse().join("");
