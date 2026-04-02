@@ -11,10 +11,10 @@ export function SplitLayoutOverlay(
   const headline = fields.headline || "";
   const subheadline = fields.subheadline || "";
   const cta = fields.cta || "";
-  const headlineFontSize = Math.round(dims.width * 0.055);
-  const subFontSize = Math.round(dims.width * 0.03);
+  const headlineFontSize = Math.round(dims.width * 0.046);
+  const subFontSize = Math.round(dims.width * 0.025);
   const ctaFontSize = Math.round(dims.width * 0.026);
-  const splitWidth = Math.round(dims.width * 0.45);
+  const splitWidth = Math.round(dims.width * 0.50);
 
   const headlineStyle: React.CSSProperties = {
     color: "#ffffff",
@@ -23,6 +23,7 @@ export function SplitLayoutOverlay(
     fontFamily: "Inter, Noto Sans Hebrew",
     lineHeight: 1.2,
     textAlign: dir === "rtl" ? "right" : "left",
+    wordBreak: "break-word",
   };
 
   const subStyle: React.CSSProperties = {
@@ -33,6 +34,7 @@ export function SplitLayoutOverlay(
     lineHeight: 1.5,
     opacity: 0.9,
     textAlign: dir === "rtl" ? "right" : "left",
+    wordBreak: "break-word",
   };
 
   return (
@@ -52,6 +54,7 @@ export function SplitLayoutOverlay(
           width: splitWidth,
           height: dims.height,
           backgroundColor: brand.primaryColor + "f2",
+          overflow: "hidden",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
