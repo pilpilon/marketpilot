@@ -111,7 +111,7 @@ function parseAudienceContext(content: string): string {
     const parts = [demoMatch?.[1], psychoMatch?.[1], titleMatch?.[1]].filter(Boolean);
     if (parts.length) summaries.push(parts.join("; ").slice(0, 200));
   }
-  return summaries.join(" | ").slice(0, 500);
+  return summaries.join(" | ").slice(0, 800);
 }
 
 /**
@@ -124,7 +124,7 @@ function parseBrandContext(content: string): string {
     positionMatch?.[1]?.trim().slice(0, 200),
     promiseMatch?.[1]?.trim().slice(0, 200),
   ].filter(Boolean);
-  return parts.join(". ").slice(0, 350);
+  return parts.join(". ").slice(0, 600);
 }
 
 /**
@@ -143,7 +143,7 @@ function parseIntakePatterns(content: string): string {
     patternMatch?.[1]?.trim().slice(0, 150),
     hookMatch?.[1]?.trim().slice(0, 100),
   ].filter(Boolean);
-  return parts.join(". ").slice(0, 400);
+  return parts.join(". ").slice(0, 800);
 }
 
 /**
@@ -156,7 +156,7 @@ function parseProductContext(content: string): string {
     valueMatch?.[1]?.trim().slice(0, 200),
     useCaseMatch?.[1]?.trim().slice(0, 150),
   ].filter(Boolean);
-  return parts.join(". ").slice(0, 300);
+  return parts.join(". ").slice(0, 600);
 }
 
 export async function loadBrandContext(
@@ -194,7 +194,7 @@ export async function loadBrandContext(
       };
 
   const brandPersonality = characterBriefFile
-    ? characterBriefFile.content.slice(0, 300)
+    ? characterBriefFile.content.slice(0, 600)
     : "professional, trustworthy, modern";
 
   const audienceContext = audienceFile ? parseAudienceContext(audienceFile.content) : "";

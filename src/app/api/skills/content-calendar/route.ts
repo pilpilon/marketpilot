@@ -275,9 +275,10 @@ async function runPipeline(params: {
   await updateJob(serviceSupabase, jobId, { current_step: "Planning content themes...", total_posts: slots.length });
 
   const contentPlan = await generateContentPlan({
-    context,
+    brandContext,
     trendingContext,
     localeCtx: localeCtx.skillContext,
+    locale,
     slots,
   });
 
@@ -449,12 +450,13 @@ async function runPipeline(params: {
  * Use AI to generate a content plan that fills the schedule slots.
  */
 async function generateContentPlan(params: {
-  context: string;
+  brandContext: BrandContext;
   trendingContext: string;
   localeCtx: string;
+  locale: string;
   slots: PostSlot[];
 }): Promise<ContentPlanPost[]> {
-  const { context, trendingContext, localeCtx, slots } = params;
+  const { brandContext, trendingContext, localeCtx, locale, slots } = params;
 
   const apiKey = process.env.GOOGLE_AI_API_KEY;
   if (!apiKey) throw new Error("GOOGLE_AI_API_KEY not configured");
@@ -470,14 +472,34 @@ async function generateContentPlan(params: {
   }));
 
   const templateCategories = getTemplateCategories();
+  const lang = locale === "he" ? "Hebrew" : "English";
 
-  const prompt = `You are a content strategy expert. Given the following schedule slots and brand context, create a content plan.
+  const prompt = `You are a content strategy expert creating a content calendar for a specific brand. Use the brand intelligence below to write content that sounds like this brand — not generic marketing.
 
-BRAND INTELLIGENCE:
-${context}
+BRAND VOICE & PERSONALITY:
+${brandContext.brandPersonality || "professional, engaging, modern"}
 
-${trendingContext ? `CURRENT TRENDING TOPICS:\n${trendingContext}\n\nWeave timely topics into the first week of the calendar where they fit naturally.\n` : ""}
-${localeCtx ? `${localeCtx}\n` : ""}
+Write ALL headlines and subheadlines in this voice. Be consistent with the brand's tone throughout.
+
+TARGET AUDIENCE:
+${brandContext.audienceContext || "general consumers"}
+
+Every post must resonate with these specific people. Reference their pain points, aspirations, and language.
+
+PRODUCT / SERVICE:
+${brandContext.productContext || "the brand's product"}
+
+Reference specific features, benefits, and use cases — not generic claims. The audience should recognize what this product does for them.
+
+BRAND POSITIONING:
+${brandContext.brandPositioning || ""}
+${brandContext.visual.styleKeywords ? `\nVISUAL STYLE: ${brandContext.visual.styleKeywords}` : ""}
+
+${brandContext.intakePatterns ? `PROVEN CONTENT PATTERNS (from past successful posts — follow these):\n${brandContext.intakePatterns}\n` : ""}
+${trendingContext ? `CURRENT TRENDING TOPICS:\n${trendingContext}\n\nWeave timely topics into the first week where they fit naturally.\n` : ""}
+${localeCtx || ""}
+
+LANGUAGE: All headlines, subheadlines, and text MUST be written in ${lang}.
 
 SCHEDULE SLOTS:
 ${JSON.stringify(slotsJson, null, 2)}
@@ -491,17 +513,18 @@ Each entry:
 {
   "slotIndex": <number matching the slot index>,
   "category": "<one of: promotional, educational, quote, announcement, product_showcase, testimonial>",
-  "postConcept": "<detailed visual description for image generation — be specific about the scene, composition, mood>",
-  "headline": "<short headline text for the post, 5-10 words>",
-  "subheadline": "<supporting text, 10-20 words>"
+  "postConcept": "<detailed visual description for image generation — be specific about the scene, composition, mood, match the visual style above>",
+  "headline": "<3-6 words, punchy, in ${lang}>",
+  "subheadline": "<8-15 words supporting the headline, in ${lang}>"
 }
 
 Rules:
 - Mix categories for variety: ~25% educational, ~25% product_showcase, ~15% promotional, ~15% quote, ~10% announcement, ~10% testimonial
-- Each postConcept must be unique and specific enough to generate a distinct image
-- Match content to the platform (e.g. Instagram = visual lifestyle, Twitter = punchy/short, TikTok = dynamic/trendy)
+- Each postConcept must be unique, specific, and aligned with the visual style direction
+- Headlines must be 3-6 words MAX — short, punchy, brand-aligned
+- Reference specific product features or audience pain points — never write generic "check this out" copy
+- Match content to the platform (Instagram = aesthetic/lifestyle, Twitter = conversational/punchy, TikTok = dynamic/trendy)
 - Weave trending topics naturally where relevant
-- Headlines should be engaging, not generic
 - Return exactly ${slots.length} entries, one per slot`;
 
   const result = await model.generateContent(prompt);
