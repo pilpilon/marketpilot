@@ -5,7 +5,7 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   turbopack: {},
-  serverExternalPackages: ["@resvg/resvg-js", "sharp"],
+  serverExternalPackages: ["@takumi-rs/core", "sharp"],
   images: {
     remotePatterns: [
       {

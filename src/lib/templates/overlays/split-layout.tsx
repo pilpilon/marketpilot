@@ -1,44 +1,25 @@
-import type { BrandTokens, PlatformDimensions, FittedSizes } from "@/types/templates";
+import type { BrandTokens, PlatformDimensions } from "@/types/templates";
 import React from "react";
-import { detectDirection, RtlTextBlock, toVisualRtl } from "./utils";
+import { detectDirection } from "./utils";
 
 export function SplitLayoutOverlay(
   fields: Record<string, string>,
   brand: BrandTokens,
-  dims: PlatformDimensions,
-  fittedSizes?: FittedSizes
+  dims: PlatformDimensions
 ): React.ReactElement {
   const dir = detectDirection(fields);
   const headline = fields.headline || "";
   const subheadline = fields.subheadline || "";
   const cta = fields.cta || "";
   const splitWidth = Math.round(dims.width * 0.50);
-  const padLeft = Math.round(dims.width * 0.03);
-  const padRight = Math.round(dims.width * 0.03);
-
-  const headlineFontSize = fittedSizes?.headline || Math.round(dims.width * 0.038);
-  const subFontSize = fittedSizes?.subheadline || Math.round(dims.width * 0.020);
+  const pad = Math.round(dims.width * 0.04);
+  const headlineFontSize = Math.round(dims.width * 0.046);
+  const subFontSize = Math.round(dims.width * 0.025);
   const ctaFontSize = Math.round(dims.width * 0.026);
 
-  const headlineStyle: React.CSSProperties = {
-    color: "#ffffff",
-    fontSize: headlineFontSize,
-    fontWeight: 700,
-    fontFamily: "Inter, Noto Sans Hebrew",
-    lineHeight: 1.2,
+  const textStyle: React.CSSProperties = {
+    direction: dir,
     textAlign: dir === "rtl" ? "right" : "left",
-    wordBreak: "break-word",
-  };
-
-  const subStyle: React.CSSProperties = {
-    color: "#ffffff",
-    fontSize: subFontSize,
-    fontWeight: 400,
-    fontFamily: "Inter, Noto Sans Hebrew",
-    lineHeight: 1.5,
-    opacity: 0.9,
-    textAlign: dir === "rtl" ? "right" : "left",
-    wordBreak: "break-word",
   };
 
   return (
@@ -50,9 +31,7 @@ export function SplitLayoutOverlay(
         flexDirection: dir === "rtl" ? "row-reverse" : "row",
       }}
     >
-      {/* Transparent half (shows background image) */}
       <div style={{ flex: 1 }} />
-      {/* Solid color half with text */}
       <div
         style={{
           width: splitWidth,
@@ -62,19 +41,20 @@ export function SplitLayoutOverlay(
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          padding: `${dims.safeZone.top}px ${padRight}px ${dims.safeZone.bottom}px ${padLeft}px`,
+          padding: `${dims.safeZone.top}px ${pad}px ${dims.safeZone.bottom}px ${pad}px`,
           gap: Math.round(dims.height * 0.02),
+          ...textStyle,
         }}
       >
         {headline && (
-          dir === "rtl"
-            ? <RtlTextBlock text={headline} style={headlineStyle} />
-            : <div style={headlineStyle}>{headline}</div>
+          <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Noto Sans Hebrew", lineHeight: 1.2 }}>
+            {headline}
+          </div>
         )}
         {subheadline && (
-          dir === "rtl"
-            ? <RtlTextBlock text={subheadline} style={subStyle} />
-            : <div style={subStyle}>{subheadline}</div>
+          <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Noto Sans Hebrew", lineHeight: 1.5, opacity: 0.9 }}>
+            {subheadline}
+          </div>
         )}
         {cta && (
           <div style={{ display: "flex", marginTop: Math.round(dims.height * 0.01), justifyContent: dir === "rtl" ? "flex-end" : "flex-start" }}>
@@ -89,7 +69,7 @@ export function SplitLayoutOverlay(
                 borderRadius: 8,
               }}
             >
-              {dir === "rtl" ? toVisualRtl(cta) : cta}
+              {cta}
             </div>
           </div>
         )}

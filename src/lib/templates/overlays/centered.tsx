@@ -1,37 +1,17 @@
-import type { BrandTokens, PlatformDimensions, FittedSizes } from "@/types/templates";
+import type { BrandTokens, PlatformDimensions } from "@/types/templates";
 import React from "react";
-import { detectDirection, RtlTextBlock } from "./utils";
+import { detectDirection } from "./utils";
 
 export function CenteredOverlay(
   fields: Record<string, string>,
   brand: BrandTokens,
-  dims: PlatformDimensions,
-  fittedSizes?: FittedSizes
+  dims: PlatformDimensions
 ): React.ReactElement {
   const dir = detectDirection(fields);
   const headline = fields.headline || "";
   const subheadline = fields.subheadline || "";
-  const headlineFontSize = fittedSizes?.headline || Math.round(dims.width * 0.06);
-  const subFontSize = fittedSizes?.subheadline || Math.round(dims.width * 0.032);
-
-  const headlineStyle: React.CSSProperties = {
-    color: brand.textColor,
-    fontSize: headlineFontSize,
-    fontWeight: 700,
-    fontFamily: "Inter, Noto Sans Hebrew",
-    textAlign: "center",
-    lineHeight: 1.2,
-  };
-
-  const subStyle: React.CSSProperties = {
-    color: brand.textColor,
-    fontSize: subFontSize,
-    fontWeight: 400,
-    fontFamily: "Inter, Noto Sans Hebrew",
-    textAlign: "center",
-    lineHeight: 1.4,
-    opacity: 0.9,
-  };
+  const headlineFontSize = Math.round(dims.width * 0.06);
+  const subFontSize = Math.round(dims.width * 0.032);
 
   return (
     <div
@@ -55,17 +35,19 @@ export function CenteredOverlay(
           borderRadius: 16,
           padding: `${Math.round(dims.height * 0.04)}px ${Math.round(dims.width * 0.08)}px`,
           maxWidth: dims.width * 0.85,
+          direction: dir,
+          textAlign: "center",
         }}
       >
         {headline && (
-          dir === "rtl"
-            ? <RtlTextBlock text={headline} style={{ ...headlineStyle, justifyContent: "center" }} />
-            : <div style={headlineStyle}>{headline}</div>
+          <div style={{ color: brand.textColor, fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Noto Sans Hebrew", lineHeight: 1.2 }}>
+            {headline}
+          </div>
         )}
         {subheadline && (
-          dir === "rtl"
-            ? <RtlTextBlock text={subheadline} style={{ ...subStyle, justifyContent: "center" }} />
-            : <div style={subStyle}>{subheadline}</div>
+          <div style={{ color: brand.textColor, fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Noto Sans Hebrew", lineHeight: 1.4, opacity: 0.9 }}>
+            {subheadline}
+          </div>
         )}
       </div>
     </div>

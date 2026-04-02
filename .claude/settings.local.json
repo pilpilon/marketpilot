@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "mcp__98cc26c7-4c1b-45b3-959a-9256650104c8__execute_sql",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:stitch.withgoogle.com)",
+      "mcp__d3ea1a89-3797-4a5c-b52a-91a6b93352f2__get_runtime_logs",
+      "mcp__d3ea1a89-3797-4a5c-b52a-91a6b93352f2__list_projects",
+      "WebFetch(domain:mcpservers.org)",
+      "mcp__98cc26c7-4c1b-45b3-959a-9256650104c8__list_tables",
+      "mcp__98cc26c7-4c1b-45b3-959a-9256650104c8__apply_migration",
+      "mcp__nanobanana__generate_image",
+      "mcp__98cc26c7-4c1b-45b3-959a-9256650104c8__list_projects",
+      "mcp__d3ea1a89-3797-4a5c-b52a-91a6b93352f2__list_teams",
+      "mcp__d3ea1a89-3797-4a5c-b52a-91a6b93352f2__list_deployments",
+      "mcp__d3ea1a89-3797-4a5c-b52a-91a6b93352f2__get_deployment_build_logs",
+      "mcp__d3ea1a89-3797-4a5c-b52a-91a6b93352f2__deploy_to_vercel",
+      "mcp__d3ea1a89-3797-4a5c-b52a-91a6b93352f2__get_deployment",
+      "mcp__98cc26c7-4c1b-45b3-959a-9256650104c8__search_docs",
+      "mcp__98cc26c7-4c1b-45b3-959a-9256650104c8__get_project_url",
+      "mcp__98cc26c7-4c1b-45b3-959a-9256650104c8__list_extensions",
+      "mcp__d3ea1a89-3797-4a5c-b52a-91a6b93352f2__get_project",
+      "mcp__98cc26c7-4c1b-45b3-959a-9256650104c8__pause_project",
+      "mcp__mcp-registry__search_mcp_registry"
+    ]
+  }
+}

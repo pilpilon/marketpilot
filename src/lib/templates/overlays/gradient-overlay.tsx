@@ -1,38 +1,21 @@
-import type { BrandTokens, PlatformDimensions, FittedSizes } from "@/types/templates";
+import type { BrandTokens, PlatformDimensions } from "@/types/templates";
 import React from "react";
-import { detectDirection, RtlTextBlock } from "./utils";
+import { detectDirection } from "./utils";
 
 export function GradientOverlay(
   fields: Record<string, string>,
   brand: BrandTokens,
-  dims: PlatformDimensions,
-  fittedSizes?: FittedSizes
+  dims: PlatformDimensions
 ): React.ReactElement {
   const dir = detectDirection(fields);
   const headline = fields.headline || "";
   const subheadline = fields.subheadline || "";
-  const headlineFontSize = fittedSizes?.headline || Math.round(dims.width * 0.048);
-  const subFontSize = fittedSizes?.subheadline || Math.round(dims.width * 0.026);
+  const headlineFontSize = Math.round(dims.width * 0.055);
+  const subFontSize = Math.round(dims.width * 0.03);
 
-  const headlineStyle: React.CSSProperties = {
-    color: "#ffffff",
-    fontSize: headlineFontSize,
-    fontWeight: 700,
-    fontFamily: "Inter, Noto Sans Hebrew",
-    lineHeight: 1.2,
+  const textStyle: React.CSSProperties = {
+    direction: dir,
     textAlign: dir === "rtl" ? "right" : "left",
-    wordBreak: "break-word",
-  };
-
-  const subStyle: React.CSSProperties = {
-    color: "#ffffff",
-    fontSize: subFontSize,
-    fontWeight: 400,
-    fontFamily: "Inter, Noto Sans Hebrew",
-    lineHeight: 1.4,
-    opacity: 0.85,
-    textAlign: dir === "rtl" ? "right" : "left",
-    wordBreak: "break-word",
   };
 
   return (
@@ -52,17 +35,18 @@ export function GradientOverlay(
           flexDirection: "column",
           gap: Math.round(dims.height * 0.015),
           padding: `${Math.round(dims.height * 0.05)}px ${Math.round(dims.width * 0.06)}px ${dims.safeZone.bottom + Math.round(dims.height * 0.03)}px`,
+          ...textStyle,
         }}
       >
         {headline && (
-          dir === "rtl"
-            ? <RtlTextBlock text={headline} style={headlineStyle} />
-            : <div style={headlineStyle}>{headline}</div>
+          <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Noto Sans Hebrew", lineHeight: 1.2 }}>
+            {headline}
+          </div>
         )}
         {subheadline && (
-          dir === "rtl"
-            ? <RtlTextBlock text={subheadline} style={subStyle} />
-            : <div style={subStyle}>{subheadline}</div>
+          <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Noto Sans Hebrew", lineHeight: 1.4, opacity: 0.85 }}>
+            {subheadline}
+          </div>
         )}
       </div>
     </div>

@@ -98,16 +98,10 @@ export interface BrandTokens {
 
 // ─── Overlay Renderer Function ───────────────────────────────────────────────
 
-export interface FittedSizes {
-  headline: number;
-  subheadline: number;
-}
-
 export type OverlayRenderer = (
   fields: Record<string, string>,
   brand: BrandTokens,
-  dims: PlatformDimensions,
-  fittedSizes?: FittedSizes
+  dims: PlatformDimensions
 ) => React.ReactElement;
 
 // ─── API Request / Response ──────────────────────────────────────────────────

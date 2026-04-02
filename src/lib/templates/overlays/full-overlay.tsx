@@ -1,41 +1,19 @@
-import type { BrandTokens, PlatformDimensions, FittedSizes } from "@/types/templates";
+import type { BrandTokens, PlatformDimensions } from "@/types/templates";
 import React from "react";
-import { detectDirection, RtlTextBlock, toVisualRtl } from "./utils";
+import { detectDirection } from "./utils";
 
 export function FullOverlay(
   fields: Record<string, string>,
   brand: BrandTokens,
-  dims: PlatformDimensions,
-  fittedSizes?: FittedSizes
+  dims: PlatformDimensions
 ): React.ReactElement {
   const dir = detectDirection(fields);
   const headline = fields.headline || "";
   const subheadline = fields.subheadline || "";
   const cta = fields.cta || "";
-  const headlineFontSize = fittedSizes?.headline || Math.round(dims.width * 0.075);
-  const subFontSize = fittedSizes?.subheadline || Math.round(dims.width * 0.035);
+  const headlineFontSize = Math.round(dims.width * 0.065);
+  const subFontSize = Math.round(dims.width * 0.032);
   const ctaFontSize = Math.round(dims.width * 0.03);
-
-  const headlineStyle: React.CSSProperties = {
-    color: "#ffffff",
-    fontSize: headlineFontSize,
-    fontWeight: 800,
-    fontFamily: "Inter, Noto Sans Hebrew",
-    textAlign: "center",
-    lineHeight: 1.15,
-    letterSpacing: "-0.02em",
-  };
-
-  const subStyle: React.CSSProperties = {
-    color: "#ffffff",
-    fontSize: subFontSize,
-    fontWeight: 400,
-    fontFamily: "Inter, Noto Sans Hebrew",
-    textAlign: "center",
-    lineHeight: 1.5,
-    opacity: 0.9,
-    maxWidth: dims.width * 0.75,
-  };
 
   return (
     <div
@@ -49,17 +27,19 @@ export function FullOverlay(
         backgroundColor: brand.primaryColor + "cc",
         padding: `${dims.safeZone.top}px ${dims.safeZone.right + 40}px ${dims.safeZone.bottom}px ${dims.safeZone.left + 40}px`,
         gap: Math.round(dims.height * 0.025),
+        direction: dir,
+        textAlign: "center",
       }}
     >
       {headline && (
-        dir === "rtl"
-          ? <RtlTextBlock text={headline} style={{ ...headlineStyle, justifyContent: "center" }} />
-          : <div style={headlineStyle}>{headline}</div>
+        <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 800, fontFamily: "Inter, Noto Sans Hebrew", lineHeight: 1.15, letterSpacing: "-0.02em" }}>
+          {headline}
+        </div>
       )}
       {subheadline && (
-        dir === "rtl"
-          ? <RtlTextBlock text={subheadline} style={{ ...subStyle, justifyContent: "center" }} />
-          : <div style={subStyle}>{subheadline}</div>
+        <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Noto Sans Hebrew", lineHeight: 1.5, opacity: 0.9, maxWidth: dims.width * 0.75 }}>
+          {subheadline}
+        </div>
       )}
       {cta && (
         <div style={{ display: "flex", marginTop: Math.round(dims.height * 0.015) }}>
@@ -74,7 +54,7 @@ export function FullOverlay(
               borderRadius: 12,
             }}
           >
-            {dir === "rtl" ? toVisualRtl(cta) : cta}
+            {cta}
           </div>
         </div>
       )}
