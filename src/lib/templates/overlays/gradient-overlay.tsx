@@ -1,6 +1,6 @@
 import type { BrandTokens, PlatformDimensions } from "@/types/templates";
 import React from "react";
-import { detectDirection, RtlTextBlock } from "./utils";
+import { detectDirection, RtlTextBlock, scaleFontSize } from "./utils";
 
 export function GradientOverlay(
   fields: Record<string, string>,
@@ -10,8 +10,10 @@ export function GradientOverlay(
   const dir = detectDirection(fields);
   const headline = fields.headline || "";
   const subheadline = fields.subheadline || "";
-  const headlineFontSize = Math.round(dims.width * 0.06);
-  const subFontSize = Math.round(dims.width * 0.033);
+  const pad = Math.round(dims.width * 0.06);
+  const availableWidth = dims.width - pad * 2;
+  const headlineFontSize = scaleFontSize(Math.round(dims.width * 0.055), headline, availableWidth, 3);
+  const subFontSize = scaleFontSize(Math.round(dims.width * 0.03), subheadline, availableWidth, 3);
 
   const headlineStyle: React.CSSProperties = {
     color: "#ffffff",
@@ -20,6 +22,7 @@ export function GradientOverlay(
     fontFamily: "Inter, Noto Sans Hebrew",
     lineHeight: 1.2,
     textAlign: dir === "rtl" ? "right" : "left",
+    wordBreak: "break-word",
   };
 
   const subStyle: React.CSSProperties = {
@@ -30,6 +33,7 @@ export function GradientOverlay(
     lineHeight: 1.4,
     opacity: 0.85,
     textAlign: dir === "rtl" ? "right" : "left",
+    wordBreak: "break-word",
   };
 
   return (

@@ -73,8 +73,8 @@ export function RtlTextBlock(props: {
 
 /**
  * Dynamically scale font size so text fits within the available width.
- * Estimates how many lines the text would need at the base size and scales
- * down when it exceeds `maxLines`. Floor is 50% of base size.
+ * Hebrew characters are ~0.75em wide on average (wider than Latin ~0.5em).
+ * Iteratively shrinks until text fits in maxLines. Floor is 40% of base.
  */
 export function scaleFontSize(
   baseFontSize: number,
@@ -82,15 +82,23 @@ export function scaleFontSize(
   availableWidth: number,
   maxLines = 3
 ): number {
-  if (!text) return baseFontSize;
-  const avgCharWidth = baseFontSize * 0.6;
-  const charsPerLine = Math.floor(availableWidth / avgCharWidth);
-  const textLen = text.length;
+  if (!text || !availableWidth) return baseFontSize;
 
-  if (textLen <= charsPerLine * maxLines) return baseFontSize;
+  let fontSize = baseFontSize;
+  const minFont = Math.round(baseFontSize * 0.4);
+  const hasHebrew = /[\u0590-\u05FF]/.test(text);
+  const charWidthRatio = hasHebrew ? 0.75 : 0.55;
 
-  const scale = Math.max(0.5, (charsPerLine * maxLines) / textLen);
-  return Math.round(baseFontSize * scale);
+  while (fontSize > minFont) {
+    const avgCharWidth = fontSize * charWidthRatio;
+    const charsPerLine = Math.floor(availableWidth / avgCharWidth);
+    if (charsPerLine <= 0) break;
+    const linesNeeded = Math.ceil(text.length / charsPerLine);
+    if (linesNeeded <= maxLines) return fontSize;
+    fontSize -= 2;
+  }
+
+  return Math.max(fontSize, minFont);
 }
 
 /**

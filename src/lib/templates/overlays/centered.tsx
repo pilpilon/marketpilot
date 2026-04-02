@@ -1,6 +1,6 @@
 import type { BrandTokens, PlatformDimensions } from "@/types/templates";
 import React from "react";
-import { detectDirection, RtlTextBlock } from "./utils";
+import { detectDirection, RtlTextBlock, scaleFontSize } from "./utils";
 
 export function CenteredOverlay(
   fields: Record<string, string>,
@@ -10,8 +10,9 @@ export function CenteredOverlay(
   const dir = detectDirection(fields);
   const headline = fields.headline || "";
   const subheadline = fields.subheadline || "";
-  const headlineFontSize = Math.round(dims.width * 0.065);
-  const subFontSize = Math.round(dims.width * 0.035);
+  const availableWidth = dims.width * 0.75;
+  const headlineFontSize = scaleFontSize(Math.round(dims.width * 0.06), headline, availableWidth, 3);
+  const subFontSize = scaleFontSize(Math.round(dims.width * 0.032), subheadline, availableWidth, 3);
 
   const headlineStyle: React.CSSProperties = {
     color: brand.textColor,
