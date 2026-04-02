@@ -1,6 +1,6 @@
 import type { BrandTokens, PlatformDimensions } from "@/types/templates";
 import React from "react";
-import { detectDirection, RtlTextBlock, toVisualRtl } from "./utils";
+import { detectDirection, RtlTextBlock, toVisualRtl, scaleFontSize } from "./utils";
 
 export function SplitLayoutOverlay(
   fields: Record<string, string>,
@@ -11,10 +11,16 @@ export function SplitLayoutOverlay(
   const headline = fields.headline || "";
   const subheadline = fields.subheadline || "";
   const cta = fields.cta || "";
-  const headlineFontSize = Math.round(dims.width * 0.046);
-  const subFontSize = Math.round(dims.width * 0.025);
-  const ctaFontSize = Math.round(dims.width * 0.026);
   const splitWidth = Math.round(dims.width * 0.50);
+  const padLeft = Math.round(dims.width * 0.03);
+  const padRight = Math.round(dims.width * 0.03);
+  const availableWidth = splitWidth - padLeft - padRight;
+
+  const baseHeadline = Math.round(dims.width * 0.042);
+  const baseSub = Math.round(dims.width * 0.022);
+  const headlineFontSize = scaleFontSize(baseHeadline, headline, availableWidth, 3);
+  const subFontSize = scaleFontSize(baseSub, subheadline, availableWidth, 4);
+  const ctaFontSize = Math.round(dims.width * 0.026);
 
   const headlineStyle: React.CSSProperties = {
     color: "#ffffff",
@@ -58,7 +64,7 @@ export function SplitLayoutOverlay(
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          padding: `${dims.safeZone.top}px ${Math.round(dims.width * 0.05)}px ${dims.safeZone.bottom}px ${Math.round(dims.width * 0.04)}px`,
+          padding: `${dims.safeZone.top}px ${padRight}px ${dims.safeZone.bottom}px ${padLeft}px`,
           gap: Math.round(dims.height * 0.02),
         }}
       >

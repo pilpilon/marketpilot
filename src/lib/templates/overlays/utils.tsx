@@ -72,6 +72,28 @@ export function RtlTextBlock(props: {
 }
 
 /**
+ * Dynamically scale font size so text fits within the available width.
+ * Estimates how many lines the text would need at the base size and scales
+ * down when it exceeds `maxLines`. Floor is 50% of base size.
+ */
+export function scaleFontSize(
+  baseFontSize: number,
+  text: string,
+  availableWidth: number,
+  maxLines = 3
+): number {
+  if (!text) return baseFontSize;
+  const avgCharWidth = baseFontSize * 0.6;
+  const charsPerLine = Math.floor(availableWidth / avgCharWidth);
+  const textLen = text.length;
+
+  if (textLen <= charsPerLine * maxLines) return baseFontSize;
+
+  const scale = Math.max(0.5, (charsPerLine * maxLines) / textLen);
+  return Math.round(baseFontSize * scale);
+}
+
+/**
  * Legacy string-based visual RTL — still used by overlay-preview.tsx (CSS client-side).
  * For Satori overlays, use RtlTextBlock instead.
  */
