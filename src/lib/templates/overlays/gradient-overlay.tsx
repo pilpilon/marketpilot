@@ -12,8 +12,8 @@ export function GradientOverlay(
   const subheadline = fields.subheadline || "";
   const pad = Math.round(dims.width * 0.06);
   const availableWidth = dims.width - pad * 2;
-  const headlineFontSize = scaleFontSize(Math.round(dims.width * 0.055), headline, availableWidth, 3);
-  const subFontSize = scaleFontSize(Math.round(dims.width * 0.03), subheadline, availableWidth, 3);
+  const headlineFontSize = scaleFontSize(Math.round(dims.width * 0.048), headline, availableWidth, 3);
+  const subFontSize = scaleFontSize(Math.round(dims.width * 0.026), subheadline, availableWidth, 3);
 
   const headlineStyle: React.CSSProperties = {
     color: "#ffffff",

@@ -60,7 +60,7 @@ export function RtlTextBlock(props: {
 
   // Build the flex container — row-reverse handles RTL word ordering + line wrapping
   // Satori doesn't support `gap` on flex containers, so we use marginLeft for word spacing
-  const { direction: _dir, textAlign: _ta, ...restStyle } = style;
+  const { direction: _dir, textAlign: _ta, wordBreak: _wb, ...restStyle } = style;
 
   return (
     <div
@@ -71,6 +71,9 @@ export function RtlTextBlock(props: {
         flexWrap: "wrap",
         justifyContent: "flex-start",
         alignItems: "baseline",
+        width: "100%",
+        maxWidth: "100%",
+        overflow: "hidden",
       }}
     >
       {words.map((word, i) => (

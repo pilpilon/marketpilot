@@ -13,8 +13,8 @@ export function BottomBarOverlay(
   const cta = fields.cta || "";
   const pad = Math.round(dims.width * 0.06);
   const availableWidth = dims.width - pad * 2;
-  const headlineFontSize = scaleFontSize(Math.round(dims.width * 0.048), headline, availableWidth, 3);
-  const subFontSize = scaleFontSize(Math.round(dims.width * 0.028), subheadline, availableWidth, 3);
+  const headlineFontSize = scaleFontSize(Math.round(dims.width * 0.042), headline, availableWidth, 2);
+  const subFontSize = scaleFontSize(Math.round(dims.width * 0.024), subheadline, availableWidth, 2);
   const ctaFontSize = Math.round(dims.width * 0.028);
   const barHeight = Math.round(dims.height * 0.25);
 

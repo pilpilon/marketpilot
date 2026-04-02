@@ -16,8 +16,8 @@ export function SplitLayoutOverlay(
   const padRight = Math.round(dims.width * 0.03);
   const availableWidth = splitWidth - padLeft - padRight;
 
-  const baseHeadline = Math.round(dims.width * 0.042);
-  const baseSub = Math.round(dims.width * 0.022);
+  const baseHeadline = Math.round(dims.width * 0.038);
+  const baseSub = Math.round(dims.width * 0.020);
   const headlineFontSize = scaleFontSize(baseHeadline, headline, availableWidth, 3);
   const subFontSize = scaleFontSize(baseSub, subheadline, availableWidth, 4);
   const ctaFontSize = Math.round(dims.width * 0.026);
