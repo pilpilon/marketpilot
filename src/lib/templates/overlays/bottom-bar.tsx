@@ -1,20 +1,20 @@
-import type { BrandTokens, PlatformDimensions } from "@/types/templates";
+import type { BrandTokens, PlatformDimensions, FittedSizes } from "@/types/templates";
 import React from "react";
-import { detectDirection, RtlTextBlock, toVisualRtl, scaleFontSize } from "./utils";
+import { detectDirection, RtlTextBlock, toVisualRtl } from "./utils";
 
 export function BottomBarOverlay(
   fields: Record<string, string>,
   brand: BrandTokens,
-  dims: PlatformDimensions
+  dims: PlatformDimensions,
+  fittedSizes?: FittedSizes
 ): React.ReactElement {
   const dir = detectDirection(fields);
   const headline = fields.headline || "";
   const subheadline = fields.subheadline || "";
   const cta = fields.cta || "";
   const pad = Math.round(dims.width * 0.06);
-  const availableWidth = dims.width - pad * 2;
-  const headlineFontSize = scaleFontSize(Math.round(dims.width * 0.042), headline, availableWidth, 2);
-  const subFontSize = scaleFontSize(Math.round(dims.width * 0.024), subheadline, availableWidth, 2);
+  const headlineFontSize = fittedSizes?.headline || Math.round(dims.width * 0.042);
+  const subFontSize = fittedSizes?.subheadline || Math.round(dims.width * 0.024);
   const ctaFontSize = Math.round(dims.width * 0.028);
   const barHeight = Math.round(dims.height * 0.25);
 

@@ -89,36 +89,6 @@ export function RtlTextBlock(props: {
 }
 
 /**
- * Dynamically scale font size so text fits within the available width.
- * Hebrew characters are ~0.75em wide on average (wider than Latin ~0.5em).
- * Iteratively shrinks until text fits in maxLines. Floor is 40% of base.
- */
-export function scaleFontSize(
-  baseFontSize: number,
-  text: string,
-  availableWidth: number,
-  maxLines = 3
-): number {
-  if (!text || !availableWidth) return baseFontSize;
-
-  let fontSize = baseFontSize;
-  const minFont = Math.round(baseFontSize * 0.4);
-  const hasHebrew = /[\u0590-\u05FF]/.test(text);
-  const charWidthRatio = hasHebrew ? 0.75 : 0.55;
-
-  while (fontSize > minFont) {
-    const avgCharWidth = fontSize * charWidthRatio;
-    const charsPerLine = Math.floor(availableWidth / avgCharWidth);
-    if (charsPerLine <= 0) break;
-    const linesNeeded = Math.ceil(text.length / charsPerLine);
-    if (linesNeeded <= maxLines) return fontSize;
-    fontSize -= 2;
-  }
-
-  return Math.max(fontSize, minFont);
-}
-
-/**
  * Legacy string-based visual RTL — still used by overlay-preview.tsx (CSS client-side).
  * For Satori overlays, use RtlTextBlock instead.
  */

@@ -1,19 +1,18 @@
-import type { BrandTokens, PlatformDimensions } from "@/types/templates";
+import type { BrandTokens, PlatformDimensions, FittedSizes } from "@/types/templates";
 import React from "react";
-import { detectDirection, RtlTextBlock, scaleFontSize } from "./utils";
+import { detectDirection, RtlTextBlock } from "./utils";
 
 export function GradientOverlay(
   fields: Record<string, string>,
   brand: BrandTokens,
-  dims: PlatformDimensions
+  dims: PlatformDimensions,
+  fittedSizes?: FittedSizes
 ): React.ReactElement {
   const dir = detectDirection(fields);
   const headline = fields.headline || "";
   const subheadline = fields.subheadline || "";
-  const pad = Math.round(dims.width * 0.06);
-  const availableWidth = dims.width - pad * 2;
-  const headlineFontSize = scaleFontSize(Math.round(dims.width * 0.048), headline, availableWidth, 3);
-  const subFontSize = scaleFontSize(Math.round(dims.width * 0.026), subheadline, availableWidth, 3);
+  const headlineFontSize = fittedSizes?.headline || Math.round(dims.width * 0.048);
+  const subFontSize = fittedSizes?.subheadline || Math.round(dims.width * 0.026);
 
   const headlineStyle: React.CSSProperties = {
     color: "#ffffff",

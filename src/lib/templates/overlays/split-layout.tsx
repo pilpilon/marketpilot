@@ -1,11 +1,12 @@
-import type { BrandTokens, PlatformDimensions } from "@/types/templates";
+import type { BrandTokens, PlatformDimensions, FittedSizes } from "@/types/templates";
 import React from "react";
-import { detectDirection, RtlTextBlock, toVisualRtl, scaleFontSize } from "./utils";
+import { detectDirection, RtlTextBlock, toVisualRtl } from "./utils";
 
 export function SplitLayoutOverlay(
   fields: Record<string, string>,
   brand: BrandTokens,
-  dims: PlatformDimensions
+  dims: PlatformDimensions,
+  fittedSizes?: FittedSizes
 ): React.ReactElement {
   const dir = detectDirection(fields);
   const headline = fields.headline || "";
@@ -14,12 +15,9 @@ export function SplitLayoutOverlay(
   const splitWidth = Math.round(dims.width * 0.50);
   const padLeft = Math.round(dims.width * 0.03);
   const padRight = Math.round(dims.width * 0.03);
-  const availableWidth = splitWidth - padLeft - padRight;
 
-  const baseHeadline = Math.round(dims.width * 0.038);
-  const baseSub = Math.round(dims.width * 0.020);
-  const headlineFontSize = scaleFontSize(baseHeadline, headline, availableWidth, 3);
-  const subFontSize = scaleFontSize(baseSub, subheadline, availableWidth, 4);
+  const headlineFontSize = fittedSizes?.headline || Math.round(dims.width * 0.038);
+  const subFontSize = fittedSizes?.subheadline || Math.round(dims.width * 0.020);
   const ctaFontSize = Math.round(dims.width * 0.026);
 
   const headlineStyle: React.CSSProperties = {

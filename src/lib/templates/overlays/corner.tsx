@@ -1,17 +1,18 @@
-import type { BrandTokens, PlatformDimensions } from "@/types/templates";
+import type { BrandTokens, PlatformDimensions, FittedSizes } from "@/types/templates";
 import React from "react";
 import { detectDirection, RtlTextBlock } from "./utils";
 
 export function CornerOverlay(
   fields: Record<string, string>,
   brand: BrandTokens,
-  dims: PlatformDimensions
+  dims: PlatformDimensions,
+  fittedSizes?: FittedSizes
 ): React.ReactElement {
   const dir = detectDirection(fields);
   const headline = fields.headline || "";
   const subheadline = fields.subheadline || "";
-  const headlineFontSize = Math.round(dims.width * 0.05);
-  const subFontSize = Math.round(dims.width * 0.028);
+  const headlineFontSize = fittedSizes?.headline || Math.round(dims.width * 0.05);
+  const subFontSize = fittedSizes?.subheadline || Math.round(dims.width * 0.028);
   const padX = Math.round(dims.width * 0.06);
   const padY = Math.round(dims.height * 0.04);
 

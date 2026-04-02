@@ -1,18 +1,19 @@
-import type { BrandTokens, PlatformDimensions } from "@/types/templates";
+import type { BrandTokens, PlatformDimensions, FittedSizes } from "@/types/templates";
 import React from "react";
 import { detectDirection, RtlTextBlock, toVisualRtl } from "./utils";
 
 export function FullOverlay(
   fields: Record<string, string>,
   brand: BrandTokens,
-  dims: PlatformDimensions
+  dims: PlatformDimensions,
+  fittedSizes?: FittedSizes
 ): React.ReactElement {
   const dir = detectDirection(fields);
   const headline = fields.headline || "";
   const subheadline = fields.subheadline || "";
   const cta = fields.cta || "";
-  const headlineFontSize = Math.round(dims.width * 0.075);
-  const subFontSize = Math.round(dims.width * 0.035);
+  const headlineFontSize = fittedSizes?.headline || Math.round(dims.width * 0.075);
+  const subFontSize = fittedSizes?.subheadline || Math.round(dims.width * 0.035);
   const ctaFontSize = Math.round(dims.width * 0.03);
 
   const headlineStyle: React.CSSProperties = {
