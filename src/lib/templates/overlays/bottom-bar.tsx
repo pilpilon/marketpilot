@@ -30,7 +30,6 @@ export function BottomBarOverlay(
           flexDirection: "column",
           gap: Math.round(dims.height * 0.012),
           backgroundColor: brand.primaryColor + "e6",
-          overflow: "hidden",
           padding: `${Math.round(barHeight * 0.2)}px ${pad}px`,
           minHeight: barHeight,
           justifyContent: "center",
@@ -38,12 +37,12 @@ export function BottomBarOverlay(
         }}
       >
         {headline && (
-          <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Noto Sans Hebrew", lineHeight: 1.2 }}>
+          <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Noto Sans Hebrew", lineHeight: 1.2, maxWidth: dims.width - pad * 2, whiteSpace: "normal" }}>
             {headline}
           </div>
         )}
         {subheadline && (
-          <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Noto Sans Hebrew", lineHeight: 1.4, opacity: 0.9 }}>
+          <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Noto Sans Hebrew", lineHeight: 1.4, opacity: 0.9, maxWidth: dims.width - pad * 2, whiteSpace: "normal" }}>
             {subheadline}
           </div>
         )}
