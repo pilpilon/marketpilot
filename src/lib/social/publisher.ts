@@ -40,6 +40,17 @@ async function publishToPlatform(ctx: PublishContext): Promise<void> {
       ? `${caption}\n\n${hashtags.map((h) => `#${h}`).join(" ")}`
       : caption;
 
+    // For Facebook, pass project name so the publisher can match the correct Page
+    let publishHint = socialAccount.platform_user_id || undefined;
+    if (socialAccount.platform === "facebook" && ctx.post.project_id) {
+      const { data: proj } = await supabase
+        .from("projects")
+        .select("name")
+        .eq("id", ctx.post.project_id)
+        .single();
+      if (proj?.name) publishHint = proj.name;
+    }
+
     console.log(`[publisher] publishing to ${socialAccount.platform}, media_urls=${JSON.stringify(postPlatform.media_urls)}, caption_length=${fullText.length}`);
 
     let result;
@@ -48,7 +59,7 @@ async function publishToPlatform(ctx: PublishContext): Promise<void> {
         accessToken,
         fullText,
         postPlatform.media_urls,
-        socialAccount.platform_user_id || undefined
+        publishHint
       );
     } else {
       result = await client.publishText(accessToken, fullText);

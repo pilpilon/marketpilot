@@ -29,17 +29,37 @@ export class FacebookClient implements SocialPlatformClient {
     return res.json();
   }
 
+  /**
+   * Resolve the correct Facebook Page for publishing.
+   * Uses projectName (passed via platformUserId field) to match when user manages multiple pages.
+   */
+  private async resolvePage(accessToken: string, projectName?: string) {
+    const pages = await this.request("/me/accounts", accessToken);
+    const allPages = pages.data || [];
+    if (!allPages.length) {
+      throw new Error("No Facebook Pages found. You need a Facebook Page to publish.");
+    }
+
+    // Match by project name if provided
+    if (projectName) {
+      const name = projectName.toLowerCase();
+      const match = allPages.find(
+        (p: { name: string }) =>
+          p.name.toLowerCase().includes(name) || name.includes(p.name.toLowerCase())
+      );
+      if (match) return match;
+    }
+
+    return allPages[0];
+  }
+
   async publishText(
     accessToken: string,
     text: string
   ): Promise<PlatformPublishResult> {
-    // accessToken is the Page access token (stored during connect).
-    // platform_user_id is the Page ID — but publishText doesn't receive it,
-    // so we resolve via /me which returns the Page when using a Page token.
-    const me = await this.request("/me?fields=id", accessToken);
-    const pageId = me.id;
+    const page = await this.resolvePage(accessToken);
 
-    const data = await this.request(`/${pageId}/feed`, accessToken, {
+    const data = await this.request(`/${page.id}/feed`, page.access_token, {
       method: "POST",
       body: JSON.stringify({ message: text }),
     });
@@ -56,15 +76,9 @@ export class FacebookClient implements SocialPlatformClient {
     mediaUrls: string[],
     platformUserId?: string
   ): Promise<PlatformPublishResult> {
-    // accessToken is the Page access token; platformUserId is the Page ID.
-    // Fall back to /me if platformUserId not provided.
-    let pageId = platformUserId;
-    if (!pageId) {
-      const me = await this.request("/me?fields=id", accessToken);
-      pageId = me.id;
-    }
+    const page = await this.resolvePage(accessToken, platformUserId);
 
-    const data = await this.request(`/${pageId}/photos`, accessToken, {
+    const data = await this.request(`/${page.id}/photos`, page.access_token, {
       method: "POST",
       body: JSON.stringify({
         url: mediaUrls[0],
