@@ -162,21 +162,41 @@ export async function GET(
         throw new Error("No Facebook Pages found. You need a Facebook Page to publish.");
       }
 
-      // Pick a page not already connected to another project for this user
-      const { data: existingFbAccounts } = await supabase
-        .from("social_accounts")
-        .select("platform_user_id, project_id")
-        .eq("user_id", user.id)
-        .eq("platform", "facebook")
-        .eq("status", "active");
+      // Get project name for matching
+      const { data: fbProject } = await supabase
+        .from("projects")
+        .select("name")
+        .eq("id", oauthState.project_id)
+        .single();
+      const projectName = (fbProject?.name || "").toLowerCase();
 
-      const usedPageIds = new Set(
-        (existingFbAccounts || [])
-          .filter((a) => a.project_id !== oauthState.project_id)
-          .map((a) => a.platform_user_id)
+      // Pick page: 1) name match with project, 2) unused by other projects, 3) first
+      const nameMatch = fbPages.find((p: { name: string }) =>
+        p.name.toLowerCase().includes(projectName) ||
+        projectName.includes(p.name.toLowerCase())
       );
 
-      const selectedPage = fbPages.find((p: { id: string }) => !usedPageIds.has(p.id)) || fbPages[0];
+      let selectedPage;
+      if (nameMatch) {
+        selectedPage = nameMatch;
+        console.log(`[social-callback] Facebook: matched Page "${nameMatch.name}" by project name "${projectName}"`);
+      } else {
+        // Fallback: pick a page not already used by another project
+        const { data: existingFbAccounts } = await supabase
+          .from("social_accounts")
+          .select("platform_user_id, project_id")
+          .eq("user_id", user.id)
+          .eq("platform", "facebook")
+          .eq("status", "active");
+
+        const usedPageIds = new Set(
+          (existingFbAccounts || [])
+            .filter((a) => a.project_id !== oauthState.project_id)
+            .map((a) => a.platform_user_id)
+        );
+
+        selectedPage = fbPages.find((p: { id: string }) => !usedPageIds.has(p.id)) || fbPages[0];
+      }
       console.log(`[social-callback] Facebook: selected Page "${selectedPage.name}" (${selectedPage.id})`);
 
       profile = {
