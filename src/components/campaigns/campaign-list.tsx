@@ -44,6 +44,7 @@ type CampaignRow = {
   created_at: string;
   campaign_assets: Array<{ id: string }>;
   posts?: Array<{ id: string; status: string }>;
+  pipelineJob?: { status: string; currentStep: string; totalPosts: number | null; completedPosts: number | null };
 };
 
 export function CampaignList({
@@ -202,41 +203,53 @@ export function CampaignList({
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-xs text-muted-foreground">
-                    {campaign.campaign_assets.length} asset
-                    {campaign.campaign_assets.length !== 1 ? "s" : ""}
-                  </span>
-                  {(() => {
-                    const posts = campaign.posts || [];
-                    const scheduled = posts.filter((p) => p.status === "scheduled").length;
-                    const published = posts.filter((p) => p.status === "published").length;
-                    return (
-                      <>
-                        {scheduled > 0 && (
-                          <Badge variant="outline" className="gap-1 border-amber-300 text-amber-600">
-                            <Clock className="h-3 w-3" />
-                            {scheduled} scheduled
-                          </Badge>
-                        )}
-                        {published > 0 && (
-                          <Badge variant="outline" className="gap-1 border-green-300 text-green-600">
-                            <CheckCircle2 className="h-3 w-3" />
-                            {published} published
-                          </Badge>
-                        )}
-                      </>
-                    );
-                  })()}
-                  <Badge
-                    variant={campaign.status === "active" ? "default" : "secondary"}
-                    className={
-                      campaign.status === "active"
-                        ? "bg-primary/10 text-primary border-primary/20"
-                        : ""
-                    }
-                  >
-                    {campaign.status}
-                  </Badge>
+                  {campaign.pipelineJob ? (
+                    <Badge variant="outline" className="gap-1.5 border-purple-300 text-purple-600 animate-pulse">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      {campaign.pipelineJob.currentStep}
+                      {campaign.pipelineJob.totalPosts && campaign.pipelineJob.completedPosts != null
+                        ? ` (${campaign.pipelineJob.completedPosts}/${campaign.pipelineJob.totalPosts})`
+                        : ""}
+                    </Badge>
+                  ) : (
+                    <>
+                      <span className="text-xs text-muted-foreground">
+                        {campaign.campaign_assets.length} asset
+                        {campaign.campaign_assets.length !== 1 ? "s" : ""}
+                      </span>
+                      {(() => {
+                        const posts = campaign.posts || [];
+                        const scheduled = posts.filter((p) => p.status === "scheduled").length;
+                        const published = posts.filter((p) => p.status === "published").length;
+                        return (
+                          <>
+                            {scheduled > 0 && (
+                              <Badge variant="outline" className="gap-1 border-amber-300 text-amber-600">
+                                <Clock className="h-3 w-3" />
+                                {scheduled} scheduled
+                              </Badge>
+                            )}
+                            {published > 0 && (
+                              <Badge variant="outline" className="gap-1 border-green-300 text-green-600">
+                                <CheckCircle2 className="h-3 w-3" />
+                                {published} published
+                              </Badge>
+                            )}
+                          </>
+                        );
+                      })()}
+                      <Badge
+                        variant={campaign.status === "active" ? "default" : "secondary"}
+                        className={
+                          campaign.status === "active"
+                            ? "bg-primary/10 text-primary border-primary/20"
+                            : ""
+                        }
+                      >
+                        {campaign.status}
+                      </Badge>
+                    </>
+                  )}
                 </div>
               </Link>
             </div>
