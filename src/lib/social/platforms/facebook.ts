@@ -33,14 +33,13 @@ export class FacebookClient implements SocialPlatformClient {
     accessToken: string,
     text: string
   ): Promise<PlatformPublishResult> {
-    // Get user's pages and post to the first one
-    const pages = await this.request("/me/accounts", accessToken);
-    const page = pages.data?.[0];
-    if (!page) {
-      throw new Error("No Facebook Pages found. You need a Facebook Page to publish.");
-    }
+    // accessToken is the Page access token (stored during connect).
+    // platform_user_id is the Page ID — but publishText doesn't receive it,
+    // so we resolve via /me which returns the Page when using a Page token.
+    const me = await this.request("/me?fields=id", accessToken);
+    const pageId = me.id;
 
-    const data = await this.request(`/${page.id}/feed`, page.access_token, {
+    const data = await this.request(`/${pageId}/feed`, accessToken, {
       method: "POST",
       body: JSON.stringify({ message: text }),
     });
@@ -54,16 +53,18 @@ export class FacebookClient implements SocialPlatformClient {
   async publishMedia(
     accessToken: string,
     caption: string,
-    mediaUrls: string[]
+    mediaUrls: string[],
+    platformUserId?: string
   ): Promise<PlatformPublishResult> {
-    const pages = await this.request("/me/accounts", accessToken);
-    const page = pages.data?.[0];
-    if (!page) {
-      throw new Error("No Facebook Pages found. You need a Facebook Page to publish.");
+    // accessToken is the Page access token; platformUserId is the Page ID.
+    // Fall back to /me if platformUserId not provided.
+    let pageId = platformUserId;
+    if (!pageId) {
+      const me = await this.request("/me?fields=id", accessToken);
+      pageId = me.id;
     }
 
-    // Post photo with caption
-    const data = await this.request(`/${page.id}/photos`, page.access_token, {
+    const data = await this.request(`/${pageId}/photos`, accessToken, {
       method: "POST",
       body: JSON.stringify({
         url: mediaUrls[0],

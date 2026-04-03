@@ -144,6 +144,51 @@ export async function GET(
 
       // Use the Page access token for publishing (not the user token)
       tokens.accessToken = pageAccessToken;
+    } else if (platform === "facebook") {
+      // Facebook: discover the user's Pages and store the Page (not the user profile).
+      // This ensures each project publishes to the correct Page when the user manages multiple.
+      console.log(`[social-callback] Facebook: discovering Pages via /me/accounts`);
+      const fbPagesRes = await fetch(
+        `https://graph.facebook.com/v22.0/me/accounts?fields=id,name,access_token,picture.type(large)&access_token=${tokens.accessToken}`
+      );
+      if (!fbPagesRes.ok) {
+        throw new Error(`Failed to get Facebook Pages: ${await fbPagesRes.text()}`);
+      }
+      const fbPagesData = await fbPagesRes.json();
+      const fbPages = fbPagesData.data || [];
+      console.log(`[social-callback] Facebook: found ${fbPages.length} Page(s)`);
+
+      if (fbPages.length === 0) {
+        throw new Error("No Facebook Pages found. You need a Facebook Page to publish.");
+      }
+
+      // Pick a page not already connected to another project for this user
+      const { data: existingFbAccounts } = await supabase
+        .from("social_accounts")
+        .select("platform_user_id, project_id")
+        .eq("user_id", user.id)
+        .eq("platform", "facebook")
+        .eq("status", "active");
+
+      const usedPageIds = new Set(
+        (existingFbAccounts || [])
+          .filter((a) => a.project_id !== oauthState.project_id)
+          .map((a) => a.platform_user_id)
+      );
+
+      const selectedPage = fbPages.find((p: { id: string }) => !usedPageIds.has(p.id)) || fbPages[0];
+      console.log(`[social-callback] Facebook: selected Page "${selectedPage.name}" (${selectedPage.id})`);
+
+      profile = {
+        id: selectedPage.id,
+        username: selectedPage.name || selectedPage.id,
+        displayName: selectedPage.name || "",
+        avatarUrl: selectedPage.picture?.data?.url || "",
+      };
+
+      // Use the Page access token for publishing (not the user token)
+      pageAccessToken = selectedPage.access_token;
+      tokens.accessToken = pageAccessToken;
     } else {
       const client = getPlatformClient(platform as Platform);
       profile = await client.getUserProfile(tokens.accessToken);
