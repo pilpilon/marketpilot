@@ -346,14 +346,19 @@ async function runPipeline(params: {
         }
 
         // ── Render template image ──
+        const slideId = slideDef?.id || "main";
         const rendered = await renderTemplateImage({
           supabase: serviceSupabase,
           projectId,
           templateId: planItem.templateId,
           platform: slot.platformKey,
-          slides: [{ slideId: slideDef?.id || "main", fieldValues }],
+          slides: [{ slideId, fieldValues }],
           customInstruction: planItem.postConcept,
         });
+
+        if (!rendered.length) {
+          throw new Error(`No slides rendered for template ${planItem.templateId}, slideId: ${slideId}`);
+        }
 
         const imageBuffer = rendered[0].imageBuffer;
 
