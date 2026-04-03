@@ -40,7 +40,7 @@ export function CornerOverlay(
           backgroundColor: "rgba(0, 0, 0, 0.6)",
           borderRadius: 12,
           padding: `${Math.round(dims.height * 0.02)}px ${Math.round(dims.width * 0.04)}px`,
-          maxWidth: dims.width * 0.65,
+          width: dims.width * 0.65,
           borderLeft: dir === "ltr" ? `4px solid ${brand.accentColor}` : "none",
           borderRight: dir === "rtl" ? `4px solid ${brand.accentColor}` : "none",
           ...textStyle,

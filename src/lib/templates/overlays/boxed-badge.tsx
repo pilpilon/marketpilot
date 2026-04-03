@@ -40,7 +40,7 @@ export function BoxedBadgeOverlay(
           backgroundColor: "#ffffff",
           borderRadius: 20,
           padding: `${Math.round(dims.height * 0.045)}px ${Math.round(dims.width * 0.07)}px`,
-          maxWidth: dims.width * 0.8,
+          width: dims.width * 0.8,
           boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
           ...textStyle,
         }}

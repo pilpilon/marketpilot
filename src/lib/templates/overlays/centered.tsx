@@ -34,7 +34,7 @@ export function CenteredOverlay(
           backgroundColor: "rgba(0, 0, 0, 0.55)",
           borderRadius: 16,
           padding: `${Math.round(dims.height * 0.04)}px ${Math.round(dims.width * 0.08)}px`,
-          maxWidth: dims.width * 0.85,
+          width: dims.width * 0.85,
           direction: dir,
           textAlign: "center",
         }}

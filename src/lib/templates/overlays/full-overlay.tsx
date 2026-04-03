@@ -37,7 +37,7 @@ export function FullOverlay(
         </div>
       )}
       {subheadline && (
-        <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.5, opacity: 0.9, maxWidth: dims.width * 0.75, direction: dir }}>
+        <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.5, opacity: 0.9, width: dims.width * 0.75, direction: dir }}>
           {subheadline}
         </div>
       )}
