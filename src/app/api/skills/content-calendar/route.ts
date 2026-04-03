@@ -441,7 +441,7 @@ Rules:
             campaign_id: campaignId,
             user_id: userId,
             asset_type: "template_render",
-            title: `${slot.platformKey} visual`,
+            title: `${slot.platform} visual`,
             content: planItem.postConcept,
             storage_path: urlData.publicUrl,
             metadata: {
