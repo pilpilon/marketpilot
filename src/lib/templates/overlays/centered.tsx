@@ -40,17 +40,13 @@ export function CenteredOverlay(
         }}
       >
         {headline && (
-          <div style={{ display: "flex", direction: dir }}>
-            <div style={{ color: brand.textColor, fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.2, direction: dir, textAlign: "center" }}>
-              {headline}
-            </div>
+          <div style={{ color: brand.textColor, fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.2, direction: dir, textAlign: "center" }}>
+            {headline}
           </div>
         )}
         {subheadline && (
-          <div style={{ display: "flex", direction: dir }}>
-            <div style={{ color: brand.textColor, fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.4, opacity: 0.9, direction: dir, textAlign: "center" }}>
-              {subheadline}
-            </div>
+          <div style={{ color: brand.textColor, fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.4, opacity: 0.9, direction: dir, textAlign: "center" }}>
+            {subheadline}
           </div>
         )}
       </div>

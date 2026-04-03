@@ -45,23 +45,20 @@ export function BottomBarOverlay(
           }}
         >
           {headline && (
-            <div style={{ display: "flex", direction: dir }}>
-              <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, whiteSpace: "normal", ...textStyle }}>
-                {headline}
-              </div>
+            <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, whiteSpace: "normal", ...textStyle }}>
+              {headline}
             </div>
           )}
           {subheadline && (
-            <div style={{ display: "flex", direction: dir }}>
-              <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.9, whiteSpace: "normal", ...textStyle }}>
-                {subheadline}
-              </div>
+            <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.9, whiteSpace: "normal", ...textStyle }}>
+              {subheadline}
             </div>
           )}
           {cta && (
-            <div style={{ display: "flex", marginTop: Math.round(dims.height * 0.01), direction: dir }}>
+            <div style={{ marginTop: Math.round(dims.height * 0.01), ...textStyle }}>
               <div
                 style={{
+                  display: "inline-block",
                   color: brand.primaryColor,
                   backgroundColor: "#ffffff",
                   fontSize: ctaFontSize,

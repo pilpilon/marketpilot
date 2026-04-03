@@ -47,17 +47,13 @@ export function CornerOverlay(
         }}
       >
         {headline && (
-          <div style={{ display: "flex", direction: dir }}>
-            <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.25, ...textStyle }}>
-              {headline}
-            </div>
+          <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.25, ...textStyle }}>
+            {headline}
           </div>
         )}
         {subheadline && (
-          <div style={{ display: "flex", direction: dir }}>
-            <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.4, opacity: 0.85, ...textStyle }}>
-              {subheadline}
-            </div>
+          <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.4, opacity: 0.85, ...textStyle }}>
+            {subheadline}
           </div>
         )}
       </div>

@@ -32,29 +32,29 @@ export function FullOverlay(
       }}
     >
       {headline && (
-        <div style={{ display: "flex", direction: dir }}>
-          <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 800, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.15, letterSpacing: "-0.02em", direction: dir, textAlign: "center" }}>
-            {headline}
-          </div>
+        <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 800, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.15, letterSpacing: "-0.02em", direction: dir, textAlign: "center" }}>
+          {headline}
         </div>
       )}
       {subheadline && (
-        <div style={{ display: "flex", direction: dir }}>
-          <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.5, opacity: 0.9, width: dims.width * 0.75, direction: dir, textAlign: "center" }}>
-            {subheadline}
-          </div>
+        <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.5, opacity: 0.9, width: dims.width * 0.75, direction: dir, textAlign: "center" }}>
+          {subheadline}
         </div>
       )}
       {cta && (
-        <div style={{ display: "flex", marginTop: Math.round(dims.height * 0.015) }}>
+        <div style={{ marginTop: Math.round(dims.height * 0.015), textAlign: "center" }}>
           <div
             style={{
+              display: "inline-block",
               color: brand.primaryColor,
               backgroundColor: "#ffffff",
               fontSize: ctaFontSize,
               fontWeight: 700,
               fontFamily: "Inter, Heebo",
-              padding: `${Math.round(dims.height * 0.015)}px ${Math.round(dims.width * 0.06)}px`,
+              paddingTop: Math.round(dims.height * 0.015),
+              paddingBottom: Math.round(dims.height * 0.015),
+              paddingLeft: Math.round(dims.width * 0.06),
+              paddingRight: Math.round(dims.width * 0.06),
               borderRadius: 12,
             }}
           >

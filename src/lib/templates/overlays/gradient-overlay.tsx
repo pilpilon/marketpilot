@@ -49,17 +49,13 @@ export function GradientOverlay(
           }}
         >
           {headline && (
-            <div style={{ display: "flex", direction: dir }}>
-              <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, whiteSpace: "normal", ...textStyle }}>
-                {headline}
-              </div>
+            <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, whiteSpace: "normal", ...textStyle }}>
+              {headline}
             </div>
           )}
           {subheadline && (
-            <div style={{ display: "flex", direction: dir }}>
-              <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.85, whiteSpace: "normal", ...textStyle }}>
-                {subheadline}
-              </div>
+            <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.85, whiteSpace: "normal", ...textStyle }}>
+              {subheadline}
             </div>
           )}
         </div>
