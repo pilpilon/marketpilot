@@ -171,10 +171,13 @@ export async function GET(
       const projectName = (fbProject?.name || "").toLowerCase();
 
       // Pick page: 1) name match with project, 2) unused by other projects, 3) first
-      const nameMatch = fbPages.find((p: { name: string }) =>
-        p.name.toLowerCase().includes(projectName) ||
-        projectName.includes(p.name.toLowerCase())
-      );
+      console.log(`[social-callback] Facebook: project name="${projectName}", pages=[${fbPages.map((p: { name: string; id: string }) => `"${p.name}" (${p.id})`).join(", ")}]`);
+      const nameMatch = projectName.length > 0
+        ? fbPages.find((p: { name: string }) =>
+            p.name.toLowerCase().includes(projectName) ||
+            projectName.includes(p.name.toLowerCase())
+          )
+        : undefined;
 
       let selectedPage;
       if (nameMatch) {
@@ -207,6 +210,10 @@ export async function GET(
       };
 
       // Use the Page access token for publishing (not the user token)
+      if (!selectedPage.access_token) {
+        console.error(`[social-callback] Facebook: Page "${selectedPage.name}" has no access_token! Pages data:`, JSON.stringify(fbPages.map((p: { id: string; name: string; access_token?: string }) => ({ id: p.id, name: p.name, hasToken: !!p.access_token }))));
+        throw new Error(`Facebook Page "${selectedPage.name}" did not return an access token. Please ensure MarketPilot has manage_posts permission for this page.`);
+      }
       pageAccessToken = selectedPage.access_token;
       tokens.accessToken = pageAccessToken;
     } else {
