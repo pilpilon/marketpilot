@@ -249,7 +249,7 @@ export function TemplateCustomizer({
                 </SelectTrigger>
                 <SelectContent>
                   {platformOptions
-                    .filter((p) => template.platforms.includes(p.value))
+                    .filter((p) => template.platforms.includes(p.value) || template.platforms.includes(p.platform))
                     .map((p) => (
                       <SelectItem key={p.value} value={p.value}>
                         <span className="flex items-center gap-2">
