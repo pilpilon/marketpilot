@@ -26,13 +26,13 @@ export function BottomBarOverlay(
     <div style={{ width: dims.width, height: dims.height, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
       <div
         style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
           backgroundColor: brand.primaryColor + "e6",
           minHeight: barHeight,
           paddingTop: Math.round(barHeight * 0.25),
           paddingBottom: Math.round(barHeight * 0.3),
+          paddingLeft: pad,
+          paddingRight: pad,
+          ...textStyle,
         }}
       >
         <div
@@ -40,8 +40,6 @@ export function BottomBarOverlay(
             display: "flex",
             flexDirection: "column",
             gap: Math.round(dims.height * 0.012),
-            width: dims.width - pad * 2,
-            ...textStyle,
           }}
         >
           {headline && (

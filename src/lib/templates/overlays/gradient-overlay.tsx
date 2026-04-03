@@ -32,11 +32,11 @@ export function GradientOverlay(
     >
       <div
         style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
           paddingTop: Math.round(dims.height * 0.05),
           paddingBottom: dims.safeZone.bottom + Math.round(dims.height * 0.03),
+          paddingLeft: pad,
+          paddingRight: pad,
+          ...textStyle,
         }}
       >
         <div
@@ -44,8 +44,6 @@ export function GradientOverlay(
             display: "flex",
             flexDirection: "column",
             gap: Math.round(dims.height * 0.015),
-            width: dims.width - pad * 2,
-            ...textStyle,
           }}
         >
           {headline && (
