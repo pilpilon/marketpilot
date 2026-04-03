@@ -12,11 +12,7 @@ export function GradientOverlay(
   const subheadline = fields.subheadline || "";
   const headlineFontSize = Math.round(dims.width * 0.055);
   const subFontSize = Math.round(dims.width * 0.03);
-
-  const textStyle: React.CSSProperties = {
-    direction: dir,
-    textAlign: dir === "rtl" ? "right" : "left",
-  };
+  const pad = Math.round(dims.width * 0.06);
 
   return (
     <div
@@ -33,20 +29,30 @@ export function GradientOverlay(
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: Math.round(dims.height * 0.015),
-          padding: `${Math.round(dims.height * 0.05)}px ${Math.round(dims.width * 0.06)}px ${dims.safeZone.bottom + Math.round(dims.height * 0.03)}px`,
+          alignItems: "center",
+          paddingTop: Math.round(dims.height * 0.05),
+          paddingBottom: dims.safeZone.bottom + Math.round(dims.height * 0.03),
         }}
       >
-        {headline && (
-          <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, direction: dir, whiteSpace: "normal", width: dims.width * 0.88 }}>
-            {headline}
-          </div>
-        )}
-        {subheadline && (
-          <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.85, direction: dir, whiteSpace: "normal", width: dims.width * 0.88 }}>
-            {subheadline}
-          </div>
-        )}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: Math.round(dims.height * 0.015),
+            width: dims.width - pad * 2,
+          }}
+        >
+          {headline && (
+            <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, direction: dir, whiteSpace: "normal" }}>
+              {headline}
+            </div>
+          )}
+          {subheadline && (
+            <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.85, direction: dir, whiteSpace: "normal" }}>
+              {subheadline}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

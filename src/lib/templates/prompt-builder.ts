@@ -73,7 +73,8 @@ export function buildImagePrompt(params: {
   const qualityLines = [
     "- Studio-quality, editorial-grade composition",
     "- Crisp details, intentional whitespace",
-    "- No text overlays, no watermarks, no logos",
+    "- CRITICAL: Do NOT include ANY text, words, letters, numbers, typography, captions, titles, headings, labels, or written content anywhere in the image. The image must be purely visual — text will be added separately as an overlay.",
+    "- No watermarks, no logos, no brand names, no UI elements",
     `- Platform-optimized layout for ${platformLabel}`,
     "- Photorealistic or high-quality illustration (match the visual style)",
     "- Suitable for professional brand social media",
@@ -91,7 +92,7 @@ export function buildImagePrompt(params: {
   const prompt = sections.join("\n");
 
   const negativePrompt = [
-    "text",
+    "text", "words", "letters", "numbers", "typography", "captions", "titles", "labels", "writing", "font",
     "watermark",
     "logo",
     "low quality",
