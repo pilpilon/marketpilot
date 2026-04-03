@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -27,6 +28,7 @@ import {
   Zap,
   Brain,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 function useProjectId() {
   const pathname = usePathname();
@@ -34,9 +36,27 @@ function useProjectId() {
   return match ? match[1] : null;
 }
 
+function useProjectName(projectId: string | null) {
+  const [name, setName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!projectId) { setName(null); return; }
+    const supabase = createClient();
+    supabase
+      .from("projects")
+      .select("name")
+      .eq("id", projectId)
+      .single()
+      .then(({ data }) => setName((data as { name: string } | null)?.name || null));
+  }, [projectId]);
+
+  return name;
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
   const projectId = useProjectId();
+  const projectName = useProjectName(projectId);
   const t = useTranslations("sidebar");
 
   const mainNav = [
@@ -68,9 +88,16 @@ export function AppSidebar() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg primary-gradient text-white font-bold text-sm font-heading shrink-0">
             MP
           </div>
-          <span className="font-heading font-bold text-base tracking-tight group-hover:text-primary transition-colors">
-            MarketPilot
-          </span>
+          <div className="flex flex-col min-w-0">
+            <span className="font-heading font-bold text-base tracking-tight group-hover:text-primary transition-colors">
+              MarketPilot
+            </span>
+            {projectName && (
+              <span className="text-xs text-muted-foreground truncate">
+                {projectName}
+              </span>
+            )}
+          </div>
         </Link>
       </SidebarHeader>
 
