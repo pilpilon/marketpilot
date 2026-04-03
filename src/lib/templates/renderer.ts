@@ -5,7 +5,7 @@ import { getOverlayRenderer } from "./overlay-registry";
 
 // ─── Font Loading (cached at module scope — loaded once per cold start) ──────
 
-type FontEntry = { name: string; data: ArrayBuffer; weight: 400 | 700; style: "normal" };
+type FontEntry = { name: string; data: ArrayBuffer; weight: 400 | 700 | 800; style: "normal" };
 
 let fontsPromise: Promise<FontEntry[]> | null = null;
 
@@ -15,21 +15,24 @@ async function loadFonts(): Promise<FontEntry[]> {
   fontsPromise = (async () => {
     const interRegularUrl = "https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf";
     const interBoldUrl = "https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf";
-    const notoHebrewRegularUrl = "https://fonts.gstatic.com/s/notosanshebrew/v50/or3HQ7v33eiDljA1IufXTtVf7V6RvEEdhQlk0LlGxCyaeNKYZC0sqk3xXGiXd4qtog.ttf";
-    const notoHebrewBoldUrl = "https://fonts.gstatic.com/s/notosanshebrew/v50/or3HQ7v33eiDljA1IufXTtVf7V6RvEEdhQlk0LlGxCyaeNKYZC0sqk3xXGiXkI2tog.ttf";
+    const heeboRegularUrl = "https://fonts.gstatic.com/s/heebo/v28/NGSpv5_NC0k9P_v6ZUCbLRAHxK1EiSysd0mj.ttf";
+    const heeboBoldUrl = "https://fonts.gstatic.com/s/heebo/v28/NGSpv5_NC0k9P_v6ZUCbLRAHxK1Ebiusd0mj.ttf";
+    const heeboExtraBoldUrl = "https://fonts.gstatic.com/s/heebo/v28/NGSpv5_NC0k9P_v6ZUCbLRAHxK1ECSusd0mj.ttf";
 
-    const [interRegular, interBold, hebrewRegular, hebrewBold] = await Promise.all([
+    const [interRegular, interBold, hebrewRegular, hebrewBold, hebrewExtraBold] = await Promise.all([
       fetch(interRegularUrl).then((r) => r.arrayBuffer()),
       fetch(interBoldUrl).then((r) => r.arrayBuffer()),
-      fetch(notoHebrewRegularUrl).then((r) => r.arrayBuffer()),
-      fetch(notoHebrewBoldUrl).then((r) => r.arrayBuffer()),
+      fetch(heeboRegularUrl).then((r) => r.arrayBuffer()),
+      fetch(heeboBoldUrl).then((r) => r.arrayBuffer()),
+      fetch(heeboExtraBoldUrl).then((r) => r.arrayBuffer()),
     ]);
 
     return [
       { name: "Inter", data: interRegular, weight: 400 as const, style: "normal" as const },
       { name: "Inter", data: interBold, weight: 700 as const, style: "normal" as const },
-      { name: "Noto Sans Hebrew", data: hebrewRegular, weight: 400 as const, style: "normal" as const },
-      { name: "Noto Sans Hebrew", data: hebrewBold, weight: 700 as const, style: "normal" as const },
+      { name: "Heebo", data: hebrewRegular, weight: 400 as const, style: "normal" as const },
+      { name: "Heebo", data: hebrewBold, weight: 700 as const, style: "normal" as const },
+      { name: "Heebo", data: hebrewExtraBold, weight: 800 as const, style: "normal" as const },
     ];
   })();
 

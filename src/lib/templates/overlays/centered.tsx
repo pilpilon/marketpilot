@@ -40,12 +40,12 @@ export function CenteredOverlay(
         }}
       >
         {headline && (
-          <div style={{ color: brand.textColor, fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Noto Sans Hebrew", lineHeight: 1.2 }}>
+          <div style={{ color: brand.textColor, fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2 }}>
             {headline}
           </div>
         )}
         {subheadline && (
-          <div style={{ color: brand.textColor, fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Noto Sans Hebrew", lineHeight: 1.4, opacity: 0.9 }}>
+          <div style={{ color: brand.textColor, fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.9 }}>
             {subheadline}
           </div>
         )}

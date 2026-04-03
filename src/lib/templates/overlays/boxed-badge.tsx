@@ -49,12 +49,12 @@ export function BoxedBadgeOverlay(
           {"\u201C"}
         </div>
         {headline && (
-          <div style={{ color: "#1a1a2e", fontSize: headlineFontSize, fontWeight: 500, fontFamily: "Inter, Noto Sans Hebrew", lineHeight: 1.5, fontStyle: "italic" }}>
+          <div style={{ color: "#1a1a2e", fontSize: headlineFontSize, fontWeight: 500, fontFamily: "Inter, Heebo", lineHeight: 1.5, fontStyle: "italic" }}>
             {headline}
           </div>
         )}
         {subheadline && (
-          <div style={{ color: "#555", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Noto Sans Hebrew", lineHeight: 1.4 }}>
+          <div style={{ color: "#555", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4 }}>
             {subheadline}
           </div>
         )}
@@ -69,7 +69,7 @@ export function BoxedBadgeOverlay(
             }}
           >
             <div style={{ width: 40, height: 2, backgroundColor: brand.accentColor }} />
-            <div style={{ color: brand.primaryColor, fontSize: attrFontSize, fontWeight: 600, fontFamily: "Inter, Noto Sans Hebrew" }}>
+            <div style={{ color: brand.primaryColor, fontSize: attrFontSize, fontWeight: 600, fontFamily: "Inter, Heebo" }}>
               {attribution}
             </div>
           </div>

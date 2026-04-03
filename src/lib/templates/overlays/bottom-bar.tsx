@@ -27,13 +27,15 @@ export function BottomBarOverlay(
       <div
         style={{
           display: "flex",
-          alignItems: "center",
+          alignItems: dir === "rtl" ? "flex-end" : "flex-start",
           justifyContent: "center",
           backgroundColor: brand.primaryColor + "e6",
           overflow: "hidden",
           minHeight: barHeight,
-          paddingTop: Math.round(barHeight * 0.2),
-          paddingBottom: Math.round(barHeight * 0.2),
+          paddingTop: Math.round(barHeight * 0.25),
+          paddingBottom: Math.round(barHeight * 0.3),
+          paddingLeft: pad,
+          paddingRight: pad,
         }}
       >
         <div
@@ -47,12 +49,12 @@ export function BottomBarOverlay(
           }}
         >
           {headline && (
-            <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Noto Sans Hebrew", lineHeight: 1.2, whiteSpace: "normal" }}>
+            <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, whiteSpace: "normal" }}>
               {headline}
             </div>
           )}
           {subheadline && (
-            <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Noto Sans Hebrew", lineHeight: 1.4, opacity: 0.9, whiteSpace: "normal" }}>
+            <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.9, whiteSpace: "normal" }}>
               {subheadline}
             </div>
           )}
@@ -64,7 +66,7 @@ export function BottomBarOverlay(
                   backgroundColor: "#ffffff",
                   fontSize: ctaFontSize,
                   fontWeight: 600,
-                  fontFamily: "Inter, Noto Sans Hebrew",
+                  fontFamily: "Inter, Heebo",
                   paddingTop: Math.round(dims.height * 0.01),
                   paddingBottom: Math.round(dims.height * 0.01),
                   paddingLeft: Math.round(dims.width * 0.04),
