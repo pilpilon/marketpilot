@@ -49,12 +49,12 @@ export function BottomBarOverlay(
           }}
         >
           {headline && (
-            <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, whiteSpace: "normal" }}>
+            <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, whiteSpace: "normal", textAlign: dir === "rtl" ? "right" : "left" }}>
               {headline}
             </div>
           )}
           {subheadline && (
-            <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.9, whiteSpace: "normal" }}>
+            <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.9, whiteSpace: "normal", textAlign: dir === "rtl" ? "right" : "left" }}>
               {subheadline}
             </div>
           )}

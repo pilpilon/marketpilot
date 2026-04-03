@@ -32,12 +32,12 @@ export function FullOverlay(
       }}
     >
       {headline && (
-        <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 800, fontFamily: "Inter, Heebo", lineHeight: 1.15, letterSpacing: "-0.02em" }}>
+        <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 800, fontFamily: "Inter, Heebo", textAlign: dir === "rtl" ? "right" : "left", lineHeight: 1.15, letterSpacing: "-0.02em" }}>
           {headline}
         </div>
       )}
       {subheadline && (
-        <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.5, opacity: 0.9, maxWidth: dims.width * 0.75 }}>
+        <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", textAlign: dir === "rtl" ? "right" : "left", lineHeight: 1.5, opacity: 0.9, maxWidth: dims.width * 0.75 }}>
           {subheadline}
         </div>
       )}
