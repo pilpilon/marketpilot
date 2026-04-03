@@ -70,6 +70,7 @@ const platformConfigs: Record<Platform, () => OAuthConfig> = {
       "pages_read_engagement",
       "pages_manage_posts",
       "pages_read_user_content",
+      "business_management",
     ],
     usePKCE: false,
   }),
