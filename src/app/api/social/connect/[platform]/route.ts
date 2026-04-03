@@ -66,7 +66,7 @@ export async function GET(
   const redirectUri = `${origin}/api/social/callback/${platform}`;
 
   // Store state for CSRF validation
-  await supabase.from("oauth_states").insert({
+  const { error: stateError } = await supabase.from("oauth_states").insert({
     user_id: user.id,
     platform: platform as Platform,
     state_token: state,
@@ -74,6 +74,11 @@ export async function GET(
     project_id: projectId,
     expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 min
   });
+
+  if (stateError) {
+    console.error(`[social-connect] Failed to store OAuth state:`, stateError.message);
+    return NextResponse.json({ error: "Failed to initiate OAuth" }, { status: 500 });
+  }
 
   const authUrl = buildAuthorizationUrl(
     platform as Platform,
