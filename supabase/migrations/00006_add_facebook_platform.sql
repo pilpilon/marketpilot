@@ -8,3 +8,7 @@ ALTER TABLE public.oauth_states ADD CONSTRAINT oauth_states_platform_check
 ALTER TABLE public.social_accounts DROP CONSTRAINT IF EXISTS social_accounts_platform_check;
 ALTER TABLE public.social_accounts ADD CONSTRAINT social_accounts_platform_check
   CHECK (platform IN ('twitter', 'instagram', 'tiktok', 'facebook'));
+
+ALTER TABLE public.post_platforms DROP CONSTRAINT IF EXISTS post_platforms_platform_check;
+ALTER TABLE public.post_platforms ADD CONSTRAINT post_platforms_platform_check
+  CHECK (platform IN ('twitter', 'instagram', 'tiktok', 'facebook'));
