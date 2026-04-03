@@ -6,10 +6,13 @@ import { parseProjectSettings, buildLocaleContext } from "@/lib/ai/locale-contex
 import { researchTrendingTopics } from "@/lib/ai/trending-research";
 import { loadBrandContext } from "@/lib/templates/brand-tokens";
 import { buildScheduleSlots, type TimeRange, type PostSlot } from "@/lib/skills/schedule-builder";
-import { generateCreativeImage, type BrandContext } from "@/lib/skills/creative-designer";
-import { SYSTEM_TEMPLATES } from "@/lib/templates/system-templates";
+import { renderTemplateImage } from "@/lib/templates/render-template-image";
+import { findSystemTemplate, SYSTEM_TEMPLATES } from "@/lib/templates/system-templates";
+import { getCondensedStorytellingGuidance } from "@/lib/ai/storytelling-framework";
 
 export const maxDuration = 300;
+
+type BrandContext = Awaited<ReturnType<typeof loadBrandContext>>;
 
 const VALID_TIME_RANGES: TimeRange[] = ["1_week", "2_weeks", "3_weeks", "1_month"];
 
@@ -20,6 +23,7 @@ interface ContentPlanPost {
   postConcept: string;
   headline: string;
   subheadline: string;
+  cta: string;
 }
 
 function buildContextBlock(
@@ -52,6 +56,7 @@ function extractNiche(files: Array<{ file_type: string; content: string }>): str
 function getTemplateCategories(): string {
   const categories = new Map<string, string>();
   for (const t of SYSTEM_TEMPLATES) {
+    if (t.format !== "single") continue; // Only single-slide templates for content calendar
     if (!categories.has(t.category)) {
       categories.set(t.category, t.description);
     }
@@ -61,17 +66,31 @@ function getTemplateCategories(): string {
     .join("\n");
 }
 
-/** Find a suitable template ID for a category + platform */
+/** Find a suitable single-slide template ID for a category + platform */
 function findTemplateId(category: string, platformKey: string): string {
   const match = SYSTEM_TEMPLATES.find(
-    (t) => t.category === category && t.platforms.includes(platformKey)
+    (t) => t.format === "single" && t.category === category && t.platforms.includes(platformKey)
   );
   if (match) return match.id;
-  // Fallback: any template in that category
-  const catMatch = SYSTEM_TEMPLATES.find((t) => t.category === category);
+  // Fallback: any single template in that category
+  const catMatch = SYSTEM_TEMPLATES.find((t) => t.format === "single" && t.category === category);
   if (catMatch) return catMatch.id;
-  // Last resort
-  return SYSTEM_TEMPLATES[0]?.id || "sys-promo-bottom-bar";
+  // Last resort: first single template
+  const anySingle = SYSTEM_TEMPLATES.find((t) => t.format === "single");
+  return anySingle?.id || "sys-promo-bottom-bar";
+}
+
+/** Default CTA text when the AI doesn't provide one */
+function defaultCtaForCategory(category: string): string {
+  const map: Record<string, string> = {
+    promotional: "Shop Now",
+    product_showcase: "Learn More",
+    announcement: "Stay Tuned",
+    educational: "",
+    quote: "",
+    testimonial: "",
+  };
+  return map[category] || "";
 }
 
 export async function POST(request: Request) {
@@ -225,8 +244,6 @@ async function runPipeline(params: {
     throw new Error("No brand intelligence found. Run the analyzer first.");
   }
 
-  const context = buildContextBlock(contextFiles as Array<{ file_type: string; content: string }>);
-
   // Research trending topics
   await updateJob(serviceSupabase, jobId, { current_step: "Researching trending topics..." });
   const niche = extractNiche(contextFiles as Array<{ file_type: string; content: string }>);
@@ -282,8 +299,8 @@ async function runPipeline(params: {
     slots,
   });
 
-  // ── Step B: Image Generation ──────────────────────────────────────────────
-  await updateJob(serviceSupabase, jobId, { status: "generating", current_step: "Generating images...", completed_posts: 0 });
+  // ── Step B: Template Rendering ────────────────────────────────────────────
+  await updateJob(serviceSupabase, jobId, { status: "generating", current_step: "Rendering template images...", completed_posts: 0 });
 
   const generatedPosts: Array<{
     slot: PostSlot;
@@ -298,6 +315,10 @@ async function runPipeline(params: {
   const warnings: string[] = [];
   const BATCH_SIZE = 3;
 
+  // Gemini text model for caption generation
+  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+
   for (let i = 0; i < contentPlan.length; i += BATCH_SIZE) {
     const batch = contentPlan.slice(i, i + BATCH_SIZE);
 
@@ -306,25 +327,139 @@ async function runPipeline(params: {
         const slot = slots[planItem.slotIndex];
         if (!slot) throw new Error(`Invalid slot index: ${planItem.slotIndex}`);
 
-        const result = await generateCreativeImage({
+        // ── Build field values from content plan ──
+        const template = findSystemTemplate(planItem.templateId);
+        const slideDef = template?.slides[0];
+        const fieldValues: Record<string, string> = {
+          headline: planItem.headline,
+          subheadline: planItem.subheadline || "",
+        };
+
+        // Add CTA if the template has a cta field
+        if (slideDef?.fields.some((f) => f.id === "cta")) {
+          fieldValues.cta = planItem.cta || defaultCtaForCategory(planItem.category);
+        }
+
+        // For testimonial templates, map subheadline to attribution if needed
+        if (planItem.category === "testimonial" && slideDef?.fields.some((f) => f.id === "attribution")) {
+          fieldValues.attribution = planItem.subheadline || "";
+        }
+
+        // ── Render template image ──
+        const rendered = await renderTemplateImage({
           supabase: serviceSupabase,
-          userId,
           projectId,
-          campaignId,
-          postContent: planItem.postConcept,
+          templateId: planItem.templateId,
           platform: slot.platformKey,
-          brandContext,
-          customInstruction: `Content category: ${planItem.category}. Headline: ${planItem.headline}. ${planItem.subheadline || ""}`,
-          localeContext: localeCtx.skillContext,
+          slides: [{ slideId: slideDef?.id || "main", fieldValues }],
+          customInstruction: planItem.postConcept,
         });
+
+        const imageBuffer = rendered[0].imageBuffer;
+
+        // ── Upload to storage ──
+        const fileName = `${userId}/${projectId}/${Date.now()}-${planItem.templateId}-${slot.platformKey}.jpg`;
+        const { error: uploadError } = await serviceSupabase.storage
+          .from("generated-images")
+          .upload(fileName, imageBuffer, { contentType: "image/jpeg", upsert: false });
+
+        if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+
+        const { data: urlData } = serviceSupabase.storage
+          .from("generated-images")
+          .getPublicUrl(fileName);
+
+        // ── Generate caption + hashtags ──
+        let generatedCaption = "";
+        let generatedHashtags: string[] = [];
+
+        try {
+          if (genAI) {
+            const platformLabel = slot.platformKey.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
+            const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+            const captionResult = await textModel.generateContent(
+              `You are an expert social media copywriter. Write a single high-performing caption and hashtags for a ${platformLabel} post.
+
+BRAND CONTEXT:
+- Personality: ${brandContext.brandPersonality || "professional and engaging"}
+- Positioning: ${brandContext.brandPositioning || ""}
+- Product: ${brandContext.productContext || ""}
+- Audience: ${brandContext.audienceContext || ""}
+
+POST CONCEPT:
+${planItem.postConcept}
+
+HEADLINE: ${planItem.headline}
+
+${getCondensedStorytellingGuidance()}
+
+PLATFORM: ${platformLabel}
+
+OUTPUT FORMAT (follow exactly):
+CAPTION: [your caption — ready to publish, no quotes]
+HASHTAGS: [comma-separated hashtags without # prefix]
+
+Rules:
+- Caption must be platform-appropriate in length and tone
+- Use the brand voice from the context above
+- Do not repeat the headline verbatim — expand it as engaging copy
+- Include 5-10 relevant hashtags
+- No intro text, no explanations — just CAPTION and HASHTAGS`
+            );
+
+            const captionText = captionResult.response.text().trim();
+            const captionMatch = captionText.match(/CAPTION:\s*([\s\S]*?)(?=HASHTAGS:|$)/i);
+            const hashtagsMatch = captionText.match(/HASHTAGS:\s*([\s\S]*?)$/i);
+
+            if (captionMatch?.[1]) generatedCaption = captionMatch[1].trim();
+            if (hashtagsMatch?.[1]) {
+              generatedHashtags = hashtagsMatch[1]
+                .trim()
+                .split(/[,\n]+/)
+                .map((h) => h.trim().replace(/^#/, ""))
+                .filter(Boolean);
+            }
+          }
+        } catch {
+          // Caption generation is best-effort
+        }
+
+        // ── Save as campaign asset ──
+        const { data: asset, error: assetError } = await serviceSupabase
+          .from("campaign_assets")
+          .insert({
+            campaign_id: campaignId,
+            user_id: userId,
+            asset_type: "template_render",
+            title: `${slot.platformKey} visual`,
+            content: planItem.postConcept,
+            storage_path: urlData.publicUrl,
+            metadata: {
+              template_id: planItem.templateId,
+              slide_id: slideDef?.id || "main",
+              platform: slot.platformKey,
+              category: planItem.category,
+              model_tier: "nb2",
+              overlay_style: slideDef?.overlayStyle,
+              mime_type: "image/jpeg",
+              file_name: fileName,
+              ...(generatedCaption && { caption: generatedCaption }),
+              ...(generatedHashtags.length > 0 && { hashtags: generatedHashtags }),
+            },
+            status: "draft",
+          })
+          .select()
+          .single();
+
+        if (assetError) throw new Error(`Asset creation failed: ${assetError.message}`);
 
         return {
           slot,
           plan: planItem,
-          assetId: result.assetId,
-          imageUrl: result.imageUrl,
-          caption: result.caption,
-          hashtags: result.hashtags,
+          assetId: (asset as { id: string }).id,
+          imageUrl: urlData.publicUrl,
+          caption: generatedCaption || planItem.headline,
+          hashtags: generatedHashtags,
           failed: false,
         };
       })
@@ -346,7 +481,7 @@ async function runPipeline(params: {
             hashtags: [],
             failed: true,
           });
-          warnings.push(`Image generation failed for ${slot.platform} on ${slot.date}: ${r.reason}`);
+          warnings.push(`Template rendering failed for ${slot.platform} on ${slot.date}: ${r.reason}`);
         }
       }
     }
@@ -354,7 +489,7 @@ async function runPipeline(params: {
     // Update progress
     await updateJob(serviceSupabase, jobId, {
       completed_posts: Math.min(generatedPosts.length, slots.length),
-      current_step: `Generated ${generatedPosts.length} of ${slots.length} images...`,
+      current_step: `Rendered ${generatedPosts.length} of ${slots.length} images...`,
     });
 
     // Rate limit delay between batches
@@ -479,7 +614,7 @@ async function generateContentPlan(params: {
 BRAND VOICE & PERSONALITY:
 ${brandContext.brandPersonality || "professional, engaging, modern"}
 
-Write ALL headlines and subheadlines in this voice. Be consistent with the brand's tone throughout.
+Write ALL headlines, subheadlines, and CTAs in this voice. Be consistent with the brand's tone throughout.
 
 TARGET AUDIENCE:
 ${brandContext.audienceContext || "general consumers"}
@@ -499,7 +634,7 @@ ${brandContext.intakePatterns ? `PROVEN CONTENT PATTERNS (from past successful p
 ${trendingContext ? `CURRENT TRENDING TOPICS:\n${trendingContext}\n\nWeave timely topics into the first week where they fit naturally.\n` : ""}
 ${localeCtx || ""}
 
-LANGUAGE: All headlines, subheadlines, and text MUST be written in ${lang}.
+LANGUAGE: All headlines, subheadlines, CTAs, and text MUST be written in ${lang}.
 
 SCHEDULE SLOTS:
 ${JSON.stringify(slotsJson, null, 2)}
@@ -513,14 +648,15 @@ Each entry:
 {
   "slotIndex": <number matching the slot index>,
   "category": "<one of: promotional, educational, quote, announcement, product_showcase, testimonial>",
-  "postConcept": "<detailed visual description for image generation — be specific about the scene, composition, mood, match the visual style above>",
+  "postConcept": "<detailed visual description for background image generation — describe the scene, composition, mood, match the visual style. DO NOT include text in the image — text is added as an overlay>",
   "headline": "<3-6 words, punchy, in ${lang}>",
-  "subheadline": "<8-15 words supporting the headline, in ${lang}>"
+  "subheadline": "<8-15 words supporting the headline, in ${lang}>",
+  "cta": "<short call to action, 2-4 words in ${lang}. For educational/quote categories, use empty string>"
 }
 
 Rules:
 - Mix categories for variety: ~25% educational, ~25% product_showcase, ~15% promotional, ~15% quote, ~10% announcement, ~10% testimonial
-- Each postConcept must be unique, specific, and aligned with the visual style direction
+- Each postConcept must describe a VISUAL SCENE for background image generation — no text, logos, or UI elements in the description
 - Headlines must be 3-6 words MAX — short, punchy, brand-aligned
 - Reference specific product features or audience pain points — never write generic "check this out" copy
 - Match content to the platform (Instagram = aesthetic/lifestyle, Twitter = conversational/punchy, TikTok = dynamic/trendy)
@@ -547,11 +683,12 @@ Rules:
       postConcept: p.postConcept || `Brand content for ${slots[i]?.platform || "social media"}`,
       headline: p.headline || "Check this out",
       subheadline: p.subheadline || "",
+      cta: p.cta || "",
     }));
   } catch {
     // Retry once with a simpler prompt
     const retryResult = await model.generateContent(
-      `Generate a JSON array with ${slots.length} content plan entries. Each entry has: slotIndex (number 0 to ${slots.length - 1}), category (string: promotional/educational/quote/product_showcase), postConcept (detailed image description), headline (short text), subheadline (supporting text). Return ONLY valid JSON array, nothing else.`
+      `Generate a JSON array with ${slots.length} content plan entries. Each entry has: slotIndex (number 0 to ${slots.length - 1}), category (string: promotional/educational/quote/product_showcase), postConcept (detailed image description — visual scene only, no text), headline (short text in ${lang}), subheadline (supporting text in ${lang}), cta (short call to action in ${lang}, or empty string). Return ONLY valid JSON array, nothing else.`
     );
     const retryText = retryResult.response.text().trim();
     const retryCleaned = retryText.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/i, "").trim();
@@ -564,6 +701,7 @@ Rules:
       postConcept: p.postConcept || `Brand content for ${slots[i]?.platform || "social media"}`,
       headline: p.headline || "Check this out",
       subheadline: p.subheadline || "",
+      cta: p.cta || "",
     }));
   }
 }
