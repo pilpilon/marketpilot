@@ -53,13 +53,17 @@ export function SplitLayoutOverlay(
           }}
         >
           {headline && (
-            <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, whiteSpace: "normal", direction: dir }}>
-              {headline}
+            <div style={{ display: "flex", direction: dir }}>
+              <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, whiteSpace: "normal" }}>
+                {headline}
+              </div>
             </div>
           )}
           {subheadline && (
-            <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.5, opacity: 0.9, whiteSpace: "normal", direction: dir }}>
-              {subheadline}
+            <div style={{ display: "flex", direction: dir }}>
+              <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.5, opacity: 0.9, whiteSpace: "normal" }}>
+                {subheadline}
+              </div>
             </div>
           )}
           {cta && (
