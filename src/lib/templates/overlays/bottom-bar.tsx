@@ -45,25 +45,20 @@ export function BottomBarOverlay(
             gap: Math.round(dims.height * 0.012),
             width: dims.width - pad * 2,
             justifyContent: "center",
-            ...textStyle,
           }}
         >
           {headline && (
-            <div style={{ display: "flex", justifyContent: dir === "rtl" ? "flex-end" : "flex-start" }}>
-              <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, whiteSpace: "normal" }}>
-                {headline}
-              </div>
+            <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, whiteSpace: "normal", direction: dir }}>
+              {headline}
             </div>
           )}
           {subheadline && (
-            <div style={{ display: "flex", justifyContent: dir === "rtl" ? "flex-end" : "flex-start" }}>
-              <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.9, whiteSpace: "normal" }}>
-                {subheadline}
-              </div>
+            <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.9, whiteSpace: "normal", direction: dir }}>
+              {subheadline}
             </div>
           )}
           {cta && (
-            <div style={{ display: "flex", marginTop: Math.round(dims.height * 0.01), justifyContent: dir === "rtl" ? "flex-end" : "flex-start" }}>
+            <div style={{ display: "flex", marginTop: Math.round(dims.height * 0.01), direction: dir }}>
               <div
                 style={{
                   color: brand.primaryColor,

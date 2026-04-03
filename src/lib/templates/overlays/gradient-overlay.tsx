@@ -35,16 +35,15 @@ export function GradientOverlay(
           flexDirection: "column",
           gap: Math.round(dims.height * 0.015),
           padding: `${Math.round(dims.height * 0.05)}px ${Math.round(dims.width * 0.06)}px ${dims.safeZone.bottom + Math.round(dims.height * 0.03)}px`,
-          ...textStyle,
         }}
       >
         {headline && (
-          <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", textAlign: dir === "rtl" ? "right" : "left", lineHeight: 1.2 }}>
+          <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, direction: dir }}>
             {headline}
           </div>
         )}
         {subheadline && (
-          <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", textAlign: dir === "rtl" ? "right" : "left", lineHeight: 1.4, opacity: 0.85 }}>
+          <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.85, direction: dir }}>
             {subheadline}
           </div>
         )}
