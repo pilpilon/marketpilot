@@ -8,6 +8,7 @@ import { loadBrandContext } from "@/lib/templates/brand-tokens";
 import { buildScheduleSlots, type TimeRange, type PostSlot } from "@/lib/skills/schedule-builder";
 import { renderTemplateImage } from "@/lib/templates/render-template-image";
 import { findSystemTemplate, SYSTEM_TEMPLATES } from "@/lib/templates/system-templates";
+import { PLATFORM_RATIOS } from "@/lib/templates/dimensions";
 import { getCondensedStorytellingGuidance } from "@/lib/ai/storytelling-framework";
 
 export const maxDuration = 300;
@@ -443,6 +444,7 @@ Rules:
               template_id: planItem.templateId,
               slide_id: slideDef?.id || "main",
               platform: slot.platformKey,
+              aspect_ratio: PLATFORM_RATIOS[slot.platformKey] || "1:1",
               category: planItem.category,
               model_tier: "nb2",
               overlay_style: slideDef?.overlayStyle,

@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
 import { loadBrandContext } from "@/lib/templates/brand-tokens";
+import { PLATFORM_RATIOS } from "@/lib/templates/dimensions";
 import { renderTemplateImage } from "@/lib/templates/render-template-image";
 import { findSystemTemplate } from "@/lib/templates/system-templates";
 import { getCondensedStorytellingGuidance } from "@/lib/ai/storytelling-framework";
@@ -141,7 +142,7 @@ export async function POST(request: Request) {
           template_id: templateId,
           slide_id: slideId,
           platform,
-          aspect_ratio: resolvedTemplate ? undefined : undefined,
+          aspect_ratio: PLATFORM_RATIOS[platform] || "1:1",
           model_tier: modelTier,
           overlay_style: slideDef?.overlayStyle,
           mime_type: "image/jpeg",
