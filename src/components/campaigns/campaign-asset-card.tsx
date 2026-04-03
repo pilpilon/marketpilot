@@ -125,7 +125,7 @@ export function CampaignAssetCard({
                 src={asset.storage_path}
                 alt={asset.title || "Generated image"}
                 fill
-                className="object-cover"
+                className="object-contain"
               />
             </div>
             {caption && (
