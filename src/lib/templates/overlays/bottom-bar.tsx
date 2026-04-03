@@ -17,25 +17,17 @@ export function BottomBarOverlay(
   const ctaFontSize = Math.round(dims.width * 0.028);
   const barHeight = Math.round(dims.height * 0.25);
 
-  const textStyle: React.CSSProperties = {
-    direction: dir,
-    textAlign: dir === "rtl" ? "right" : "left",
-  };
-
   return (
     <div style={{ width: dims.width, height: dims.height, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
       <div
         style={{
           display: "flex",
-          alignItems: dir === "rtl" ? "flex-end" : "flex-start",
-          justifyContent: "center",
+          flexDirection: "column",
+          alignItems: "center",
           backgroundColor: brand.primaryColor + "e6",
-          overflow: "hidden",
           minHeight: barHeight,
           paddingTop: Math.round(barHeight * 0.25),
           paddingBottom: Math.round(barHeight * 0.3),
-          paddingLeft: pad,
-          paddingRight: pad,
         }}
       >
         <div
@@ -44,7 +36,6 @@ export function BottomBarOverlay(
             flexDirection: "column",
             gap: Math.round(dims.height * 0.012),
             width: dims.width - pad * 2,
-            justifyContent: "center",
           }}
         >
           {headline && (
