@@ -45,6 +45,12 @@ const TIME_RANGE_OPTIONS = [
   { value: "1_month", labelKey: "timeRange1Month" },
 ] as const;
 
+const FORMAT_OPTIONS = [
+  { value: "feed", labelKey: "formatFeed", ratio: "4:5" },
+  { value: "square", labelKey: "formatSquare", ratio: "1:1" },
+  { value: "story", labelKey: "formatStoryReel", ratio: "9:16" },
+] as const;
+
 export default function SkillsPage() {
   const params = useParams();
   const router = useRouter();
@@ -86,7 +92,7 @@ export default function SkillsPage() {
       description: t("calendarDesc"),
       icon: CalendarDays,
       color: "bg-orange-500/10 text-orange-600",
-      options: ["platforms", "timeRange"],
+      options: ["platforms", "timeRange", "format"],
     },
   ];
 
@@ -100,6 +106,7 @@ export default function SkillsPage() {
     tone: "",
     campaignName: "",
     timeRange: "2_weeks",
+    format: "feed",
   });
 
   // Pipeline progress state
@@ -227,6 +234,7 @@ export default function SkillsPage() {
           projectId,
           platforms: options.platforms,
           timeRange: options.timeRange,
+          format: options.format,
           campaignName: options.campaignName || undefined,
         }),
       });
@@ -587,6 +595,27 @@ export default function SkillsPage() {
                   <p className="text-xs text-muted-foreground">
                     {t("timeRangeHint")}
                   </p>
+                </div>
+              )}
+
+              {skill?.options.includes("format") && (
+                <div className="space-y-1.5">
+                  <Label>{t("formatLabel")}</Label>
+                  <Select
+                    value={options.format}
+                    onValueChange={(val) => val && setOptions({ ...options, format: val })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FORMAT_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {t(opt.labelKey)} ({opt.ratio})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 

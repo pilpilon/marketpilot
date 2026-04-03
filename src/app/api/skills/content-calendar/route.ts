@@ -102,10 +102,11 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const { projectId, platforms, timeRange, campaignName } = body as {
+  const { projectId, platforms, timeRange, format = "feed", campaignName } = body as {
     projectId: string;
     platforms: string[];
     timeRange: TimeRange;
+    format?: string;
     campaignName?: string;
   };
 
@@ -188,6 +189,7 @@ export async function POST(request: Request) {
         jobId,
         platforms,
         timeRange,
+        format,
         projectSettings: project.settings,
       });
     } catch (err) {
@@ -221,9 +223,10 @@ async function runPipeline(params: {
   jobId: string;
   platforms: string[];
   timeRange: TimeRange;
+  format: string;
   projectSettings: unknown;
 }) {
-  const { serviceSupabase, userId, projectId, campaignId, jobId, platforms, timeRange, projectSettings } = params;
+  const { serviceSupabase, userId, projectId, campaignId, jobId, platforms, timeRange, format, projectSettings } = params;
 
   // ── Step A: Planning ──────────────────────────────────────────────────────
   await updateJob(serviceSupabase, jobId, { status: "planning", current_step: "Loading brand intelligence..." });
@@ -283,6 +286,7 @@ async function runPipeline(params: {
     timeRange,
     startDate,
     locale: locale as "en" | "he",
+    format,
   });
 
   if (slots.length === 0) {

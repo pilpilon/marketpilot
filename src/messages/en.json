@@ -284,6 +284,7 @@
     "runSkill": "Run {skill} Skill",
     "failedToRun": "Failed to run skill",
     "timeRangeLabel": "Schedule ahead",
+    "formatLabel": "Image format",
     "timeRange1Week": "1 Week",
     "timeRange2Weeks": "2 Weeks",
     "timeRange3Weeks": "3 Weeks",

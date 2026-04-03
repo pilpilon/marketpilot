@@ -21,6 +21,13 @@ const PLATFORM_KEY_MAP: Record<string, string> = {
   linkedin: "linkedin",
 };
 
+/** Map format choice to platform key suffix override */
+const FORMAT_SUFFIX_MAP: Record<string, Record<string, string>> = {
+  feed: { instagram: "instagram_feed", facebook: "instagram_feed" },
+  square: { instagram: "instagram_square", facebook: "instagram_square", linkedin: "linkedin", twitter: "twitter_square" },
+  story: { instagram: "instagram_story", facebook: "instagram_story", tiktok: "tiktok" },
+};
+
 /** Posts per week per platform */
 const POSTS_PER_WEEK: Record<string, number> = {
   instagram: 4,
@@ -108,8 +115,9 @@ export function buildScheduleSlots(params: {
   timeRange: TimeRange;
   startDate: Date;
   locale: "en" | "he";
+  format?: string;
 }): PostSlot[] {
-  const { platforms, timeRange, startDate, locale } = params;
+  const { platforms, timeRange, startDate, locale, format } = params;
   const totalDays = RANGE_DAYS[timeRange];
   const totalWeeks = totalDays / 7;
   const localeWindows = OPTIMAL_TIMES[locale] || OPTIMAL_TIMES.en;
@@ -125,7 +133,7 @@ export function buildScheduleSlots(params: {
     const postsPerWeek = POSTS_PER_WEEK[platform] || 3;
     const totalPosts = Math.round(postsPerWeek * totalWeeks);
     const windows = localeWindows[platform] || [[10, 12], [17, 19]];
-    const platformKey = PLATFORM_KEY_MAP[platform] || "instagram_feed";
+    const platformKey = (format && FORMAT_SUFFIX_MAP[format]?.[platform]) || PLATFORM_KEY_MAP[platform] || "instagram_feed";
 
     // Distribute posts evenly across the range
     const interval = totalDays / totalPosts;

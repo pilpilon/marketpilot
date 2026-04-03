@@ -284,6 +284,7 @@
     "runSkill": "הפעל כישור {skill}",
     "failedToRun": "הפעלת הכישור נכשלה",
     "timeRangeLabel": "תזמן קדימה",
+    "formatLabel": "פורמט תמונה",
     "timeRange1Week": "שבוע",
     "timeRange2Weeks": "שבועיים",
     "timeRange3Weeks": "3 שבועות",
