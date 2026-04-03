@@ -50,14 +50,14 @@ export function BoxedBadgeOverlay(
         </div>
         {headline && (
           <div style={{ display: "flex", direction: dir }}>
-            <div style={{ color: "#1a1a2e", fontSize: headlineFontSize, fontWeight: 500, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.5, fontStyle: "italic" }}>
+            <div style={{ color: "#1a1a2e", fontSize: headlineFontSize, fontWeight: 500, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.5, fontStyle: "italic", ...textStyle }}>
               {headline}
             </div>
           </div>
         )}
         {subheadline && (
           <div style={{ display: "flex", direction: dir }}>
-            <div style={{ color: "#555", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.4 }}>
+            <div style={{ color: "#555", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.4, ...textStyle }}>
               {subheadline}
             </div>
           </div>

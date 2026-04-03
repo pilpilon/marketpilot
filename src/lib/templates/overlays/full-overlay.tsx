@@ -33,14 +33,14 @@ export function FullOverlay(
     >
       {headline && (
         <div style={{ display: "flex", direction: dir }}>
-          <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 800, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.15, letterSpacing: "-0.02em" }}>
+          <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 800, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.15, letterSpacing: "-0.02em", direction: dir, textAlign: "center" }}>
             {headline}
           </div>
         </div>
       )}
       {subheadline && (
         <div style={{ display: "flex", direction: dir }}>
-          <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.5, opacity: 0.9, width: dims.width * 0.75 }}>
+          <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.5, opacity: 0.9, width: dims.width * 0.75, direction: dir, textAlign: "center" }}>
             {subheadline}
           </div>
         </div>

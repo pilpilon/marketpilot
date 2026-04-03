@@ -17,6 +17,11 @@ export function BottomBarOverlay(
   const ctaFontSize = Math.round(dims.width * 0.028);
   const barHeight = Math.round(dims.height * 0.25);
 
+  const textStyle: React.CSSProperties = {
+    direction: dir,
+    textAlign: dir === "rtl" ? "right" : "left",
+  };
+
   return (
     <div style={{ width: dims.width, height: dims.height, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
       <div
@@ -36,18 +41,19 @@ export function BottomBarOverlay(
             flexDirection: "column",
             gap: Math.round(dims.height * 0.012),
             width: dims.width - pad * 2,
+            ...textStyle,
           }}
         >
           {headline && (
             <div style={{ display: "flex", direction: dir }}>
-              <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, whiteSpace: "normal" }}>
+              <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, whiteSpace: "normal", ...textStyle }}>
                 {headline}
               </div>
             </div>
           )}
           {subheadline && (
             <div style={{ display: "flex", direction: dir }}>
-              <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.9, whiteSpace: "normal" }}>
+              <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.9, whiteSpace: "normal", ...textStyle }}>
                 {subheadline}
               </div>
             </div>

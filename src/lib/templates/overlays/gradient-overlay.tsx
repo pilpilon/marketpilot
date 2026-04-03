@@ -14,6 +14,11 @@ export function GradientOverlay(
   const subFontSize = Math.round(dims.width * 0.03);
   const pad = Math.round(dims.width * 0.06);
 
+  const textStyle: React.CSSProperties = {
+    direction: dir,
+    textAlign: dir === "rtl" ? "right" : "left",
+  };
+
   return (
     <div
       style={{
@@ -40,18 +45,19 @@ export function GradientOverlay(
             flexDirection: "column",
             gap: Math.round(dims.height * 0.015),
             width: dims.width - pad * 2,
+            ...textStyle,
           }}
         >
           {headline && (
             <div style={{ display: "flex", direction: dir }}>
-              <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, whiteSpace: "normal" }}>
+              <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, whiteSpace: "normal", ...textStyle }}>
                 {headline}
               </div>
             </div>
           )}
           {subheadline && (
             <div style={{ display: "flex", direction: dir }}>
-              <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.85, whiteSpace: "normal" }}>
+              <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.85, whiteSpace: "normal", ...textStyle }}>
                 {subheadline}
               </div>
             </div>

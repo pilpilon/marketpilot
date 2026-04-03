@@ -108,9 +108,14 @@ export async function renderTemplateImage(
     const fieldValues = slideInput.fieldValues || {};
 
     // 1. Build AI background prompt
-    const contentSummary = Object.values(fieldValues).filter(Boolean).join(" — ");
+    // For template renders, use the visual description (customInstruction) as
+    // the primary content — NOT the raw headline/subheadline text.  Sending
+    // the actual text to Gemini causes it to render words into the background
+    // image even though the prompt says "no text".  The text overlay is added
+    // separately by the Takumi compositor.
+    const visualDirection = [customInstruction, slideDef.aiPromptHint].filter(Boolean).join(". ");
     const { prompt, negativePrompt } = buildImagePrompt({
-      postContent: contentSummary,
+      postContent: visualDirection || `Background image for a ${template.category} social media post`,
       platform,
       styleKeywords: brandContext.visual.styleKeywords,
       colorPalette: brandContext.visual.colorPalette,
@@ -121,7 +126,7 @@ export async function renderTemplateImage(
       productContext: brandContext.productContext,
       intakePatterns: brandContext.intakePatterns,
       hasReferenceImage: !!referenceImage,
-      customInstruction: [customInstruction, slideDef.aiPromptHint].filter(Boolean).join(". "),
+      customInstruction: "This is a BACKGROUND IMAGE ONLY — text will be overlaid separately. Generate a purely visual scene with absolutely NO text, words, letters, or numbers anywhere in the image.",
     });
 
     // 2. Generate background image via Gemini
