@@ -38,12 +38,12 @@ export function GradientOverlay(
         }}
       >
         {headline && (
-          <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, direction: dir }}>
+          <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.2, direction: dir, whiteSpace: "normal", maxWidth: dims.width * 0.88 }}>
             {headline}
           </div>
         )}
         {subheadline && (
-          <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.85, direction: dir }}>
+          <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.85, direction: dir, whiteSpace: "normal", maxWidth: dims.width * 0.88 }}>
             {subheadline}
           </div>
         )}

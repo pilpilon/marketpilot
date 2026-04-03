@@ -47,12 +47,12 @@ export function CornerOverlay(
         }}
       >
         {headline && (
-          <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", lineHeight: 1.25, direction: dir }}>
+          <div style={{ color: "#ffffff", fontSize: headlineFontSize, fontWeight: 700, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.25, direction: dir }}>
             {headline}
           </div>
         )}
         {subheadline && (
-          <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", lineHeight: 1.4, opacity: 0.85, direction: dir }}>
+          <div style={{ color: "#ffffff", fontSize: subFontSize, fontWeight: 400, fontFamily: "Inter, Heebo", whiteSpace: "normal", lineHeight: 1.4, opacity: 0.85, direction: dir }}>
             {subheadline}
           </div>
         )}
