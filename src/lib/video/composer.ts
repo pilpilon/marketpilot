@@ -2,18 +2,16 @@
  * Video composer — stitches Veo scenes + overlay cards + music into a
  * final MP4.
  *
- * Phase 1 ships with a provider-agnostic interface and two implementations:
+ * Exposes an async API so the worker can kick off a render and poll
+ * across multiple cron ticks without blocking a Vercel function:
  *
- *   1. RemotionLambdaComposer — production-grade, calls the Remotion Lambda
- *      renderer. Requires AWS setup and REMOTION_SERVE_URL + REMOTION_LAMBDA_*
- *      env vars. Reuses src/remotion/* components.
+ *   startComposition(input)  → { composer, handle?, immediate? }
+ *   pollComposition(handle)  → { done, videoUrl?, error? }
  *
- *   2. FallbackComposer — ships video out the door immediately by returning
- *      the first scene's URL as the "final" video. No stitching, no music,
- *      no overlay cards — but it's testable end-to-end without AWS.
- *
- * The orchestrator picks by env: if REMOTION_SERVE_URL is set, use Remotion.
- * Otherwise, fall back (and warn the user).
+ * Two composers:
+ *   1. remotion_lambda — calls the Remotion Lambda renderer on AWS.
+ *   2. fallback_first_scene — returns the first scene URL as-is (no
+ *      stitching), used when Remotion env vars aren't set.
  */
 
 import type { VideoAspectRatio, VideoLanguage, VideoScene } from "./types";
@@ -26,7 +24,6 @@ export interface ComposeInput {
   language: VideoLanguage;
   aspectRatio: VideoAspectRatio;
   musicTrackUrl: string | null;
-  /** Brand palette for overlay cards. */
   brandPalette: {
     primary: string;
     accent: string;
@@ -34,15 +31,39 @@ export interface ComposeInput {
   };
 }
 
-export interface ComposeResult {
-  /** Public URL of the final MP4. */
-  videoUrl: string;
-  /** Total duration in seconds. */
+export type ComposerName = "remotion_lambda" | "fallback_first_scene";
+
+export interface ComposerHandle {
+  composer: ComposerName;
+  /** renderId returned by renderMediaOnLambda. */
+  renderId: string;
+  /** bucketName returned by renderMediaOnLambda. */
+  bucketName: string;
+  /** functionName used for this render (persist to avoid env drift). */
+  functionName: string;
+  /** AWS region for this render. */
+  region: string;
+  /** Total duration in seconds (persisted for asset metadata). */
   durationSeconds: number;
-  /** Implementation used. */
-  composer: "remotion_lambda" | "fallback_first_scene";
-  /** Any warnings (e.g. "used fallback composer"). */
-  warnings: string[];
+}
+
+export interface StartCompositionResult {
+  composer: ComposerName;
+  /** Set when the composer is async (Remotion Lambda). */
+  handle?: ComposerHandle;
+  /** Set when the composer finishes immediately (fallback). */
+  immediate?: {
+    videoUrl: string;
+    durationSeconds: number;
+    warnings: string[];
+  };
+}
+
+export interface PollCompositionResult {
+  done: boolean;
+  videoUrl?: string;
+  durationSeconds?: number;
+  error?: string;
 }
 
 function isRemotionConfigured(): boolean {
@@ -53,75 +74,88 @@ function isRemotionConfigured(): boolean {
   );
 }
 
-export async function composeVideo(input: ComposeInput): Promise<ComposeResult> {
+/**
+ * Kick off composition. Returns immediately with a handle to poll later
+ * (Remotion) or an immediate result (fallback).
+ */
+export async function startComposition(
+  input: ComposeInput
+): Promise<StartCompositionResult> {
   if (isRemotionConfigured()) {
-    return composeWithRemotionLambda(input);
+    return startRemotionLambda(input);
   }
-  return composeWithFallback(input);
+  return startFallback(input);
 }
 
 /**
- * Remotion Lambda composer — renders src/remotion/VideoComposition.tsx
- * on AWS Lambda.
- *
- * Setup (one-time):
- *   1. npx remotion lambda policies user  (create IAM user, paste policy)
- *   2. npx remotion lambda functions deploy
- *   3. npx remotion lambda sites create src/remotion/index.ts --site-name=marketpilot-video
- *   4. Copy serve URL + function name into env:
- *        REMOTION_SERVE_URL=...
- *        REMOTION_LAMBDA_FUNCTION_NAME=...
- *        REMOTION_AWS_REGION=us-east-1
- *        REMOTION_AWS_ACCESS_KEY_ID=...
- *        REMOTION_AWS_SECRET_ACCESS_KEY=...
- *
- * The @remotion/lambda package is imported dynamically so the app builds
- * even when Remotion isn't installed yet.
+ * Poll a composition handle. Returns done=false if still rendering.
  */
-async function composeWithRemotionLambda(
+export async function pollComposition(
+  handle: ComposerHandle
+): Promise<PollCompositionResult> {
+  if (handle.composer === "remotion_lambda") {
+    return pollRemotionLambda(handle);
+  }
+  // fallback is instant-only; pollComposition should never be called for it.
+  return {
+    done: true,
+    error: "pollComposition called with fallback handle (should never happen)",
+  };
+}
+
+// ── Remotion Lambda ─────────────────────────────────────────────────────────
+
+interface LambdaClient {
+  renderMediaOnLambda: (opts: Record<string, unknown>) => Promise<{
+    renderId: string;
+    bucketName: string;
+  }>;
+  getRenderProgress: (opts: Record<string, unknown>) => Promise<{
+    done: boolean;
+    outputFile?: string | null;
+    fatalErrorEncountered?: boolean;
+    errors: Array<{ message: string }>;
+  }>;
+}
+
+async function loadLambdaClient(): Promise<LambdaClient | null> {
+  try {
+    const mod = (await import(
+      "@remotion/lambda/client" as string
+    )) as LambdaClient;
+    return mod;
+  } catch {
+    return null;
+  }
+}
+
+async function startRemotionLambda(
   input: ComposeInput
-): Promise<ComposeResult> {
-  // Dynamic import so the app still builds without @remotion/lambda.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const lambda = await (import("@remotion/lambda/client" as string) as Promise<any>).catch(
-    () => null
-  );
+): Promise<StartCompositionResult> {
+  const lambda = await loadLambdaClient();
   if (!lambda) {
-    return composeWithFallback({
-      ...input,
-    });
+    return startFallback(input);
   }
 
-  const { renderMediaOnLambda, getRenderProgress } = lambda as {
-    renderMediaOnLambda: (opts: Record<string, unknown>) => Promise<{
-      renderId: string;
-      bucketName: string;
-    }>;
-    getRenderProgress: (opts: Record<string, unknown>) => Promise<{
-      done: boolean;
-      outputFile?: string | null;
-      fatalErrorEncountered?: boolean;
-      errors: Array<{ message: string }>;
-    }>;
-  };
-
-  const serveUrl = process.env.REMOTION_SERVE_URL!;
-  const functionName = process.env.REMOTION_LAMBDA_FUNCTION_NAME!;
+  const serveUrl = process.env.REMOTION_SERVE_URL;
+  const functionName = process.env.REMOTION_LAMBDA_FUNCTION_NAME;
   const region = process.env.REMOTION_AWS_REGION || "us-east-1";
+
+  if (!serveUrl || !functionName) {
+    return startFallback(input);
+  }
 
   const totalSeconds = input.scenes.reduce((sum, s) => sum + s.duration, 0);
   const fps = 30;
 
-  // Fresh AWS accounts default to 10 concurrent Lambda executions and
-  // very low Invoke API TPS. Using a large framesPerLambda value minimizes
-  // fan-out. For 32s @ 30fps = 960 frames: framesPerLambda=480 → 2
-  // renderer lambdas + 1 orchestrator = 3 total. Override with env var
-  // VIDEO_FRAMES_PER_LAMBDA once quota is raised for faster renders.
+  // Conservative fan-out for fresh AWS accounts. Override via
+  // VIDEO_FRAMES_PER_LAMBDA once Lambda burst concurrency is raised.
   const framesPerLambda = parseInt(
     process.env.VIDEO_FRAMES_PER_LAMBDA || "480",
     10
   );
-  const { renderId, bucketName } = await renderMediaOnLambda({
+
+  const { renderId, bucketName } = await lambda.renderMediaOnLambda({
     region,
     functionName,
     serveUrl,
@@ -146,56 +180,72 @@ async function composeWithRemotionLambda(
     },
   });
 
-  // Poll until done
-  const start = Date.now();
-  const timeoutMs = 5 * 60 * 1000;
-  while (Date.now() - start < timeoutMs) {
-    const progress = await getRenderProgress({
+  return {
+    composer: "remotion_lambda",
+    handle: {
+      composer: "remotion_lambda",
       renderId,
       bucketName,
       functionName,
       region,
-    });
-    if (progress.fatalErrorEncountered) {
-      throw new Error(
-        `Remotion render failed: ${progress.errors.map((e: { message: string }) => e.message).join("; ")}`
-      );
-    }
-    if (progress.done && progress.outputFile) {
-      return {
-        videoUrl: progress.outputFile,
-        durationSeconds: totalSeconds,
-        composer: "remotion_lambda",
-        warnings: [],
-      };
-    }
-    await new Promise((r) => setTimeout(r, 3000));
-  }
-
-  throw new Error("Remotion render timed out after 5 minutes");
+      durationSeconds: totalSeconds,
+    },
+  };
 }
 
-/**
- * Fallback composer — returns the first scene's URL directly.
- *
- * This is only a stopgap so the pipeline ships end-to-end before the user
- * completes AWS setup. It surfaces a warning so the UI can tell the user
- * why their video is only 8 seconds with no overlays.
- */
-async function composeWithFallback(input: ComposeInput): Promise<ComposeResult> {
+async function pollRemotionLambda(
+  handle: ComposerHandle
+): Promise<PollCompositionResult> {
+  const lambda = await loadLambdaClient();
+  if (!lambda) {
+    return { done: true, error: "@remotion/lambda/client not installed" };
+  }
+
+  const progress = await lambda.getRenderProgress({
+    renderId: handle.renderId,
+    bucketName: handle.bucketName,
+    functionName: handle.functionName,
+    region: handle.region,
+  });
+
+  if (progress.fatalErrorEncountered) {
+    const msg = progress.errors
+      .map((e: { message: string }) => e.message)
+      .join("; ");
+    return { done: true, error: `Remotion render failed: ${msg}` };
+  }
+
+  if (progress.done && progress.outputFile) {
+    return {
+      done: true,
+      videoUrl: progress.outputFile,
+      durationSeconds: handle.durationSeconds,
+    };
+  }
+
+  return { done: false };
+}
+
+// ── Fallback (instant) ──────────────────────────────────────────────────────
+
+function startFallback(input: ComposeInput): StartCompositionResult {
   const firstScene = input.scenes[0];
   if (!firstScene?.videoUrl) {
-    throw new Error("Fallback composer requires at least one scene with a videoUrl");
+    throw new Error(
+      "Fallback composer requires at least one scene with a videoUrl"
+    );
   }
   return {
-    videoUrl: firstScene.videoUrl,
-    durationSeconds: firstScene.duration,
     composer: "fallback_first_scene",
-    warnings: [
-      "Remotion Lambda not configured — video is the first scene only, " +
-        "without overlay cards or music. Set REMOTION_SERVE_URL, " +
-        "REMOTION_LAMBDA_FUNCTION_NAME, and REMOTION_AWS_REGION to enable " +
-        "full stitching.",
-    ],
+    immediate: {
+      videoUrl: firstScene.videoUrl,
+      durationSeconds: firstScene.duration,
+      warnings: [
+        "Remotion Lambda not configured — video is the first scene only, " +
+          "without overlay cards or music. Set REMOTION_SERVE_URL, " +
+          "REMOTION_LAMBDA_FUNCTION_NAME, and REMOTION_AWS_REGION to enable " +
+          "full stitching.",
+      ],
+    },
   };
 }

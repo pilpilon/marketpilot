@@ -7,7 +7,11 @@ import {
   startSceneGeneration,
   finalizeSceneIfReady,
 } from "@/lib/video/scene-pipeline";
-import { composeVideo } from "@/lib/video/composer";
+import {
+  startComposition,
+  pollComposition,
+  type ComposerHandle,
+} from "@/lib/video/composer";
 import { getMusicTrackUrl } from "@/lib/video/music-library";
 import { estimateVideoCost } from "@/lib/video/cost-guard";
 import type {
@@ -95,6 +99,7 @@ type JobMetadata = VideoJobMetadata & {
     operationName: string;
     done: boolean;
   }>;
+  composerHandle?: ComposerHandle;
   [key: string]: unknown;
 };
 
@@ -331,10 +336,41 @@ async function stageCompose(
     throw new Error("Some scenes are missing video URLs at compose time");
   }
 
+  // ── If a composer handle is already persisted, poll it ──
+  const existingHandle = meta.composerHandle;
+  if (existingHandle) {
+    const pollResult = await pollComposition(existingHandle);
+    if (!pollResult.done) {
+      // Still rendering — just refresh the step text
+      await updateJob(supabase, job.id, {
+        current_step: "Stitching scenes + overlays + music…",
+      });
+      return "composing";
+    }
+    if (pollResult.error) {
+      throw new Error(pollResult.error);
+    }
+    if (!pollResult.videoUrl) {
+      throw new Error("Composer finished but returned no video URL");
+    }
+    // Render complete → save asset, mark job complete
+    return await finalizeComposition(
+      supabase,
+      job,
+      meta,
+      script,
+      pollResult.videoUrl,
+      pollResult.durationSeconds ?? existingHandle.durationSeconds,
+      existingHandle.composer,
+      []
+    );
+  }
+
+  // ── First time in composing stage: kick off the render ──
   const brandTokens = await loadBrandTokens(supabase, job.project_id);
 
   // Probe the music track — if it 404s, drop it so Remotion doesn't
-  // crash on a missing asset. User hasn't uploaded MP3s yet.
+  // crash on a missing asset.
   const rawMusicUrl = (meta?.musicTrackUrl as string | undefined) || null;
   let musicTrackUrl: string | null = null;
   if (rawMusicUrl) {
@@ -347,8 +383,14 @@ async function stageCompose(
       // leave as null
     }
   }
+  const musicDroppedWarning =
+    rawMusicUrl && !musicTrackUrl
+      ? [
+          "Background music track not found in storage — rendered without music. Upload MP3s to the music-library bucket.",
+        ]
+      : [];
 
-  const result = await composeVideo({
+  const startResult = await startComposition({
     scenes: script.scenes.map((s) => ({
       videoUrl: s.videoUrl,
       overlayText: s.overlayText,
@@ -367,7 +409,47 @@ async function stageCompose(
     },
   });
 
-  // Create the asset record
+  // Fallback composer is instant — skip polling, go straight to finalize
+  if (startResult.immediate) {
+    return await finalizeComposition(
+      supabase,
+      job,
+      meta,
+      script,
+      startResult.immediate.videoUrl,
+      startResult.immediate.durationSeconds,
+      startResult.composer,
+      [...startResult.immediate.warnings, ...musicDroppedWarning]
+    );
+  }
+
+  // Remotion: persist the handle, next tick will poll
+  if (!startResult.handle) {
+    throw new Error("Composer did not return a handle or immediate result");
+  }
+
+  const pendingWarnings = [...(meta.warnings || []), ...musicDroppedWarning];
+  await updateJob(supabase, job.id, {
+    current_step: "Stitching scenes + overlays + music…",
+    metadata: {
+      ...meta,
+      composerHandle: startResult.handle,
+      warnings: pendingWarnings,
+    },
+  });
+  return "composing";
+}
+
+async function finalizeComposition(
+  supabase: SupabaseClient,
+  job: JobRow,
+  meta: JobMetadata,
+  script: VideoScript,
+  videoUrl: string,
+  durationSeconds: number,
+  composer: string,
+  extraWarnings: string[]
+): Promise<string> {
   const { data: asset, error: assetError } = await supabase
     .from("campaign_assets")
     .insert({
@@ -376,14 +458,14 @@ async function stageCompose(
       asset_type: "video",
       title: `Video — ${script.hook}`.slice(0, 120),
       content: `${script.hook}\n\n${script.keyMessage}\n\n${script.cta}`,
-      storage_path: result.videoUrl,
+      storage_path: videoUrl,
       metadata: {
-        duration_seconds: result.durationSeconds,
+        duration_seconds: durationSeconds,
         aspect_ratio: "9:16",
         language: script.language,
         framework: script.framework,
         music_mood: script.musicMood,
-        composer: result.composer,
+        composer,
         scene_count: script.scenes.length,
         cost_usd: meta.costUsd || 0,
       },
@@ -397,15 +479,7 @@ async function stageCompose(
   }
 
   const assetId = (asset as { id: string }).id;
-  const musicDroppedWarning =
-    rawMusicUrl && !musicTrackUrl
-      ? ["Background music track not found in storage — rendered without music. Upload MP3s to the music-library bucket."]
-      : [];
-  const warnings = [
-    ...(meta.warnings || []),
-    ...result.warnings,
-    ...musicDroppedWarning,
-  ];
+  const warnings = [...(meta.warnings || []), ...extraWarnings];
 
   await updateJob(supabase, job.id, {
     status: "completed",
@@ -413,8 +487,8 @@ async function stageCompose(
     completed_posts: script.scenes.length,
     metadata: {
       ...meta,
-      finalVideoUrl: result.videoUrl,
-      composer: result.composer,
+      finalVideoUrl: videoUrl,
+      composer,
       warnings,
       assetId,
     },
