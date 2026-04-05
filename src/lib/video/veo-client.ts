@@ -118,6 +118,9 @@ export async function pollVeoOperation(
     response?: {
       generateVideoResponse?: {
         generatedSamples?: Array<{ video?: { uri?: string } }>;
+        generatedVideos?: Array<{ video?: { uri?: string } }>;
+        raiMediaFilteredCount?: number;
+        raiMediaFilteredReasons?: string[];
       };
     };
   };
@@ -128,10 +131,26 @@ export async function pollVeoOperation(
 
   if (!data.done) return { done: false };
 
+  // Surface content-filter rejections with the actual reason.
+  const rai = data.response?.generateVideoResponse?.raiMediaFilteredReasons;
+  if (rai && rai.length > 0) {
+    return {
+      done: true,
+      error: `Veo content filter rejected the scene: ${rai.join("; ")}`,
+    };
+  }
+
+  // Veo has used both generatedSamples (older) and generatedVideos (newer).
   const uri =
-    data.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.uri;
+    data.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.uri ??
+    data.response?.generateVideoResponse?.generatedVideos?.[0]?.video?.uri;
   if (!uri) {
-    return { done: true, error: "Veo completed but returned no video URI" };
+    return {
+      done: true,
+      error: `Veo completed but returned no video URI. Raw response: ${JSON.stringify(
+        data.response
+      ).slice(0, 500)}`,
+    };
   }
 
   return { done: true, videoUri: uri };

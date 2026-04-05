@@ -135,7 +135,10 @@ Rules:
 - Scene prompts must describe real, filmable shots (no abstract concepts).
 - Scene prompts in English, all overlayText / hook / keyMessage / cta in ${lang}.
 - Overlay text must be short enough to read in 2-3 seconds (max 10 words).
-- Lean authentic UGC-style visuals, not cinematic stock-ad clichés.`;
+- Lean authentic UGC-style visuals, not cinematic stock-ad clichés.
+- NEVER show identifiable human faces looking at camera — Veo blocks them. Use hands, silhouettes, back-of-head shots, over-the-shoulder angles, product close-ups, screen recordings, or objects instead.
+- NO children, NO named real people, NO celebrity references.
+- Avoid text baked into the scene (logos fine, but no legible words) — overlay cards handle all text.`;
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
