@@ -136,8 +136,14 @@ Rules:
 - Scene prompts in English, all overlayText / hook / keyMessage / cta in ${lang}.
 - Overlay text must be short enough to read in 2-3 seconds (max 10 words).
 - Lean authentic UGC-style visuals, not cinematic stock-ad clichés.
-- NEVER show identifiable human faces looking at camera — Veo blocks them. Use hands, silhouettes, back-of-head shots, over-the-shoulder angles, product close-ups, screen recordings, or objects instead.
-- NO children, NO named real people, NO celebrity references.
+
+PEOPLE RULES (important — Veo rejects specific wording):
+- People ARE allowed, but must be framed as clearly fictional synthetic characters.
+- Every scene involving a person MUST begin with: "A fictional AI-generated person (not a real individual): ..."
+- Use "a person" / "a character" — NEVER "the owner", "the founder", "the CEO", "the customer", "the manager" (these imply a specific real person and get blocked).
+- Do NOT combine nationality + personal pronouns (no "an Israeli smile", "a French chef"). Describe actions instead.
+- NO children (under 18). NO named real people. NO celebrities.
+- Prefer medium/wide shots over extreme face close-ups. Show body language + environment, not just faces.
 - Avoid text baked into the scene (logos fine, but no legible words) — overlay cards handle all text.`;
 
   const genAI = new GoogleGenerativeAI(apiKey);
