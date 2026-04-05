@@ -1,55 +1,112 @@
-# Remotion Lambda Setup (one-time)
+# Remotion Lambda Setup — Step by Step
 
-The Video Creator skill uses Remotion to stitch Veo scenes + overlay cards
-+ music into a final MP4. In production this runs on AWS Lambda.
+Total time: ~30 minutes. Cost: **$0** at low volume (AWS free tier).
+
+The Video Creator skill uses Remotion to stitch Veo scenes + overlay
+cards + music into the final MP4. This runs on AWS Lambda in production.
 
 Without this setup, the composer falls back to returning the first Veo
 scene as-is (single 8s clip, no overlays, no music).
 
+---
+
 ## Prerequisites
 
-- An AWS account with billing enabled (free tier works for low volume)
-- AWS CLI installed locally OR willingness to copy/paste a policy JSON
-- About 15 minutes
+- [ ] An AWS account (sign up at https://aws.amazon.com/ if needed)
+- [ ] AWS CLI installed (`brew install awscli` on macOS, or
+      https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+- [ ] Local terminal with the marketpilot repo
 
-## Step 1 — Create an IAM user for Remotion
+---
+
+## Step 1 — Create an AWS IAM user for Remotion
+
+### 1a. Generate the user policy
 
 ```bash
-# This prints a policy you need to attach to a new IAM user.
+cd C:/Users/Aorus/Documents/marketpilot
 npx remotion lambda policies user
 ```
 
-1. The command prints a policy JSON. Copy it.
-2. Open https://console.aws.amazon.com/iam/home#/users
-3. Click **Create user** → name it `remotion-marketpilot` → Next
-4. On "Set permissions" → **Attach policies directly** → **Create policy**
-5. Switch to JSON tab, paste the policy from step 1, save as `RemotionUser`
-6. Back on the user creation flow, attach `RemotionUser`, finish user creation
-7. Click the new user → **Security credentials** → **Create access key**
-   → choose **CLI** → copy the Access Key ID + Secret Access Key
+Copy the entire JSON output it prints.
 
-Export them locally so the next commands work:
+### 1b. Create the policy in AWS Console
+
+1. Go to https://console.aws.amazon.com/iam/home#/policies
+2. Click **Create policy** → **JSON** tab
+3. Paste the JSON from step 1a, overwriting whatever's there
+4. Click **Next**, name it `remotion-user`, click **Create policy**
+
+### 1c. Create the IAM user
+
+1. Go to https://console.aws.amazon.com/iam/home#/users
+2. Click **Create user**
+3. Username: `remotion-marketpilot`, click **Next**
+4. **Attach policies directly** → search for `remotion-user` → check it
+5. Click **Next**, **Create user**
+
+### 1d. Generate access keys
+
+1. Click the new user `remotion-marketpilot`
+2. Go to **Security credentials** tab
+3. Scroll to **Access keys** → **Create access key**
+4. Select **Command Line Interface (CLI)** → check the warning box → **Next**
+5. Skip description tag → **Create access key**
+6. **COPY BOTH** the Access Key ID and Secret Access Key — you won't see
+   the secret again
+
+### 1e. Set environment variables locally
 
 ```bash
-export AWS_ACCESS_KEY_ID=AKIA...
-export AWS_SECRET_ACCESS_KEY=...
-export REMOTION_AWS_REGION=us-east-1   # or eu-central-1 closer to Supabase
+export AWS_ACCESS_KEY_ID=AKIAxxxxxxxxxxxxxxxx
+export AWS_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+export REMOTION_AWS_REGION=us-east-1
 ```
 
-## Step 2 — Create the role policy
+(On Windows: `set AWS_ACCESS_KEY_ID=...` in cmd, or
+`$env:AWS_ACCESS_KEY_ID="..."` in PowerShell.)
+
+Verify:
+
+```bash
+aws sts get-caller-identity
+```
+
+Should print your account ID and the `remotion-marketpilot` user ARN.
+
+---
+
+## Step 2 — Create the Lambda role policy
 
 ```bash
 npx remotion lambda policies role
 ```
 
-Same drill: copy the printed JSON, create another policy in AWS Console
-called `RemotionRole`, then:
+Copy the JSON output.
+
+1. Go to https://console.aws.amazon.com/iam/home#/policies
+2. Create policy → JSON → paste → Next
+3. Name: `remotion-role`, create
+
+Now attach the role policy:
 
 ```bash
 npx remotion lambda policies role-attach
 ```
 
-This creates the role `remotion-lambda-role` and attaches the policy.
+This creates the role `remotion-lambda-role` and attaches the policy
+you just made.
+
+### Verify
+
+```bash
+npx remotion lambda policies validate
+```
+
+Should print "Your permissions look correct" or similar. If it fails,
+re-read the error and fix the flagged policy.
+
+---
 
 ## Step 3 — Deploy the Lambda function
 
@@ -57,9 +114,16 @@ This creates the role `remotion-lambda-role` and attaches the policy.
 npx remotion lambda functions deploy
 ```
 
-Copy the printed function name — you'll paste it into Vercel env as
-`REMOTION_LAMBDA_FUNCTION_NAME`. It looks like:
-`remotion-render-4-0-xxx-mem2048mb-disk2048mb-120sec`.
+Wait ~2 min. Output looks like:
+
+```
+✅ Deployed as "remotion-render-4-0-352-mem2048mb-disk2048mb-120sec".
+```
+
+**Copy that function name.** You'll paste it into Vercel as
+`REMOTION_LAMBDA_FUNCTION_NAME`.
+
+---
 
 ## Step 4 — Deploy the composition bundle
 
@@ -67,66 +131,115 @@ Copy the printed function name — you'll paste it into Vercel env as
 npx remotion lambda sites create src/remotion/index.ts --site-name=marketpilot-video
 ```
 
-Copy the printed Serve URL — paste into Vercel env as
-`REMOTION_SERVE_URL`. It looks like:
-`https://remotionlambda-useast1-xxx.s3.us-east-1.amazonaws.com/sites/marketpilot-video/index.html`.
-
-Re-run this command every time you change `src/remotion/*` and want
-the changes live in production.
-
-## Step 5 — Set Vercel env vars
-
-In Vercel project settings → Environment Variables, add (Production):
+Wait ~2 min (bundles the React code, uploads to S3). Output:
 
 ```
-REMOTION_SERVE_URL=<from step 4>
-REMOTION_LAMBDA_FUNCTION_NAME=<from step 3>
-REMOTION_AWS_REGION=us-east-1
-REMOTION_AWS_ACCESS_KEY_ID=<from step 1>
-REMOTION_AWS_SECRET_ACCESS_KEY=<from step 1>
+Serve URL: https://remotionlambda-useast1-xxx.s3.us-east-1.amazonaws.com/sites/marketpilot-video/index.html
 ```
 
-Redeploy. The composer auto-detects these and switches from the fallback
-to Lambda.
+**Copy the Serve URL.** You'll paste it into Vercel as
+`REMOTION_SERVE_URL`.
 
-## Step 6 — Test locally first (recommended)
+> Re-run this command every time you change anything in `src/remotion/*`
+> and want it live in production.
 
-Before burning Veo credits, render one composition locally with hardcoded
-scene URLs:
+---
+
+## Step 5 — Set Vercel environment variables
+
+Go to https://vercel.com/idans-projects-fe717255/marketpilot/settings/environment-variables
+
+Add these for **Production**:
+
+| Variable | Value |
+|----------|-------|
+| `REMOTION_SERVE_URL` | (from step 4) |
+| `REMOTION_LAMBDA_FUNCTION_NAME` | (from step 3) |
+| `REMOTION_AWS_REGION` | `us-east-1` |
+| `REMOTION_AWS_ACCESS_KEY_ID` | (from step 1d) |
+| `REMOTION_AWS_SECRET_ACCESS_KEY` | (from step 1d) |
+
+Click **Save**, then go to **Deployments** → latest → **⋯** → **Redeploy**.
+
+The composer auto-detects these and switches from fallback to Lambda.
+
+---
+
+## Step 6 — Test
+
+1. Go to https://marketpilot-one.vercel.app/dashboard/[any-project]/skills/video-creator
+2. Fill in the form → Generate
+3. Watch the status — should progress through stages
+4. Final video should be **32 seconds with overlays + music**, not 8 seconds
+
+If it's still 8 seconds with a warning, check Vercel deployment logs for
+`REMOTION_SERVE_URL` being read.
+
+---
+
+## Step 7 (optional) — Test locally before burning Veo credits
+
+Before committing to full AWS usage, render one composition locally
+with dummy URLs:
 
 ```bash
-npx remotion render src/remotion/index.ts MarketPilotVideo out.mp4 \
-  --props='{"scenes":[{"videoUrl":"https://example.com/clip.mp4","overlayText":"Hook","duration":8}],"hook":"Hook","keyMessage":"Message","cta":"Click","language":"en","aspectRatio":"9:16","musicTrackUrl":null,"brandPalette":{"primary":"#1a1a2e","accent":"#e94560","text":"#ffffff"},"totalDurationInFrames":240,"fps":30}'
+npx remotion render src/remotion/index.ts MarketPilotVideo out.mp4 --props='{"scenes":[{"videoUrl":"https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4","overlayText":"Hook text here","duration":8}],"hook":"Hook text here","keyMessage":"Proof message","cta":"Get started","language":"en","aspectRatio":"9:16","musicTrackUrl":null,"brandPalette":{"primary":"#1a1a2e","accent":"#e94560","text":"#ffffff"},"totalDurationInFrames":240,"fps":30}'
 ```
 
-Open `out.mp4` and verify overlays render correctly in your browser.
+Open `out.mp4` — verify hook card + lower-third + CTA cards render
+correctly in your local video player.
 
-## Pricing (approximate)
+---
 
-- Lambda compute: ~$0.02–$0.05 per 30s render
-- S3 storage: negligible
-- Data transfer: ~$0.01 per video
+## Pricing
 
-Budget ~$0.05/video for composition, on top of ~$4.80 for Veo.
+AWS Lambda free tier (permanent, not 12-month):
+- 1,000,000 invocations/month FREE
+- 400,000 GB-seconds/month FREE
 
-## Rotating keys
+For a 32s video at 2GB Lambda memory, each render uses ~40 GB-seconds.
+Free tier covers ~10,000 videos/month.
 
-If you ever need to rotate the IAM keys:
-1. AWS Console → IAM → user `remotion-marketpilot` → Security credentials
-2. Deactivate old key, create new one
-3. Update Vercel env vars, redeploy
+Beyond free tier: ~$0.01–0.03 per video.
+
+Plus S3:
+- Storage: negligible
+- GET/PUT: ~$0.0005 per video
+- Data transfer out: ~$0.005 per video
+
+---
 
 ## Troubleshooting
 
-**"Access Denied" on function deploy**
-→ The user policy is missing `lambda:*` + `iam:PassRole`. Re-run
-`npx remotion lambda policies user`, replace the policy content.
+**`policies validate` fails with "Access Denied"**
+→ The user policy or role policy is missing something. Copy them fresh
+from `policies user` / `policies role` and replace the policy content in
+AWS Console.
 
-**Fonts look wrong in output**
-→ Add web fonts to `src/remotion/` with `@remotion/fonts`. Currently the
-OverlayCard uses system Heebo/Inter — add `@remotion/google-fonts/Heebo`
-import for deterministic rendering.
+**Deploy succeeds but Lambda times out during render**
+→ Increase memory/timeout:
+```bash
+npx remotion lambda functions deploy --memory=3008 --timeout=300
+```
 
-**Renders time out**
-→ Increase the memory/timeout on the Lambda function:
-`npx remotion lambda functions deploy --memory=3008 --timeout=300`
+**"Expected a composition with id 'MarketPilotVideo' to exist"**
+→ The site bundle is stale. Re-run
+`npx remotion lambda sites create src/remotion/index.ts --site-name=marketpilot-video`.
+
+**Fonts look wrong**
+→ We use Heebo + Inter as system fonts. For deterministic rendering,
+switch `src/remotion/components/OverlayCard.tsx` to use
+`@remotion/google-fonts/Heebo` imports.
+
+**Video is still only 8 seconds on prod**
+→ The composer is using fallback mode. Check that all 5 env vars are
+set in Vercel Production and that you redeployed after setting them.
+
+---
+
+## Rotating AWS keys
+
+1. AWS Console → IAM → user `remotion-marketpilot` → Security credentials
+2. Create new key, deactivate old
+3. Update Vercel env vars
+4. Redeploy
