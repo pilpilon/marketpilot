@@ -72,8 +72,10 @@ export async function startVeoGeneration(
     durationSeconds: Math.min(8, Math.max(4, input.durationSeconds)),
     sampleCount: 1,
     resolution: "1080p",
-    generateAudio: input.generateAudio ?? true,
   };
+  // Veo 3.1 generates audio natively. The Fast tier rejects the
+  // generateAudio parameter explicitly, so we never send it.
+  void input.generateAudio;
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${VEO_MODEL}:predictLongRunning?key=${apiKey}`;
 
