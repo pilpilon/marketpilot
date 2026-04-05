@@ -57,7 +57,7 @@ export default function SkillsPage() {
   const projectId = params.projectId as string;
   const t = useTranslations("skills");
 
-  // Creative Designer routes directly to its own page
+  // Skills that route directly to their own page
   const DIRECT_SKILLS = [
     {
       id: "creative_designer",
@@ -66,6 +66,14 @@ export default function SkillsPage() {
       icon: ImageIcon,
       color: "bg-pink-500/10 text-pink-600",
       href: "skills/creative-designer",
+    },
+    {
+      id: "video_creator",
+      label: t("videoCreatorLabel"),
+      description: t("videoCreatorDesc"),
+      icon: Video,
+      color: "bg-purple-500/10 text-purple-600",
+      href: "skills/video-creator",
     },
   ];
 
@@ -76,14 +84,6 @@ export default function SkillsPage() {
       description: t("emailDesc"),
       icon: Mail,
       color: "bg-green-500/10 text-green-600",
-      options: ["goal", "tone"],
-    },
-    {
-      id: "video_script",
-      label: t("videoLabel"),
-      description: t("videoDesc"),
-      icon: Video,
-      color: "bg-purple-500/10 text-purple-600",
       options: ["goal", "tone"],
     },
     {
