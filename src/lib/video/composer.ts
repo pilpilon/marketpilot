@@ -112,9 +112,15 @@ async function composeWithRemotionLambda(
   const totalSeconds = input.scenes.reduce((sum, s) => sum + s.duration, 0);
   const fps = 30;
 
-  // Fresh AWS accounts default to 10 concurrent Lambda executions.
-  // Using a high framesPerLambda value keeps render fan-out under that
-  // limit. For 32s @ 30fps = 960 frames: framesPerLambda=240 → 4 lambdas.
+  // Fresh AWS accounts default to 10 concurrent Lambda executions and
+  // very low Invoke API TPS. Using a large framesPerLambda value minimizes
+  // fan-out. For 32s @ 30fps = 960 frames: framesPerLambda=480 → 2
+  // renderer lambdas + 1 orchestrator = 3 total. Override with env var
+  // VIDEO_FRAMES_PER_LAMBDA once quota is raised for faster renders.
+  const framesPerLambda = parseInt(
+    process.env.VIDEO_FRAMES_PER_LAMBDA || "480",
+    10
+  );
   const { renderId, bucketName } = await renderMediaOnLambda({
     region,
     functionName,
@@ -124,7 +130,7 @@ async function composeWithRemotionLambda(
     imageFormat: "jpeg",
     maxRetries: 1,
     privacy: "public",
-    framesPerLambda: 240,
+    framesPerLambda,
     concurrencyPerLambda: 1,
     inputProps: {
       scenes: input.scenes,
