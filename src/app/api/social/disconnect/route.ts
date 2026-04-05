@@ -41,12 +41,29 @@ export async function POST(request: Request) {
     await deleteVaultSecret(account.refresh_token_secret_id);
   }
 
-  // Delete the social account record
-  await supabase
-    .from("social_accounts")
-    .delete()
-    .eq("id", socialAccountId)
-    .eq("user_id", user.id);
+  // Facebook and Instagram are user-level connections cloned per project.
+  // Disconnecting one removes the entire connection + any derived Instagram rows.
+  if (account.platform === "facebook") {
+    await supabase
+      .from("social_accounts")
+      .delete()
+      .eq("user_id", user.id)
+      .in("platform", ["facebook", "instagram"]);
+  } else if (account.platform === "instagram") {
+    await supabase
+      .from("social_accounts")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("platform", "instagram")
+      .eq("platform_user_id", account.platform_user_id);
+  } else {
+    // Per-project platforms (twitter, tiktok): single-row delete
+    await supabase
+      .from("social_accounts")
+      .delete()
+      .eq("id", socialAccountId)
+      .eq("user_id", user.id);
+  }
 
   return NextResponse.json({ success: true });
 }

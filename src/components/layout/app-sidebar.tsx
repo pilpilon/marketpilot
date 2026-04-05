@@ -69,7 +69,6 @@ export function AppSidebar() {
         { title: t("intelligence"), href: `/dashboard/${projectId}/intelligence`, icon: Brain, group: "core" },
         { title: t("skillsEngine"), href: `/dashboard/${projectId}/skills`, icon: Zap, group: "core" },
         { title: t("campaigns"), href: `/dashboard/${projectId}/campaigns`, icon: FolderKanban, group: "core" },
-        { title: t("socialAccounts"), href: `/dashboard/${projectId}/social`, icon: Share2, group: "publish" },
         { title: t("compose"), href: `/dashboard/${projectId}/compose`, icon: PenSquare, group: "publish" },
         { title: t("calendar"), href: `/dashboard/${projectId}/calendar`, icon: CalendarDays, group: "publish" },
         { title: t("autoReply"), href: `/dashboard/${projectId}/auto-reply`, icon: MessageSquareReply, group: "publish" },
@@ -78,6 +77,7 @@ export function AppSidebar() {
 
   const settingsNav = [
     { title: t("settings"), href: "/dashboard/settings", icon: Settings },
+    { title: t("socialAccounts"), href: "/dashboard/settings/social", icon: Share2 },
     { title: t("billing"), href: "/dashboard/settings/billing", icon: CreditCard },
   ];
 

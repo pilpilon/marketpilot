@@ -31,25 +31,37 @@ export async function GET(
   }
 
   const { searchParams } = new URL(request.url);
-  const projectId = searchParams.get("projectId");
+  let projectId = searchParams.get("projectId");
 
-  if (!projectId) {
-    return NextResponse.json(
-      { error: "projectId is required" },
-      { status: 400 }
-    );
-  }
-
-  // Verify project ownership
-  const { data: project } = await supabase
-    .from("projects")
-    .select("id")
-    .eq("id", projectId)
-    .eq("user_id", user.id)
-    .single();
-
-  if (!project) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  if (projectId) {
+    // Verify project ownership when a specific project is targeted
+    const { data: project } = await supabase
+      .from("projects")
+      .select("id")
+      .eq("id", projectId)
+      .eq("user_id", user.id)
+      .single();
+    if (!project) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
+  } else {
+    // User-level connect (from Settings → Social). Facebook callback fans out
+    // across all the user's projects, so we just need any project to satisfy
+    // the oauth_states FK constraint.
+    const { data: anyProject } = await supabase
+      .from("projects")
+      .select("id")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (!anyProject) {
+      return NextResponse.json(
+        { error: "Create a project before connecting social accounts." },
+        { status: 400 }
+      );
+    }
+    projectId = anyProject.id;
   }
 
   const state = generateState();

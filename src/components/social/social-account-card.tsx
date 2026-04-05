@@ -13,7 +13,7 @@ type SocialAccount = Database["public"]["Tables"]["social_accounts"]["Row"];
 interface SocialAccountCardProps {
   account: SocialAccount;
   platformInfo: { id: Platform; name: string; description: string };
-  projectId: string;
+  projectId?: string;
 }
 
 export function SocialAccountCard({
@@ -22,6 +22,9 @@ export function SocialAccountCard({
   projectId,
 }: SocialAccountCardProps) {
   const isHealthy = account.status === "active";
+  const reconnectHref = projectId
+    ? `/api/social/connect/${account.platform}?projectId=${projectId}`
+    : `/api/social/connect/${account.platform}`;
 
   async function handleDisconnect() {
     if (!confirm(`Disconnect ${platformInfo.name}?`)) return;
@@ -31,7 +34,6 @@ export function SocialAccountCard({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         socialAccountId: account.id,
-        projectId,
       }),
     });
 
@@ -77,7 +79,7 @@ export function SocialAccountCard({
             className="w-full"
             asChild
           >
-            <a href={`/api/social/connect/${account.platform}?projectId=${projectId}`}>
+            <a href={reconnectHref}>
               Reconnect
             </a>
           </Button>

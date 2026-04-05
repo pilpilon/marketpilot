@@ -10,11 +10,17 @@ import type { Platform } from "@/types/database";
 
 interface ConnectButtonProps {
   platform: { id: Platform; name: string; description: string };
-  projectId: string;
+  projectId?: string;
 }
 
 export function ConnectButton({ platform, projectId }: ConnectButtonProps) {
   const t = useTranslations("social");
+  const connectHref = projectId
+    ? `/api/social/connect/${platform.id}?projectId=${projectId}`
+    : `/api/social/connect/${platform.id}`;
+  const helpHref = projectId
+    ? `/dashboard/${projectId}/social/help?platform=${platform.id}`
+    : `/dashboard/settings/social/help?platform=${platform.id}`;
 
   return (
     <Card className="border-dashed">
@@ -28,13 +34,13 @@ export function ConnectButton({ platform, projectId }: ConnectButtonProps) {
         <p className="text-sm text-muted-foreground">{platform.description}</p>
         <div className="flex flex-col gap-2">
           <Button variant="outline" className="w-full" asChild>
-            <a href={`/api/social/connect/${platform.id}?projectId=${projectId}`}>
+            <a href={connectHref}>
               <Plus className="me-2 h-4 w-4" />
               Connect {platform.name}
             </a>
           </Button>
           <Button variant="ghost" size="sm" className="w-full text-muted-foreground" asChild>
-            <Link href={`/dashboard/${projectId}/social/help?platform=${platform.id}`}>
+            <Link href={helpHref}>
               <HelpCircle className="me-1.5 h-3.5 w-3.5" />
               {t("howToConnect")}
             </Link>
