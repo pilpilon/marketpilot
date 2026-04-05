@@ -195,6 +195,82 @@ export async function GET(
       throw new Error(`DB upsert failed: ${upsertError.message}`);
     }
 
+    // When Facebook connects (with combined FB+IG scopes), auto-link an Instagram social_account
+    // for this project by discovering the IG Business account on the project's matching page.
+    // The IG social_account row is metadata only — publisher uses the FB user token at publish time.
+    if (platform === "facebook") {
+      try {
+        const { data: proj } = await supabase
+          .from("projects")
+          .select("name")
+          .eq("id", oauthState.project_id)
+          .single();
+        const projectName = proj?.name || "";
+        const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+        const pagesRes = await fetch(
+          `https://graph.facebook.com/v22.0/me/accounts?fields=id,name,instagram_business_account{id,username,name,profile_picture_url}&access_token=${tokens.accessToken}`
+        );
+        if (pagesRes.ok) {
+          const pagesData = await pagesRes.json();
+          const pages: Array<{ id: string; name: string; instagram_business_account?: { id: string; username?: string; name?: string; profile_picture_url?: string } }> = pagesData.data || [];
+          const withIg = pages.filter((p) => p.instagram_business_account?.id);
+          const target = norm(projectName);
+          const chosen =
+            withIg.find((p) => norm(p.name) === target) ||
+            withIg.find((p) => norm(p.name).includes(target) || target.includes(norm(p.name))) ||
+            withIg[0];
+
+          if (chosen?.instagram_business_account) {
+            const ig = chosen.instagram_business_account;
+            console.log(`[social-callback] Auto-linking IG account ${ig.id} (${ig.username}) to project via page "${chosen.name}"`);
+            await supabase.from("social_accounts").upsert(
+              {
+                user_id: user.id,
+                project_id: oauthState.project_id,
+                platform: "instagram",
+                platform_user_id: ig.id,
+                platform_username: ig.username || ig.id,
+                platform_display_name: ig.name || ig.username || "",
+                platform_avatar_url: ig.profile_picture_url || "",
+                access_token_secret_id: accessSecretId, // same FB user token, re-referenced
+                refresh_token_secret_id: refreshSecretId,
+                token_expires_at: new Date(Date.now() + tokens.expiresIn * 1000).toISOString(),
+                scopes: tokens.scope ? tokens.scope.split(" ") : [],
+                status: "active",
+                connected_at: new Date().toISOString(),
+                metadata: { derived_from: "facebook", page_id: chosen.id, page_name: chosen.name },
+              },
+              { onConflict: "project_id,platform,platform_user_id" }
+            );
+
+            // Relink any orphaned IG post_platforms rows for this project to the new account
+            const { data: newIg } = await supabase
+              .from("social_accounts")
+              .select("id")
+              .eq("project_id", oauthState.project_id)
+              .eq("platform", "instagram")
+              .eq("platform_user_id", ig.id)
+              .maybeSingle();
+            if (newIg?.id) {
+              await supabase
+                .from("post_platforms")
+                .update({ social_account_id: newIg.id })
+                .is("social_account_id", null)
+                .eq("platform", "instagram")
+                .in("post_id", (
+                  await supabase.from("posts").select("id").eq("project_id", oauthState.project_id)
+                ).data?.map((p) => p.id) || []);
+            }
+          } else {
+            console.log(`[social-callback] No IG Business Account found on any page for project "${projectName}"`);
+          }
+        }
+      } catch (igErr) {
+        console.error(`[social-callback] IG auto-link failed (non-fatal):`, igErr instanceof Error ? igErr.message : igErr);
+      }
+    }
+
     console.log(`[social-callback] SUCCESS. Redirecting to social page.`);
     return NextResponse.redirect(
       `${appUrl}/dashboard/${oauthState.project_id}/social?connected=${platform}`

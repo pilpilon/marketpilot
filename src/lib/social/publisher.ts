@@ -18,7 +18,8 @@ interface PublishContext {
  */
 async function publishToPlatform(ctx: PublishContext): Promise<void> {
   const supabase = await createServiceRoleClient();
-  const { postPlatform, socialAccount } = ctx;
+  const { postPlatform } = ctx;
+  let { socialAccount } = ctx;
 
   try {
     // Update status to publishing
@@ -27,22 +28,42 @@ async function publishToPlatform(ctx: PublishContext): Promise<void> {
       .update({ status: "publishing" })
       .eq("id", postPlatform.id);
 
+    const targetPlatform = postPlatform.platform;
+
+    // Instagram Business publishing rides on the Facebook user token:
+    // /me/accounts → find the page for this project → publish to page.instagram_business_account
+    // So for IG posts, swap to the project's Facebook social_account for the token.
+    if (targetPlatform === "instagram") {
+      const { data: fbAccount } = await supabase
+        .from("social_accounts")
+        .select("*")
+        .eq("project_id", ctx.post.project_id)
+        .eq("platform", "facebook")
+        .eq("status", "active")
+        .maybeSingle();
+      if (!fbAccount) {
+        throw new Error("Instagram publishing requires a connected Facebook account for this project. Connect Facebook to enable Instagram.");
+      }
+      socialAccount = fbAccount as unknown as SocialAccount;
+    }
+
     // Get decrypted tokens
     const { accessToken } = await getAccountTokens(socialAccount);
     if (!accessToken) {
       throw new Error("No access token available. Account may need reconnection.");
     }
 
-    const client = getPlatformClient(socialAccount.platform);
+    // Use the target platform's client (facebook → FB client, instagram → IG client) even though the token is always an FB user token.
+    const client = getPlatformClient(targetPlatform);
     const caption = postPlatform.caption || "";
     const hashtags = postPlatform.hashtags || [];
     const fullText = hashtags.length > 0
       ? `${caption}\n\n${hashtags.map((h) => `#${h}`).join(" ")}`
       : caption;
 
-    // For Facebook, pass project name so the publisher can match the correct Page
+    // For Facebook + Instagram, pass the project name as the page-match hint (both resolve via /me/accounts)
     let publishHint = socialAccount.platform_user_id || undefined;
-    if (socialAccount.platform === "facebook" && ctx.post.project_id) {
+    if ((targetPlatform === "facebook" || targetPlatform === "instagram") && ctx.post.project_id) {
       const { data: proj } = await supabase
         .from("projects")
         .select("name")
@@ -140,7 +161,19 @@ export async function publishPost(postId: string): Promise<{
 
   // Publish to each platform sequentially (to respect rate limits)
   for (const pp of postPlatforms) {
-    const socialAccount = pp.social_accounts as unknown as SocialAccount;
+    const socialAccount = pp.social_accounts as unknown as SocialAccount | null;
+
+    // Orphaned platform row (social_account was deleted/disconnected). Surface a clear message.
+    if (!socialAccount) {
+      const msg = `Social account for ${pp.platform} was disconnected. Reconnect ${pp.platform} to publish this post.`;
+      console.log(`[publisher] orphaned post_platform ${pp.id} for post ${postId}: ${msg}`);
+      await supabase
+        .from("post_platforms")
+        .update({ status: "failed", error_message: msg })
+        .eq("id", pp.id);
+      results.push({ platform: pp.platform, success: false, error: msg });
+      continue;
+    }
 
     try {
       await publishToPlatform({

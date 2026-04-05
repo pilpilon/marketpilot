@@ -53,29 +53,48 @@ export class InstagramClient implements SocialPlatformClient {
     throw new Error("Instagram requires media content. Text-only posts are not supported.");
   }
 
+  /**
+   * Resolve the Instagram Business account via the Facebook user token.
+   * Mirrors FacebookClient.resolvePage — uses project name to pick the right page,
+   * then reads page.instagram_business_account and returns the PAGE token (required
+   * for IG content publishing; the IG business account is impersonated via its owning page).
+   */
+  private async resolveIgAccount(fbUserToken: string, projectName?: string): Promise<{ igId: string; pageAccessToken: string }> {
+    const res = await this.get("/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}", fbUserToken);
+    const pages: Array<{ id: string; name: string; access_token: string; instagram_business_account?: { id: string; username?: string } }> = res.data || [];
+
+    const withIg = pages.filter((p) => p.instagram_business_account?.id);
+    if (!withIg.length) {
+      throw new Error("No Instagram Business account found on any Facebook Page. Link an IG Business account to a Page in Meta Business Suite.");
+    }
+
+    let chosen = withIg[0];
+    if (projectName) {
+      const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const target = norm(projectName);
+      const match = withIg.find((p) => norm(p.name) === target) || withIg.find((p) => norm(p.name).includes(target) || target.includes(norm(p.name)));
+      if (match) chosen = match;
+      else console.log(`[instagram] no page name matched project="${projectName}" — defaulting to first IG-enabled page "${chosen.name}"`);
+    }
+
+    console.log(`[instagram] resolved IG account ${chosen.instagram_business_account!.id} (${chosen.instagram_business_account!.username}) via page "${chosen.name}"`);
+    return { igId: chosen.instagram_business_account!.id, pageAccessToken: chosen.access_token };
+  }
+
   async publishMedia(
     accessToken: string,
     caption: string,
     mediaUrls: string[],
-    platformUserId?: string
+    publishHint?: string
   ): Promise<PlatformPublishResult> {
-    // Use the stored platform user ID (from OAuth) — avoids calling GET /me which
-    // is unreliable on graph.instagram.com for Instagram Login tokens
-    let igAccountId = platformUserId;
-    if (!igAccountId) {
-      console.log(`[instagram] no platformUserId provided, falling back to GET /me`);
-      const profile = await this.get("/me?fields=user_id", accessToken);
-      igAccountId = profile.user_id || profile.id;
-    }
-    if (!igAccountId) {
-      throw new Error("Could not get Instagram user ID");
-    }
+    // publishHint = project name (passed by publisher.ts for FB-style resolution)
+    const { igId: igAccountId, pageAccessToken } = await this.resolveIgAccount(accessToken, publishHint);
     console.log(`[instagram] publishMedia: igAccountId=${igAccountId}, mediaUrl=${mediaUrls[0]?.substring(0, 80)}...`);
 
-    // Create media container
+    // Create media container (use PAGE access token, not user token)
     const container = await this.post(
       `/${igAccountId}/media`,
-      accessToken,
+      pageAccessToken,
       { image_url: mediaUrls[0], caption }
     );
 
@@ -88,7 +107,7 @@ export class InstagramClient implements SocialPlatformClient {
     while (!ready && attempts < 10) {
       const status = await this.get(
         `/${creationId}?fields=status_code`,
-        accessToken
+        pageAccessToken
       );
       console.log(`[instagram] container status (attempt ${attempts + 1}): ${status.status_code}`);
       if (status.status_code === "FINISHED") {
@@ -109,7 +128,7 @@ export class InstagramClient implements SocialPlatformClient {
     console.log(`[instagram] publishing container ${creationId}...`);
     const published = await this.post(
       `/${igAccountId}/media_publish`,
-      accessToken,
+      pageAccessToken,
       { creation_id: creationId }
     );
     console.log(`[instagram] published! id=${published.id}`);

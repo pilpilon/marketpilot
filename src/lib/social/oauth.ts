@@ -65,12 +65,15 @@ const platformConfigs: Record<Platform, () => OAuthConfig> = {
     tokenUrl: "https://graph.facebook.com/v22.0/oauth/access_token",
     clientId: process.env.FACEBOOK_APP_ID!,
     clientSecret: process.env.FACEBOOK_APP_SECRET!,
+    // Combined scopes: one Facebook connection grants publishing to both Facebook Pages AND Instagram Business
     scopes: [
       "pages_show_list",
       "pages_read_engagement",
       "pages_manage_posts",
       "pages_read_user_content",
       "business_management",
+      "instagram_basic",
+      "instagram_content_publish",
     ],
     usePKCE: false,
   }),
