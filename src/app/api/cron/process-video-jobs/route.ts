@@ -332,7 +332,21 @@ async function stageCompose(
   }
 
   const brandTokens = await loadBrandTokens(supabase, job.project_id);
-  const musicTrackUrl = (meta?.musicTrackUrl as string | undefined) || null;
+
+  // Probe the music track — if it 404s, drop it so Remotion doesn't
+  // crash on a missing asset. User hasn't uploaded MP3s yet.
+  const rawMusicUrl = (meta?.musicTrackUrl as string | undefined) || null;
+  let musicTrackUrl: string | null = null;
+  if (rawMusicUrl) {
+    try {
+      const probe = await fetch(rawMusicUrl, { method: "HEAD" });
+      if (probe.ok) {
+        musicTrackUrl = rawMusicUrl;
+      }
+    } catch {
+      // leave as null
+    }
+  }
 
   const result = await composeVideo({
     scenes: script.scenes.map((s) => ({
@@ -383,7 +397,15 @@ async function stageCompose(
   }
 
   const assetId = (asset as { id: string }).id;
-  const warnings = [...(meta.warnings || []), ...result.warnings];
+  const musicDroppedWarning =
+    rawMusicUrl && !musicTrackUrl
+      ? ["Background music track not found in storage — rendered without music. Upload MP3s to the music-library bucket."]
+      : [];
+  const warnings = [
+    ...(meta.warnings || []),
+    ...result.warnings,
+    ...musicDroppedWarning,
+  ];
 
   await updateJob(supabase, job.id, {
     status: "completed",
