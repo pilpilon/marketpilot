@@ -148,10 +148,11 @@ async function startRemotionLambda(
   const totalSeconds = input.scenes.reduce((sum, s) => sum + s.duration, 0);
   const fps = 30;
 
-  // Conservative fan-out for fresh AWS accounts. Override via
-  // VIDEO_FRAMES_PER_LAMBDA once Lambda burst concurrency is raised.
+  // framesPerLambda controls render fan-out. Lower = more parallel lambdas,
+  // faster per-chunk render. 120 → 8 renderers for 960 frames (32s@30fps).
+  // Override via VIDEO_FRAMES_PER_LAMBDA.
   const framesPerLambda = parseInt(
-    process.env.VIDEO_FRAMES_PER_LAMBDA || "480",
+    process.env.VIDEO_FRAMES_PER_LAMBDA || "120",
     10
   );
 
