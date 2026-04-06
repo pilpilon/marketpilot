@@ -143,7 +143,6 @@ async function captureViaBrowserless(
         deviceScaleFactor: spec.deviceScaleFactor ?? 2,
       },
       waitForTimeout: 3000,
-      blockAds: true,
     }),
     signal: AbortSignal.timeout(15_000),
   });
