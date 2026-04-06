@@ -372,16 +372,16 @@ export default function IntelligencePage() {
           </CardHeader>
           {screenshots.length > 0 && (
             <CardContent className="pt-0">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="flex gap-4 items-start">
                 {screenshots.map((s) => (
-                  <div key={s.id} className="space-y-2">
+                  <div key={s.id} className="space-y-2" style={{ width: s.viewport === "mobile" ? 160 : undefined, flex: s.viewport === "desktop" ? 1 : "none" }}>
                     <div className="relative rounded-lg border overflow-hidden bg-muted">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={s.public_url}
                         alt={`${s.viewport} screenshot`}
-                        className="w-full h-auto object-cover"
-                        style={{ maxHeight: s.viewport === "mobile" ? 300 : 200 }}
+                        className="w-full h-auto object-contain"
+                        style={{ maxHeight: s.viewport === "mobile" ? 340 : 220 }}
                       />
                       {s.approved && (
                         <div className="absolute top-2 end-2">
