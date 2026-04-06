@@ -6,7 +6,7 @@ import Image from "next/image";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Copy, ChevronDown, ChevronUp, Send, Check, Download, ImageIcon } from "lucide-react";
+import { Copy, ChevronDown, ChevronUp, Send, Check, Download, ImageIcon, Play } from "lucide-react";
 
 type Asset = {
   id: string;
@@ -22,6 +22,7 @@ type Asset = {
 const ASSET_TYPE_LABELS: Record<string, string> = {
   post_draft: "Post Draft",
   image: "Image",
+  video: "Video",
   video_script: "Video Script",
   scene_json: "Scene",
   content_calendar: "Content Calendar",
@@ -74,7 +75,7 @@ export function CampaignAssetCard({
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          {(asset.asset_type === "image" || asset.asset_type === "template_render") && asset.storage_path ? (
+          {(asset.asset_type === "image" || asset.asset_type === "template_render" || asset.asset_type === "video") && asset.storage_path ? (
             <Button variant="ghost" size="sm" asChild className="h-8 px-2">
               <a href={asset.storage_path} download target="_blank" rel="noreferrer">
                 <Download className="h-4 w-4" />
@@ -115,7 +116,35 @@ export function CampaignAssetCard({
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        {(asset.asset_type === "image" || asset.asset_type === "template_render") && asset.storage_path ? (
+        {asset.asset_type === "video" && asset.storage_path ? (
+          <div className="space-y-3">
+            <div className="relative w-full max-w-sm rounded-lg overflow-hidden border bg-black"
+              style={{ aspectRatio: aspectRatio?.replace(":", "/") || "9/16" }}
+            >
+              <video
+                controls
+                playsInline
+                src={asset.storage_path}
+                className="w-full h-full object-contain"
+              />
+            </div>
+            {meta?.duration_seconds ? (
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Play className="h-3 w-3" />
+                {String(meta.duration_seconds)}s
+                {meta.cost_usd ? ` · $${Number(meta.cost_usd as number).toFixed(2)}` : ""}
+              </p>
+            ) : null}
+            {content && (
+              <details className="text-xs text-muted-foreground">
+                <summary className="cursor-pointer hover:text-foreground">View script</summary>
+                <pre className="mt-1 whitespace-pre-wrap font-sans bg-muted rounded p-2 leading-relaxed">
+                  {content}
+                </pre>
+              </details>
+            )}
+          </div>
+        ) : (asset.asset_type === "image" || asset.asset_type === "template_render") && asset.storage_path ? (
           <div className="space-y-3">
             <div
               className="relative w-full max-w-xs rounded-lg overflow-hidden border bg-muted"
