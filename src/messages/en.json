@@ -501,6 +501,8 @@
     "descVisualStyle": "Color direction, typography, imagery, composition guidance",
     "labelExamples": "Examples",
     "descExamples": "Upload past successful posts, campaigns, and presentations \u2014 AI learns your voice and style patterns",
+    "labelFeatures": "Features",
+    "descFeatures": "Confirmed product capabilities and platform type \u2014 keeps AI assets grounded in reality",
     "labelSop": "SOP",
     "descSop": "Standard operating procedure for the research & analysis workflow"
   },

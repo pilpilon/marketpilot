@@ -146,13 +146,45 @@ async function stagePlanning(
     tone: (meta?.tone as string | undefined) || undefined,
     localeContext:
       (meta?.localeContext as string | undefined) || undefined,
+    features: brandContext.features || undefined,
   });
 
   // Respect user's chosen mood if it wasn't "auto"
   const chosenMood = (meta?.musicMood as MusicMood) || script.musicMood;
   const musicTrackUrl = getMusicTrackUrl(chosenMood);
 
-  // Kick off scene 0 immediately (no reference image for the first one)
+  // Load approved screenshot for scenes that mention the app/product
+  let projectScreenshotBase64: string | undefined;
+  try {
+    const { data: screenshots } = await supabase
+      .from("project_screenshots")
+      .select("public_url, viewport")
+      .eq("project_id", job.project_id)
+      .eq("approved", true)
+      .order("viewport", { ascending: true })
+      .limit(1);
+
+    if (screenshots?.length) {
+      const res = await fetch((screenshots[0] as { public_url: string }).public_url, {
+        signal: AbortSignal.timeout(5000),
+      });
+      if (res.ok) {
+        projectScreenshotBase64 = Buffer.from(await res.arrayBuffer()).toString("base64");
+      }
+    }
+  } catch {
+    // Best-effort
+  }
+
+  // Detect if scene prompt references the app/product
+  const sceneReferencesApp = (prompt: string) =>
+    /\b(app|screen|interface|dashboard|website|platform|homepage|landing)\b/i.test(prompt);
+
+  const firstSceneRef = sceneReferencesApp(script.scenes[0].prompt)
+    ? projectScreenshotBase64
+    : undefined;
+
+  // Kick off scene 0
   const firstHandle = await startSceneGeneration(
     script.scenes[0],
     {
@@ -160,7 +192,8 @@ async function stagePlanning(
       userId: job.user_id,
       projectId: job.project_id,
       aspectRatio: "9:16",
-    }
+    },
+    firstSceneRef
   );
 
   const sceneOperations = [

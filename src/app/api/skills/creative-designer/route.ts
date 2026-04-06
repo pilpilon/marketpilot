@@ -7,6 +7,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
 import { buildImagePrompt } from "@/lib/templates/prompt-builder";
 import { getCondensedStorytellingGuidance } from "@/lib/ai/storytelling-framework";
+import { screenshotToReferenceImage } from "@/lib/screenshots/mockup";
 
 export async function POST(request: Request) {
   const supabase = await createServerSupabaseClient();
@@ -46,8 +47,39 @@ export async function POST(request: Request) {
   // Load brand intelligence
   const brandContext = await loadBrandContext(supabase, projectId);
 
-  // If there's a reference image, use the direct Gemini path (can't go through shared fn)
-  if (referenceImage?.base64) {
+  // Auto-inject approved project screenshot as reference image when user hasn't provided one
+  let effectiveReferenceImage = referenceImage;
+  let isAutoScreenshot = false;
+
+  if (!effectiveReferenceImage?.base64) {
+    try {
+      const { data: screenshots } = await supabase
+        .from("project_screenshots")
+        .select("public_url, viewport")
+        .eq("project_id", projectId)
+        .eq("approved", true)
+        .order("viewport", { ascending: true }) // mobile first
+        .limit(1);
+
+      if (screenshots?.length) {
+        const screenshotRes = await fetch((screenshots[0] as { public_url: string }).public_url, {
+          signal: AbortSignal.timeout(5000),
+        });
+        if (screenshotRes.ok) {
+          const buf = Buffer.from(await screenshotRes.arrayBuffer());
+          const device = (screenshots[0] as { viewport: string }).viewport === "mobile" ? "iphone" as const : "browser" as const;
+          const ref = await screenshotToReferenceImage(buf, device);
+          effectiveReferenceImage = { base64: ref.base64, mimeType: ref.mimeType };
+          isAutoScreenshot = true;
+        }
+      }
+    } catch {
+      // Best-effort — continue without screenshot
+    }
+  }
+
+  // If there's a reference image (user-provided or auto-screenshot), use the direct Gemini path
+  if (effectiveReferenceImage?.base64) {
     return handleReferenceImageGeneration({
       supabase,
       userId: user.id,
@@ -58,8 +90,9 @@ export async function POST(request: Request) {
       aspectRatio,
       customInstruction,
       modelTier,
-      referenceImage,
+      referenceImage: effectiveReferenceImage,
       brandContext,
+      isAutoScreenshot,
     });
   }
 
@@ -126,6 +159,7 @@ async function handleReferenceImageGeneration(params: {
   modelTier: string;
   referenceImage: { base64: string; mimeType: string };
   brandContext: Awaited<ReturnType<typeof loadBrandContext>>;
+  isAutoScreenshot?: boolean;
 }) {
   const {
     supabase,
@@ -153,6 +187,8 @@ async function handleReferenceImageGeneration(params: {
     productContext: brandContext.productContext,
     intakePatterns: brandContext.intakePatterns,
     hasReferenceImage: true,
+    isAutoScreenshot: params.isAutoScreenshot,
+    platformTypes: brandContext.platformTypes,
     customInstruction,
   });
 
@@ -226,6 +262,10 @@ async function handleReferenceImageGeneration(params: {
 
   try {
     const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const featuresGuard = brandContext.features
+      ? `\nPRODUCT CAPABILITIES (ONLY reference these — do NOT invent features):\n${brandContext.features.slice(0, 1000)}\n\nRULES:\n- Only mention features listed as "Confirmed" above\n- Do NOT promise features not in the list\n- If the product is a website (not a mobile app), do NOT suggest "download the app" or reference app stores`
+      : "";
+
     const captionResult = await textModel.generateContent(
       `You are an expert social media copywriter. Write a single high-performing caption and hashtags for a ${platformLabel} post.
 
@@ -234,6 +274,7 @@ BRAND CONTEXT:
 - Positioning: ${brandContext.brandPositioning || ""}
 - Product: ${brandContext.productContext || ""}
 - Audience: ${brandContext.audienceContext || ""}
+${featuresGuard}
 
 POST CONCEPT:
 ${postContent}

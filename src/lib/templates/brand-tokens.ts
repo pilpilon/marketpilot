@@ -159,6 +159,20 @@ function parseProductContext(content: string): string {
   return parts.join(". ").slice(0, 600);
 }
 
+/**
+ * Extract platform type from features context file.
+ * Returns a set of platform labels the product is confirmed to have.
+ */
+function parsePlatformType(content: string): string[] {
+  const platforms: string[] = [];
+  if (/\[x\]\s*Website/i.test(content)) platforms.push("website");
+  if (/\[x\]\s*Mobile App.*iOS/i.test(content)) platforms.push("ios");
+  if (/\[x\]\s*Mobile App.*Android/i.test(content)) platforms.push("android");
+  if (/\[x\]\s*Desktop App/i.test(content)) platforms.push("desktop");
+  if (/\[x\]\s*Physical Product/i.test(content)) platforms.push("physical");
+  return platforms.length > 0 ? platforms : ["website"]; // default to website
+}
+
 export async function loadBrandContext(
   supabase: SupabaseClient,
   projectId: string
@@ -169,12 +183,14 @@ export async function loadBrandContext(
   brandPositioning: string;
   productContext: string;
   intakePatterns: string;
+  features: string;
+  platformTypes: string[];
 }> {
   const { data: contextFiles } = await supabase
     .from("context_files")
     .select("file_type, content")
     .eq("project_id", projectId)
-    .in("file_type", ["visual_style", "character_brief", "audience", "brand", "product", "intake"]);
+    .in("file_type", ["visual_style", "character_brief", "audience", "brand", "product", "intake", "features"]);
 
   const files = (contextFiles || []) as Array<{ file_type: string; content: string }>;
   const visualStyleFile = files.find((f) => f.file_type === "visual_style");
@@ -183,6 +199,7 @@ export async function loadBrandContext(
   const brandFile = files.find((f) => f.file_type === "brand");
   const productFile = files.find((f) => f.file_type === "product");
   const intakeFile = files.find((f) => f.file_type === "intake");
+  const featuresFile = files.find((f) => f.file_type === "features");
 
   const visual = visualStyleFile
     ? parseVisualStyle(visualStyleFile.content)
@@ -201,6 +218,8 @@ export async function loadBrandContext(
   const brandPositioning = brandFile ? parseBrandContext(brandFile.content) : "";
   const productContext = productFile ? parseProductContext(productFile.content) : "";
   const intakePatterns = intakeFile ? parseIntakePatterns(intakeFile.content) : "";
+  const features = featuresFile?.content ?? "";
+  const platformTypes = featuresFile ? parsePlatformType(featuresFile.content) : ["website"];
 
-  return { visual, brandPersonality, audienceContext, brandPositioning, productContext, intakePatterns };
+  return { visual, brandPersonality, audienceContext, brandPositioning, productContext, intakePatterns, features, platformTypes };
 }

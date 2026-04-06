@@ -30,6 +30,7 @@ const FILE_TYPE_IDS = [
   { id: "character_brief", labelKey: "labelCharacter", descKey: "descCharacter" },
   { id: "visual_style", labelKey: "labelVisualStyle", descKey: "descVisualStyle" },
   { id: "intake", labelKey: "labelExamples", descKey: "descExamples" },
+  { id: "features", labelKey: "labelFeatures", descKey: "descFeatures" },
   { id: "sop", labelKey: "labelSop", descKey: "descSop" },
 ];
 
@@ -78,19 +79,27 @@ export default function IntelligencePage() {
   const [synthesizing, setSynthesizing] = useState(false);
   const [synthesizeError, setSynthesizeError] = useState("");
 
+  // Screenshot state
+  type Screenshot = { id: string; viewport: string; public_url: string; approved: boolean };
+  const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
+  const [capturingScreenshots, setCapturingScreenshots] = useState(false);
+
   const fetchFiles = useCallback(async () => {
-    const [contextRes, attachRes] = await Promise.all([
+    const [contextRes, attachRes, screenshotRes] = await Promise.all([
       fetch(`/api/projects/${projectId}/context`),
       fetch(`/api/projects/${projectId}/context/attachments`),
+      fetch(`/api/projects/${projectId}/screenshots`),
     ]);
     const contextData = await contextRes.json();
     const attachData = await attachRes.json();
+    const screenshotData = await screenshotRes.json().catch(() => ({ screenshots: [] }));
     const map: Record<string, ContextFile> = {};
     for (const f of contextData.files || []) {
       map[f.file_type] = f;
     }
     setFiles(map);
     setAttachments(attachData.attachments || []);
+    setScreenshots(screenshotData.screenshots || []);
     setLoading(false);
   }, [projectId]);
 
@@ -101,7 +110,7 @@ export default function IntelligencePage() {
 
   const ANALYSIS_STEPS = [
     "start", "competitors", "audience", "social",
-    "brand", "product", "character", "visual_style", "sop", "complete",
+    "brand", "product", "features", "character", "visual_style", "sop", "complete",
   ];
 
   async function runAnalysis() {
@@ -113,8 +122,8 @@ export default function IntelligencePage() {
       const step = ANALYSIS_STEPS[i];
       // Map step to display label using FILE_TYPES
       const displayStep = FILE_TYPES.find((ft) => ft.id === step)?.label ?? step;
-      const stepNum = Math.min(i, 7);
-      setProgress({ step: displayStep, current: stepNum, total: 7 });
+      const stepNum = Math.min(i, 8);
+      setProgress({ step: displayStep, current: stepNum, total: 8 });
 
       try {
         const res = await fetch(`/api/projects/${projectId}/analyze`, {
@@ -181,6 +190,35 @@ export default function IntelligencePage() {
     } finally {
       setSynthesizing(false);
     }
+  }
+
+  async function captureScreenshots() {
+    setCapturingScreenshots(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/screenshots`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        // Refetch to get full records
+        const refetch = await fetch(`/api/projects/${projectId}/screenshots`);
+        const refetchData = await refetch.json();
+        setScreenshots(refetchData.screenshots || []);
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setCapturingScreenshots(false);
+    }
+  }
+
+  async function approveScreenshot(id: string, approved: boolean) {
+    await fetch(`/api/projects/${projectId}/screenshots`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ screenshotId: id, approved }),
+    });
+    setScreenshots((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, approved } : s))
+    );
   }
 
   const populatedCount = FILE_TYPES.filter((t) => files[t.id]).length;
@@ -269,6 +307,78 @@ export default function IntelligencePage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* App Preview — Screenshots Section */}
+      {!loading && (
+        <Card>
+          <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
+            <div>
+              <CardTitle className="text-base">App Preview</CardTitle>
+              <CardDescription className="mt-0.5 text-xs">
+                Screenshots of your website help AI create marketing assets with your real interface instead of generic images.
+              </CardDescription>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={capturingScreenshots}
+              onClick={captureScreenshots}
+            >
+              {capturingScreenshots ? (
+                <Loader2 className="me-2 h-3 w-3 animate-spin" />
+              ) : (
+                <RefreshCw className="me-2 h-3 w-3" />
+              )}
+              {screenshots.length > 0 ? "Refresh" : "Capture"}
+            </Button>
+          </CardHeader>
+          {screenshots.length > 0 && (
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-2 gap-4">
+                {screenshots.map((s) => (
+                  <div key={s.id} className="space-y-2">
+                    <div className="relative rounded-lg border overflow-hidden bg-muted">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={s.public_url}
+                        alt={`${s.viewport} screenshot`}
+                        className="w-full h-auto object-cover"
+                        style={{ maxHeight: s.viewport === "mobile" ? 300 : 200 }}
+                      />
+                      {s.approved && (
+                        <div className="absolute top-2 end-2">
+                          <Badge className="bg-green-500 text-white text-xs">Approved</Badge>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground capitalize">{s.viewport}</span>
+                      <div className="flex gap-1">
+                        {!s.approved ? (
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => approveScreenshot(s.id, true)}>
+                            <CheckCircle2 className="me-1 h-3 w-3" /> Approve
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="ghost" className="h-7 text-xs text-muted-foreground" onClick={() => approveScreenshot(s.id, false)}>
+                            Unapprove
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          )}
+          {screenshots.length === 0 && !capturingScreenshots && (
+            <CardContent className="pt-0 pb-4">
+              <p className="text-xs text-muted-foreground">
+                No screenshots yet. Click &quot;Capture&quot; to take screenshots of your website, or they&apos;ll be captured automatically during analysis.
+              </p>
+            </CardContent>
+          )}
+        </Card>
       )}
 
       {loading ? (

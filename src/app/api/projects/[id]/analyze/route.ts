@@ -3,6 +3,9 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { perplexityResearch, perplexitySynthesize } from "@/lib/ai/perplexity";
 import { parseProjectSettings, buildLocaleContext } from "@/lib/ai/locale-context";
 import { generateSOP } from "@/lib/ai/sop-template";
+import { captureScreenshot, VIEWPORTS } from "@/lib/screenshots/capture";
+import { createClient } from "@supabase/supabase-js";
+import { ensureDeviceFrames } from "@/lib/screenshots/mockup";
 
 // Each step should complete within 60s
 export const maxDuration = 60;
@@ -218,6 +221,56 @@ export async function POST(
           console.log(`[analyze] Scraped ${websiteContent.length} chars from website`);
         }
 
+        // Best-effort: capture screenshots of the website for asset generation
+        if (projectUrl) {
+          try {
+            await ensureDeviceFrames();
+            const serviceSupabase = createClient(
+              process.env.NEXT_PUBLIC_SUPABASE_URL!,
+              process.env.SUPABASE_SERVICE_ROLE_KEY!
+            );
+
+            for (const viewport of ["desktop", "mobile"] as const) {
+              try {
+                const capture = await captureScreenshot(projectUrl, viewport);
+                const spec = VIEWPORTS[viewport];
+                const fileName = `screenshots/${user.id}/${projectId}/${viewport}-${Date.now()}.png`;
+
+                await serviceSupabase.storage
+                  .from("generated-images")
+                  .upload(fileName, capture.buffer, { contentType: "image/png", upsert: true });
+
+                const { data: urlData } = serviceSupabase.storage
+                  .from("generated-images")
+                  .getPublicUrl(fileName);
+
+                // Clear old screenshots for this viewport
+                await supabase
+                  .from("project_screenshots")
+                  .delete()
+                  .eq("project_id", projectId)
+                  .eq("user_id", user.id)
+                  .eq("viewport", viewport);
+
+                await supabase.from("project_screenshots").insert({
+                  project_id: projectId,
+                  user_id: user.id,
+                  viewport,
+                  storage_path: fileName,
+                  public_url: urlData.publicUrl,
+                  width: spec.width * (spec.deviceScaleFactor ?? 2),
+                  height: spec.height * (spec.deviceScaleFactor ?? 2),
+                  approved: false,
+                });
+              } catch (e) {
+                console.error(`[analyze] Screenshot ${viewport} capture failed:`, e instanceof Error ? e.message : e);
+              }
+            }
+          } catch (e) {
+            console.error("[analyze] Screenshot setup failed:", e instanceof Error ? e.message : e);
+          }
+        }
+
         // Create new run with scraped content in metadata
         const { data: run } = await supabase
           .from("analysis_runs")
@@ -227,7 +280,7 @@ export async function POST(
             run_type: "full_brand_analysis",
             provider: "perplexity",
             status: "running",
-            metadata: { step: "start", current: 0, total: 7, websiteContent },
+            metadata: { step: "start", current: 0, total: 8, websiteContent },
           })
           .select("id")
           .single();
@@ -365,6 +418,52 @@ Write a Product Brief with these sections:
 Keep it tight and focused on what matters for marketing.`
         );
         await saveContextFile(supabase, projectId, user.id, "product", result);
+        return NextResponse.json({ done: true });
+      }
+
+      // ─── Step 6b: Features ─────────────────────────────────────
+      case "features": {
+        const product = await readContextFile(supabase, projectId, "product");
+
+        const result = await perplexitySynthesize(
+          `You are a product analyst. Extract a STRUCTURED list of CONFIRMED features and capabilities from "${projectName}".
+
+${websiteInstruction}
+
+${context}
+
+Product brief:
+${product.slice(0, 1500)}
+${localeCtx.synthesisContext}
+
+RULES:
+- Only list features you can VERIFY from the website content or product brief
+- Do NOT invent or assume features that aren't mentioned
+- If a feature is unclear, mark it as "Unverified"
+- Determine the platform type (website only, mobile app, desktop app, physical product)
+- List what the product explicitly does NOT have (if you can determine this)
+
+Output format (use this EXACT structure):
+
+## Confirmed Features
+- [feature name]: [one-line description]
+
+## Platform Type
+- [x] Website
+- [ ] Mobile App (iOS)
+- [ ] Mobile App (Android)
+- [ ] Desktop App
+- [ ] Physical Product
+
+Check the boxes that apply based on the website content. If the product is ONLY a website with no mobile app, leave mobile unchecked.
+
+## Unverified / Needs User Input
+- [anything unclear or that needs user confirmation]
+
+## What This Product Does NOT Have
+- [any capabilities the product clearly lacks based on the website]`
+        );
+        await saveContextFile(supabase, projectId, user.id, "features", result);
         return NextResponse.json({ done: true });
       }
 

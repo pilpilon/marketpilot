@@ -13,6 +13,8 @@ export function buildImagePrompt(params: {
   productContext?: string;
   intakePatterns?: string;
   hasReferenceImage?: boolean;
+  isAutoScreenshot?: boolean;
+  platformTypes?: string[];
   customInstruction?: string;
 }): { prompt: string; negativePrompt: string } {
   const {
@@ -27,6 +29,8 @@ export function buildImagePrompt(params: {
     productContext,
     intakePatterns,
     hasReferenceImage,
+    isAutoScreenshot,
+    platformTypes,
     customInstruction,
   } = params;
 
@@ -82,8 +86,22 @@ export function buildImagePrompt(params: {
   ];
 
   if (hasReferenceImage) {
+    if (isAutoScreenshot) {
+      qualityLines.push(
+        "- The reference image shows the ACTUAL app/website interface in a device frame. Show this exact interface on a device screen in the scene. Do NOT replace it with generic dashboards, graphs, or placeholder UI."
+      );
+    } else {
+      qualityLines.push(
+        "- Incorporate the provided reference image content naturally into the scene (e.g., show the actual app UI on a device screen, place the real product in frame, use the brand asset as part of the composition)"
+      );
+    }
+  }
+
+  // Platform type guard — prevent AI from showing smartphones if product has no mobile app
+  const hasMobileApp = platformTypes?.some((p) => p === "ios" || p === "android");
+  if (platformTypes?.length && !hasMobileApp) {
     qualityLines.push(
-      "- Incorporate the provided reference image content naturally into the scene (e.g., show the actual app UI on a device screen, place the real product in frame, use the brand asset as part of the composition)"
+      "- This product is a WEBSITE, not a mobile app. Do NOT show app stores, app download prompts, or people using mobile apps unless a reference image explicitly shows a mobile interface."
     );
   }
 

@@ -65,6 +65,7 @@ export async function generateVideoScript(params: {
   goal?: string;
   tone?: string;
   localeContext?: string;
+  features?: string;
 }): Promise<VideoScript> {
   const {
     brandContext,
@@ -74,6 +75,7 @@ export async function generateVideoScript(params: {
     goal,
     tone,
     localeContext,
+    features,
   } = params;
 
   const apiKey = process.env.GOOGLE_AI_API_KEY;
@@ -103,6 +105,7 @@ ${brandContext.visual.styleKeywords ? `VISUAL STYLE: ${brandContext.visual.style
 ${brandContext.intakePatterns ? `PROVEN CONTENT PATTERNS:\n${brandContext.intakePatterns}\n` : ""}
 ${localeContext ? `\n${localeContext}\n` : ""}
 
+${features ? `PRODUCT CAPABILITIES (ONLY reference these confirmed features — do NOT invent features):\n${features.slice(0, 1000)}\n` : ""}
 GOAL: ${goal || "drive awareness and sign-ups"}
 TONE OVERRIDE: ${tone || "match the brand voice above"}
 FRAMEWORK: ${framework}
@@ -137,7 +140,7 @@ Rules:
 - Overlay text must be short enough to read in 2-3 seconds (max 10 words).
 - Lean authentic UGC-style visuals, not cinematic stock-ad clichés.
 
-PEOPLE RULES (important — Veo rejects specific wording):
+${!brandContext.platformTypes?.some((p) => p === "ios" || p === "android") ? "PLATFORM GUARD: This product is a WEBSITE, not a mobile app. Do NOT show app stores, app download screens, or people using mobile apps. Show the product as a website on a laptop/desktop screen if needed.\n\n" : ""}PEOPLE RULES (important — Veo rejects specific wording):
 - People ARE allowed, but must be framed as clearly fictional synthetic characters.
 - Every scene involving a person MUST begin with: "A fictional AI-generated person (not a real individual): ..."
 - Use "a person" / "a character" — NEVER "the owner", "the founder", "the CEO", "the customer", "the manager" (these imply a specific real person and get blocked).
