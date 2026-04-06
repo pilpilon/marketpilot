@@ -166,6 +166,7 @@ function parseProductContext(content: string): string {
 function parsePlatformType(content: string): string[] {
   const platforms: string[] = [];
   if (/\[x\]\s*Website/i.test(content)) platforms.push("website");
+  if (/\[x\]\s*PWA/i.test(content)) platforms.push("pwa");
   if (/\[x\]\s*Mobile App.*iOS/i.test(content)) platforms.push("ios");
   if (/\[x\]\s*Mobile App.*Android/i.test(content)) platforms.push("android");
   if (/\[x\]\s*Desktop App/i.test(content)) platforms.push("desktop");

@@ -129,6 +129,7 @@ export async function POST(
           width: spec.width * (spec.deviceScaleFactor ?? 2),
           height: spec.height * (spec.deviceScaleFactor ?? 2),
           approved: false,
+          screenshot_type: "landing",
         })
         .select("id")
         .single();
@@ -196,4 +197,82 @@ export async function PUT(
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ success: true });
+}
+
+/**
+ * PATCH /api/projects/[id]/screenshots
+ * Upload a product screenshot (user-provided, not auto-captured).
+ * Body: { base64: string, mimeType: string, viewport: "desktop" | "mobile" }
+ */
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: projectId } = await params;
+  const supabase = await createServerSupabaseClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { base64, mimeType, viewport = "mobile" } = await request.json();
+
+  if (!base64 || !mimeType) {
+    return NextResponse.json(
+      { error: "base64 and mimeType are required" },
+      { status: 400 }
+    );
+  }
+
+  const serviceSupabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const ext = mimeType === "image/jpeg" ? "jpg" : "png";
+  const fileName = `screenshots/${user.id}/${projectId}/product-${viewport}-${Date.now()}.${ext}`;
+  const buffer = Buffer.from(base64, "base64");
+
+  const { error: uploadError } = await serviceSupabase.storage
+    .from("generated-images")
+    .upload(fileName, buffer, { contentType: mimeType, upsert: true });
+
+  if (uploadError) {
+    return NextResponse.json({ error: uploadError.message }, { status: 500 });
+  }
+
+  const { data: urlData } = serviceSupabase.storage
+    .from("generated-images")
+    .getPublicUrl(fileName);
+
+  const { data: row, error: insertError } = await supabase
+    .from("project_screenshots")
+    .insert({
+      project_id: projectId,
+      user_id: user.id,
+      viewport,
+      storage_path: fileName,
+      public_url: urlData.publicUrl,
+      width: 0,
+      height: 0,
+      approved: true, // user-uploaded = pre-approved
+      screenshot_type: "product",
+    })
+    .select("id")
+    .single();
+
+  if (insertError) {
+    return NextResponse.json({ error: insertError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    screenshot: {
+      id: (row as { id: string }).id,
+      viewport,
+      publicUrl: urlData.publicUrl,
+      screenshot_type: "product",
+      approved: true,
+    },
+  });
 }

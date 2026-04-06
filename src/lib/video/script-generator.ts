@@ -140,7 +140,13 @@ Rules:
 - Overlay text must be short enough to read in 2-3 seconds (max 10 words).
 - Lean authentic UGC-style visuals, not cinematic stock-ad clichés.
 
-${!brandContext.platformTypes?.some((p) => p === "ios" || p === "android") ? "PLATFORM GUARD: This product is a WEBSITE, not a mobile app. Do NOT show app stores, app download screens, or people using mobile apps. Show the product as a website on a laptop/desktop screen if needed.\n\n" : ""}PEOPLE RULES (important — Veo rejects specific wording):
+${!brandContext.platformTypes?.some((p) => p === "ios" || p === "android") ? (brandContext.platformTypes?.some((p) => p === "pwa") ? "PLATFORM GUARD: This product is a PWA (mobile web app). It IS okay to show someone using it on a phone/tablet. Do NOT show app stores, app download screens, or 'available on App Store/Google Play' messaging.\n\n" : "PLATFORM GUARD: This product is a WEBSITE, not a mobile app. Do NOT show app stores, app download screens, or people using mobile apps. Show the product as a website on a laptop/desktop screen if needed.\n\n") : ""}CONTENT SAFETY (applies to ALL scenes):
+- Do NOT include any religious symbols (crosses, Stars of David, crescents, menorahs, churches, mosques, synagogues)
+- Do NOT include national flags, national emblems, or political imagery
+- Do NOT include military imagery or culturally controversial symbols
+- Keep visuals culturally neutral — focus on the product, people, and lifestyle
+
+PEOPLE RULES (important — Veo rejects specific wording):
 - People ARE allowed, but must be framed as clearly fictional synthetic characters.
 - Every scene involving a person MUST begin with: "A fictional AI-generated person (not a real individual): ..."
 - Use "a person" / "a character" — NEVER "the owner", "the founder", "the CEO", "the customer", "the manager" (these imply a specific real person and get blocked).

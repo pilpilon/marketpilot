@@ -97,13 +97,25 @@ export function buildImagePrompt(params: {
     }
   }
 
-  // Platform type guard — prevent AI from showing smartphones if product has no mobile app
+  // Platform type guard — prevent AI from showing app stores if product has no native app
   const hasMobileApp = platformTypes?.some((p) => p === "ios" || p === "android");
+  const hasPWA = platformTypes?.some((p) => p === "pwa");
   if (platformTypes?.length && !hasMobileApp) {
-    qualityLines.push(
-      "- This product is a WEBSITE, not a mobile app. Do NOT show app stores, app download prompts, or people using mobile apps unless a reference image explicitly shows a mobile interface."
-    );
+    if (hasPWA) {
+      qualityLines.push(
+        "- This product is a PWA (mobile web app). It IS okay to show someone using it on a phone/tablet. Do NOT show app stores, app download prompts, or 'available on App Store/Google Play' messaging."
+      );
+    } else {
+      qualityLines.push(
+        "- This product is a WEBSITE, not a mobile app. Do NOT show app stores, app download prompts, or people using mobile apps unless a reference image explicitly shows a mobile interface."
+      );
+    }
   }
+
+  // Content safety — applies to ALL asset generation globally
+  qualityLines.push(
+    "- CONTENT SAFETY: Do NOT include any religious symbols (crosses, Stars of David, crescents, menorahs, churches, mosques, synagogues), national flags, national emblems, political imagery, military imagery, or culturally controversial symbols. Keep visuals culturally neutral — focus on the product, people, and lifestyle."
+  );
 
   sections.push("", `QUALITY REQUIREMENTS:\n${qualityLines.join("\n")}`);
 
@@ -119,6 +131,8 @@ export function buildImagePrompt(params: {
     "distorted",
     "amateur",
     "cluttered",
+    "religious symbols", "cross", "star of david", "crescent", "menorah", "church", "mosque", "synagogue",
+    "national flag", "flag", "national emblem", "political", "military", "controversial",
     ...(visualDonts ? [visualDonts] : []),
   ].join(", ");
 

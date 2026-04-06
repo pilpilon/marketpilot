@@ -440,7 +440,8 @@ RULES:
 - Only list features you can VERIFY from the website content or product brief
 - Do NOT invent or assume features that aren't mentioned
 - If a feature is unclear, mark it as "Unverified"
-- Determine the platform type (website only, mobile app, desktop app, physical product)
+- Determine the platform type (website only, PWA/mobile web, native mobile app, desktop app, physical product)
+- Check for PWA signals: manifest.json link, service worker registration, "install" prompts, mobile-responsive meta tags, "add to home screen" messaging
 - List what the product explicitly does NOT have (if you can determine this)
 
 Output format (use this EXACT structure):
@@ -450,12 +451,13 @@ Output format (use this EXACT structure):
 
 ## Platform Type
 - [x] Website
-- [ ] Mobile App (iOS)
-- [ ] Mobile App (Android)
+- [ ] PWA / Mobile Web (installable web app, works on phone but NOT in app stores)
+- [ ] Mobile App (iOS — native, available in Apple App Store)
+- [ ] Mobile App (Android — native, available in Google Play)
 - [ ] Desktop App
 - [ ] Physical Product
 
-Check the boxes that apply based on the website content. If the product is ONLY a website with no mobile app, leave mobile unchecked.
+Check the boxes that apply based on the website content. A PWA is a website that also works like a mobile app (installable, offline-capable) but is NOT in app stores. If the site has manifest.json, service worker, or "add to home screen" — check PWA. Only check iOS/Android if the product is actually listed in Apple App Store or Google Play.
 
 ## Unverified / Needs User Input
 - [anything unclear or that needs user confirmation]

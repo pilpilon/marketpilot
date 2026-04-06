@@ -17,6 +17,7 @@ import {
   AlertCircle,
   Pencil,
   Wand2,
+  Upload,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { IntakeFileUpload } from "@/components/intake-file-upload";
@@ -80,7 +81,7 @@ export default function IntelligencePage() {
   const [synthesizeError, setSynthesizeError] = useState("");
 
   // Screenshot state
-  type Screenshot = { id: string; viewport: string; public_url: string; approved: boolean };
+  type Screenshot = { id: string; viewport: string; public_url: string; approved: boolean; screenshot_type?: string };
   const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
   const [capturingScreenshots, setCapturingScreenshots] = useState(false);
 
@@ -221,6 +222,24 @@ export default function IntelligencePage() {
     );
   }
 
+  async function uploadProductScreenshot(file: File) {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = (reader.result as string).split(",")[1];
+      const res = await fetch(`/api/projects/${projectId}/screenshots`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ base64, mimeType: file.type, viewport: "mobile" }),
+      });
+      if (res.ok) {
+        const refetch = await fetch(`/api/projects/${projectId}/screenshots`);
+        const data = await refetch.json();
+        setScreenshots(data.screenshots || []);
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
   const populatedCount = FILE_TYPES.filter((t) => files[t.id]).length;
 
   return (
@@ -319,19 +338,37 @@ export default function IntelligencePage() {
                 Screenshots of your website help AI create marketing assets with your real interface instead of generic images.
               </CardDescription>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={capturingScreenshots}
-              onClick={captureScreenshots}
-            >
-              {capturingScreenshots ? (
-                <Loader2 className="me-2 h-3 w-3 animate-spin" />
-              ) : (
-                <RefreshCw className="me-2 h-3 w-3" />
-              )}
-              {screenshots.length > 0 ? "Refresh" : "Capture"}
-            </Button>
+            <div className="flex gap-2">
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) uploadProductScreenshot(file);
+                    e.target.value = "";
+                  }}
+                />
+                <span className="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground">
+                  <Upload className="h-3 w-3" />
+                  Upload App Screenshot
+                </span>
+              </label>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={capturingScreenshots}
+                onClick={captureScreenshots}
+              >
+                {capturingScreenshots ? (
+                  <Loader2 className="me-2 h-3 w-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="me-2 h-3 w-3" />
+                )}
+                {screenshots.length > 0 ? "Refresh LP" : "Capture LP"}
+              </Button>
+            </div>
           </CardHeader>
           {screenshots.length > 0 && (
             <CardContent className="pt-0">
@@ -353,7 +390,9 @@ export default function IntelligencePage() {
                       )}
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground capitalize">{s.viewport}</span>
+                      <span className="text-xs text-muted-foreground capitalize">
+                        {s.screenshot_type === "product" ? "Product" : "Landing"} · {s.viewport}
+                      </span>
                       <div className="flex gap-1">
                         {!s.approved ? (
                           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => approveScreenshot(s.id, true)}>

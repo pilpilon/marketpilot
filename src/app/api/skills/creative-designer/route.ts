@@ -55,9 +55,10 @@ export async function POST(request: Request) {
     try {
       const { data: screenshots } = await supabase
         .from("project_screenshots")
-        .select("public_url, viewport")
+        .select("public_url, viewport, screenshot_type")
         .eq("project_id", projectId)
         .eq("approved", true)
+        .order("screenshot_type", { ascending: false }) // "product" before "landing"
         .order("viewport", { ascending: true }) // mobile first
         .limit(1);
 
@@ -292,7 +293,8 @@ Rules:
 - Use the brand voice from the context above
 - Do not repeat the post concept verbatim — rewrite it as engaging copy
 - Include 5-10 relevant hashtags
-- No intro text, no explanations — just CAPTION and HASHTAGS`
+- No intro text, no explanations — just CAPTION and HASHTAGS
+- CONTENT SAFETY: Do NOT reference religious symbols, national flags, political topics, military imagery, or culturally controversial subjects. Keep copy culturally neutral and brand-focused.`
     );
 
     const captionText = captionResult.response.text().trim();
