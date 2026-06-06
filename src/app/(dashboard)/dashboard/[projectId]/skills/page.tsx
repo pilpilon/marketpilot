@@ -49,6 +49,7 @@ const FORMAT_OPTIONS = [
   { value: "feed", labelKey: "formatFeed", ratio: "4:5" },
   { value: "square", labelKey: "formatSquare", ratio: "1:1" },
   { value: "story", labelKey: "formatStoryReel", ratio: "9:16" },
+  { value: "carousel", labelKey: "formatFeed", ratio: "4:5 carousel" },
 ] as const;
 
 export default function SkillsPage() {
@@ -92,7 +93,7 @@ export default function SkillsPage() {
       description: t("calendarDesc"),
       icon: CalendarDays,
       color: "bg-orange-500/10 text-orange-600",
-      options: ["platforms", "timeRange", "format"],
+      options: ["platforms", "timeRange", "format", "templateMode"],
     },
   ];
 
@@ -107,6 +108,9 @@ export default function SkillsPage() {
     campaignName: "",
     timeRange: "2_weeks",
     format: "feed",
+    templateMode: "auto",
+    templateId: "",
+    allowCarousels: true,
   });
 
   // Pipeline progress state
@@ -119,6 +123,21 @@ export default function SkillsPage() {
     campaignId: string;
     error: string | null;
     warnings: string[];
+    strategyPreview?: {
+      campaignThesis?: string;
+      painPoints?: string[];
+      hookAngles?: string[];
+      proofPoints?: string[];
+      visualDirections?: string[];
+      postPreviews?: Array<{ slotIndex: number; platform?: string; headline: string; painPoint: string; hookAngle: string }>;
+    } | null;
+    qualityGate?: {
+      passed: boolean;
+      score: number;
+      summary: string;
+      diagnostics?: string[];
+      rejectedPosts?: Array<{ slotIndex: number; score: number; reasons: string[] }>;
+    } | null;
   } | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -235,6 +254,9 @@ export default function SkillsPage() {
           platforms: options.platforms,
           timeRange: options.timeRange,
           format: options.format,
+          templateMode: options.templateMode,
+          templateId: options.templateId || undefined,
+          allowCarousels: options.allowCarousels,
           campaignName: options.campaignName || undefined,
         }),
       });
@@ -257,6 +279,8 @@ export default function SkillsPage() {
         campaignId: data.campaignId,
         error: null,
         warnings: [],
+        strategyPreview: null,
+        qualityGate: null,
       });
     } catch {
       setRunning(false);
@@ -339,6 +363,78 @@ export default function SkillsPage() {
                   }`}
                   style={{ width: `${isComplete ? 100 : progress}%` }}
                 />
+              </div>
+            )}
+
+            {/* Strategy Preview + Quality Gate */}
+            {(pipelineStatus.strategyPreview || pipelineStatus.qualityGate) && (
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-3 overflow-hidden">
+                {pipelineStatus.qualityGate && (
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Quality Gate
+                      </p>
+                      <p className="text-sm font-medium">
+                        {pipelineStatus.qualityGate.passed ? "Approved" : "Rejected"} · {pipelineStatus.qualityGate.score}/100
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {pipelineStatus.qualityGate.summary}
+                      </p>
+                    </div>
+                    <Badge variant={pipelineStatus.qualityGate.passed ? "default" : "destructive"}>
+                      {pipelineStatus.qualityGate.passed ? "Pass" : "Fail"}
+                    </Badge>
+                  </div>
+                )}
+
+                {pipelineStatus.strategyPreview && (
+                  <div className="space-y-2 min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Strategy Preview
+                    </p>
+                    {pipelineStatus.strategyPreview.campaignThesis && (
+                      <p className="text-sm break-words">{pipelineStatus.strategyPreview.campaignThesis}</p>
+                    )}
+                    {pipelineStatus.strategyPreview.painPoints && pipelineStatus.strategyPreview.painPoints.length > 0 && (
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground mb-1">Pain points</p>
+                        <div className="grid gap-1.5 min-w-0">
+                          {pipelineStatus.strategyPreview.painPoints.slice(0, 5).map((point) => (
+                            <Badge
+                              key={point}
+                              variant="secondary"
+                              className="h-auto w-full max-w-full shrink whitespace-normal justify-start text-left leading-snug break-words px-2 py-1"
+                            >
+                              {point}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {pipelineStatus.strategyPreview.hookAngles && pipelineStatus.strategyPreview.hookAngles.length > 0 && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Hooks</p>
+                        <ul className="text-xs space-y-1 list-disc ps-4">
+                          {pipelineStatus.strategyPreview.hookAngles.slice(0, 4).map((hook) => (
+                            <li key={hook}>{hook}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {pipelineStatus.qualityGate?.diagnostics && pipelineStatus.qualityGate.diagnostics.length > 0 && (
+                  <div className="space-y-1">
+                    {pipelineStatus.qualityGate.diagnostics.map((diagnostic) => (
+                      <p key={diagnostic} className="text-xs text-destructive flex items-start gap-1.5">
+                        <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                        {diagnostic}
+                      </p>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -603,7 +699,15 @@ export default function SkillsPage() {
                   <Label>{t("formatLabel")}</Label>
                   <Select
                     value={options.format}
-                    onValueChange={(val) => val && setOptions({ ...options, format: val })}
+                    onValueChange={(val) => {
+                      if (!val) return;
+                      setOptions({
+                        ...options,
+                        format: val,
+                        templateMode: val === "carousel" ? "carousel" : options.templateMode,
+                        allowCarousels: val === "carousel" ? true : options.allowCarousels,
+                      });
+                    }}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue />
@@ -611,11 +715,61 @@ export default function SkillsPage() {
                     <SelectContent>
                       {FORMAT_OPTIONS.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>
-                          {t(opt.labelKey)} ({opt.ratio})
+                          {opt.value === "carousel" ? "Carousel campaign" : t(opt.labelKey)} ({opt.ratio})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              )}
+
+              {skill?.options.includes("templateMode") && (
+                <div className="space-y-3 rounded-lg border border-border p-3 bg-muted/30">
+                  <div className="space-y-1.5">
+                    <Label>Creative Designer templates</Label>
+                    <Select
+                      value={options.templateMode}
+                      onValueChange={(val) => val && setOptions({
+                        ...options,
+                        templateMode: val,
+                        allowCarousels: val === "carousel" || val === "auto" ? true : options.allowCarousels,
+                      })}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="auto">Auto-pick best templates</SelectItem>
+                        <SelectItem value="carousel">Prefer carousel templates</SelectItem>
+                        <SelectItem value="single">Single-image templates only</SelectItem>
+                        <SelectItem value="selected">Use selected template ID</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={options.allowCarousels}
+                      onCheckedChange={(v) => setOptions({ ...options, allowCarousels: Boolean(v) })}
+                    />
+                    Allow carousel posts when they fit the campaign
+                  </label>
+
+                  {options.templateMode === "selected" && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="templateId">Template ID</Label>
+                      <Input
+                        id="templateId"
+                        placeholder="e.g. sys-edu-carousel-5"
+                        value={options.templateId}
+                        onChange={(e) => setOptions({ ...options, templateId: e.target.value })}
+                      />
+                    </div>
+                  )}
+
+                  <p className="text-xs text-muted-foreground">
+                    Uses the same Creative Designer template renderer, including multi-slide carousel templates.
+                  </p>
                 </div>
               )}
 

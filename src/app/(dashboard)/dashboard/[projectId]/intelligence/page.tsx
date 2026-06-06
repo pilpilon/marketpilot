@@ -61,8 +61,8 @@ export default function IntelligencePage() {
 
   const FILE_TYPES = FILE_TYPE_IDS.map((ft) => ({
     id: ft.id,
-    label: t(ft.labelKey as any),
-    description: t(ft.descKey as any),
+    label: t(ft.labelKey),
+    description: t(ft.descKey),
   }));
   const isOnboarding = searchParams.get("onboarding") === "true";
 

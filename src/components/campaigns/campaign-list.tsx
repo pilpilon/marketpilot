@@ -44,7 +44,7 @@ type CampaignRow = {
   created_at: string;
   campaign_assets: Array<{ id: string }>;
   posts?: Array<{ id: string; status: string }>;
-  pipelineJob?: { status: string; currentStep: string; totalPosts: number | null; completedPosts: number | null };
+  pipelineJob?: { status: string; currentStep: string; totalPosts: number | null; completedPosts: number | null; updatedAt: string | null };
 };
 
 export function CampaignList({
@@ -161,6 +161,14 @@ export function CampaignList({
         {campaigns.map((campaign) => {
           const Icon = CAMPAIGN_ICONS[campaign.campaign_type] ?? FolderKanban;
           const isSelected = selected.has(campaign.id);
+          const activeJob = campaign.pipelineJob;
+          const jobUpdatedAt = activeJob?.updatedAt ? new Date(activeJob.updatedAt).getTime() : null;
+          const jobLooksStale = Boolean(jobUpdatedAt && Date.now() - jobUpdatedAt > 15 * 60 * 1000);
+          const progressText = activeJob?.totalPosts && activeJob.completedPosts != null
+            ? ` (${activeJob.completedPosts}/${activeJob.totalPosts} posts, ${campaign.campaign_assets.length} slides so far)`
+            : campaign.campaign_assets.length > 0
+              ? ` (${campaign.campaign_assets.length} slides so far)`
+              : "";
 
           return (
             <div
@@ -203,13 +211,16 @@ export function CampaignList({
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  {campaign.pipelineJob ? (
-                    <Badge variant="outline" className="gap-1.5 border-purple-300 text-purple-600 animate-pulse">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      {campaign.pipelineJob.currentStep}
-                      {campaign.pipelineJob.totalPosts && campaign.pipelineJob.completedPosts != null
-                        ? ` (${campaign.pipelineJob.completedPosts}/${campaign.pipelineJob.totalPosts})`
-                        : ""}
+                  {activeJob ? (
+                    <Badge
+                      variant="outline"
+                      className={`gap-1.5 ${jobLooksStale ? "border-amber-300 text-amber-700" : "border-purple-300 text-purple-600 animate-pulse"}`}
+                      title={jobLooksStale ? "This job has not updated for over 15 minutes; it may be stuck." : "Generation is still running."}
+                    >
+                      {jobLooksStale ? <Clock className="h-3 w-3" /> : <Loader2 className="h-3 w-3 animate-spin" />}
+                      {jobLooksStale ? "Possibly stuck: " : "Generating: "}
+                      {activeJob.currentStep.replace(/images/g, "posts")}
+                      {progressText}
                     </Badge>
                   ) : (
                     <>

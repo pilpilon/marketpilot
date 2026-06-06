@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getPlatformDimensions } from "@/lib/templates/dimensions";
 import { loadBrandContext, loadBrandTokens } from "@/lib/templates/brand-tokens";
@@ -6,6 +5,7 @@ import { buildImagePrompt } from "@/lib/templates/prompt-builder";
 import { renderOverlayToPng } from "@/lib/templates/renderer";
 import { compositeImage } from "@/lib/templates/compositor";
 import { findSystemTemplate } from "@/lib/templates/system-templates";
+import { generateMarketingImage } from "@/lib/ai/image-generation";
 import type { BrandTokens, ContentTemplate, OverlayStyle } from "@/types/templates";
 
 // ─── Public Interface ─────────────────────────────────────────────────────────
@@ -89,14 +89,6 @@ export async function renderTemplateImage(
 
   const dims = getPlatformDimensions(platform);
 
-  // ─── Gemini Setup ─────────────────────────────────────────────────────────
-
-  const apiKey = process.env.GOOGLE_AI_API_KEY;
-  if (!apiKey) throw new Error("GOOGLE_AI_API_KEY not configured");
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-image-preview" });
-
   // ─── Process Each Slide ───────────────────────────────────────────────────
 
   const results: RenderTemplateImageResult[] = [];
@@ -129,31 +121,16 @@ export async function renderTemplateImage(
       customInstruction: "This is a BACKGROUND IMAGE ONLY — text will be overlaid separately. Generate a purely visual scene with absolutely NO text, words, letters, or numbers anywhere in the image.",
     });
 
-    // 2. Generate background image via Gemini
-    const reqParts: Array<{ text: string } | { inlineData: { data: string; mimeType: string } }> = [];
-    if (referenceImage?.base64 && referenceImage?.mimeType) {
-      reqParts.push({ inlineData: { data: referenceImage.base64, mimeType: referenceImage.mimeType } });
-    }
-    reqParts.push({ text: `${prompt}\n\nAvoid: ${negativePrompt}` });
-
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: reqParts }],
-      generationConfig: {
-        // @ts-ignore — responseModalities
-        responseModalities: ["IMAGE", "TEXT"],
-      },
+    // 2. Generate background image via the shared provider abstraction.
+    // OpenAI is used when IMAGE_PROVIDER=openai, with Gemini fallback.
+    // This keeps Creative Designer template mode and Content Calendar aligned
+    // with the same high-quality image path as freeform creative generation.
+    const generatedImage = await generateMarketingImage({
+      prompt,
+      negativePrompt,
+      aspectRatio: dims.aspectRatio,
+      referenceImage,
     });
-
-    const parts = result.response.candidates?.[0]?.content?.parts ?? [];
-    // @ts-ignore
-    const imagePart = parts.find((p) => p.inlineData?.mimeType?.startsWith("image/"));
-
-    if (!imagePart || !("inlineData" in imagePart)) {
-      throw new Error(`No image returned for slide: ${slideDef.name}`);
-    }
-
-    // @ts-ignore
-    const imageBase64: string = imagePart.inlineData.data;
 
     // 3. Render text overlay
     const overlayPng = await renderOverlayToPng(
@@ -164,7 +141,7 @@ export async function renderTemplateImage(
     );
 
     // 4. Composite overlay onto background
-    const backgroundBuffer = Buffer.from(imageBase64, "base64");
+    const backgroundBuffer = Buffer.from(generatedImage.base64, "base64");
     const finalImage = await compositeImage(backgroundBuffer, overlayPng, dims.width, dims.height);
 
     results.push({

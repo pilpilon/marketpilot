@@ -45,7 +45,7 @@ export function TemplateSelector({ onSelect }: TemplateSelectorProps) {
                 : "bg-muted text-muted-foreground hover:text-foreground"
             )}
           >
-            {t(tab.key as any)}
+            {t(tab.key)}
           </button>
         ))}
       </div>

@@ -40,13 +40,13 @@ export default async function CampaignsPage({
   const { data: pipelineJobs } = campaignIds.length > 0
     ? await supabase
         .from("pipeline_jobs")
-        .select("campaign_id, status, current_step, total_posts, completed_posts")
+        .select("campaign_id, status, current_step, total_posts, completed_posts, updated_at")
         .in("campaign_id", campaignIds)
         .in("status", ["pending", "planning", "generating", "scheduling"])
     : { data: [] };
 
   const jobByCampaign = new Map(
-    (pipelineJobs || []).map((j: { campaign_id: string; status: string; current_step: string; total_posts: number | null; completed_posts: number | null }) => [j.campaign_id, j])
+    (pipelineJobs || []).map((j: { campaign_id: string; status: string; current_step: string; total_posts: number | null; completed_posts: number | null; updated_at: string | null }) => [j.campaign_id, j])
   );
 
   type CampaignRow = {
@@ -59,16 +59,16 @@ export default async function CampaignsPage({
     created_at: string;
     campaign_assets: Array<{ id: string }>;
     posts: Array<{ id: string; status: string }>;
-    pipelineJob?: { status: string; currentStep: string; totalPosts: number | null; completedPosts: number | null };
+    pipelineJob?: { status: string; currentStep: string; totalPosts: number | null; completedPosts: number | null; updatedAt: string | null };
   };
 
-  const rows = (campaigns || []).map((c: any) => {
+  const rows: CampaignRow[] = (campaigns || []).map((c) => {
     const job = jobByCampaign.get(c.id);
     return {
       ...c,
-      pipelineJob: job ? { status: job.status, currentStep: job.current_step, totalPosts: job.total_posts, completedPosts: job.completed_posts } : undefined,
+      pipelineJob: job ? { status: job.status, currentStep: job.current_step, totalPosts: job.total_posts, completedPosts: job.completed_posts, updatedAt: job.updated_at } : undefined,
     };
-  }) as CampaignRow[];
+  });
 
   return (
     <div className="space-y-6">

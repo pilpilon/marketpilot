@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MarketPilot
 
-## Getting Started
+AI-powered social media marketing platform for small businesses. Create branded content, schedule posts, and publish across Instagram, Facebook, Twitter/X, and TikTok — with native Hebrew (RTL) support.
 
-First, run the development server:
+## Tech Stack
+
+- **Next.js 16** (App Router) + React 19 + TypeScript
+- **Supabase** (Postgres, Auth, Storage)
+- **AI**: OpenAI `gpt-image-1` for primary image generation, Gemini fallback/caption support, Perplexity (trend research)
+- **i18n**: next-intl (Hebrew default, English supported)
+- **Image pipeline**: Takumi (RTL text) + Sharp (compositing)
+- **UI**: Tailwind CSS 4 + shadcn/ui
+- **Deploy**: Vercel
+
+## Setup
+
+1. Clone the repo
+2. `npm install`
+3. Copy `.env.example` to `.env.local` and fill in the required values
+4. `npm run dev` — opens at [http://localhost:3000](http://localhost:3000)
+
+## Scripts
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev       # Development server
+npm run build     # Production build
+npm run start     # Production server
+npm run lint      # ESLint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+See `.env.example` for the full list. Key required variables:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase connection
+- `SUPABASE_SERVICE_ROLE_KEY` — server-side Supabase access
+- `GOOGLE_AI_API_KEY` — Gemini caption/image fallback support
+- `OPENAI_API_KEY` — primary ChatGPT/OpenAI image generation
+- `IMAGE_PROVIDER` — `openai` by default; set to `gemini` to force Gemini
+- `OPENAI_IMAGE_MODEL` — defaults to `gpt-image-1`
+- `FACEBOOK_APP_ID` / `FACEBOOK_APP_SECRET` — Instagram/Facebook OAuth
+- `TWITTER_CLIENT_ID` / `TWITTER_CLIENT_SECRET` — Twitter/X OAuth
+- `TIKTOK_CLIENT_KEY` / `TIKTOK_CLIENT_SECRET` — TikTok OAuth
+- `CRON_SECRET` — Vercel cron job authorization
 
-## Learn More
+## Database
 
-To learn more about Next.js, take a look at the following resources:
+Migrations live in `supabase/migrations/`. Apply them via the Supabase dashboard or CLI.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deployed on Vercel. Push to `master` to trigger a production deploy. Cron jobs are configured in `vercel.json`.

@@ -17,6 +17,8 @@ type Asset = {
   status: string;
   created_at: string;
   metadata?: Record<string, unknown> | null;
+  slideCount?: number;
+  slideAssets?: Asset[];
 };
 
 const ASSET_TYPE_LABELS: Record<string, string> = {
@@ -44,6 +46,8 @@ export function CampaignAssetCard({
   const caption = meta?.caption as string | undefined;
   const hashtags = meta?.hashtags as string[] | undefined;
   const aspectRatio = meta?.aspect_ratio as string | undefined; // e.g. "4:5", "1:1", "16:9"
+  const slideAssets = asset.slideAssets || [asset];
+  const slideCount = asset.slideCount || slideAssets.length;
 
   const content = asset.content || "";
   const preview = content.slice(0, 200);
@@ -72,6 +76,11 @@ export function CampaignAssetCard({
             >
               {asset.status}
             </Badge>
+            {slideCount > 1 && (
+              <Badge variant="secondary" className="text-xs">
+                {slideCount} slides
+              </Badge>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
@@ -146,16 +155,28 @@ export function CampaignAssetCard({
           </div>
         ) : (asset.asset_type === "image" || asset.asset_type === "template_render") && asset.storage_path ? (
           <div className="space-y-3">
-            <div
-              className="relative w-full max-w-xs rounded-lg overflow-hidden border bg-muted"
-              style={{ aspectRatio: aspectRatio?.replace(":", "/") || "1/1" }}
-            >
-              <Image
-                src={asset.storage_path}
-                alt={asset.title || "Generated image"}
-                fill
-                className="object-contain"
-              />
+            <div className="flex flex-wrap gap-3">
+              {slideAssets.map((slide, index) => (
+                slide.storage_path ? (
+                  <div
+                    key={slide.id}
+                    className="relative w-full max-w-xs rounded-lg overflow-hidden border bg-muted"
+                    style={{ aspectRatio: aspectRatio?.replace(":", "/") || "1/1" }}
+                  >
+                    {slideCount > 1 && (
+                      <span className="absolute left-2 top-2 z-10 rounded-full bg-background/90 px-2 py-0.5 text-xs font-medium shadow">
+                        {index + 1}/{slideCount}
+                      </span>
+                    )}
+                    <Image
+                      src={slide.storage_path}
+                      alt={slide.title || `Generated slide ${index + 1}`}
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                ) : null
+              ))}
             </div>
             {caption && (
               <div className="space-y-2">

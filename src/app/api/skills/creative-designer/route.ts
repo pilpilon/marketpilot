@@ -4,10 +4,11 @@ import { loadBrandContext } from "@/lib/templates/brand-tokens";
 import { generateCreativeImage } from "@/lib/skills/creative-designer";
 import { PLATFORM_RATIOS } from "@/lib/templates/dimensions";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { buildImagePrompt } from "@/lib/templates/prompt-builder";
 import { getCondensedStorytellingGuidance } from "@/lib/ai/storytelling-framework";
 import { screenshotToReferenceImage } from "@/lib/screenshots/mockup";
+import { generateMarketingImage } from "@/lib/ai/image-generation";
 
 export async function POST(request: Request) {
   const supabase = await createServerSupabaseClient();
@@ -149,7 +150,7 @@ export async function POST(request: Request) {
  * since the shared function doesn't support inline reference images.
  */
 async function handleReferenceImageGeneration(params: {
-  supabase: any;
+  supabase: SupabaseClient;
   userId: string;
   projectId: string;
   campaignId?: string;
@@ -193,42 +194,19 @@ async function handleReferenceImageGeneration(params: {
     customInstruction,
   });
 
-  const apiKey = process.env.GOOGLE_AI_API_KEY;
-  if (!apiKey) return NextResponse.json({ error: "GOOGLE_AI_API_KEY not configured" }, { status: 500 });
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-image-preview" });
-
   let imageBase64: string;
   let mimeType: string;
+  let generatedImage: Awaited<ReturnType<typeof generateMarketingImage>>;
 
   try {
-    const reqParts: Array<{ text: string } | { inlineData: { data: string; mimeType: string } }> = [];
-    reqParts.push({ inlineData: { data: referenceImage.base64, mimeType: referenceImage.mimeType } });
-    reqParts.push({ text: `${prompt}\n\nAvoid: ${negativePrompt}` });
-
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: reqParts }],
-      generationConfig: {
-        // @ts-ignore
-        responseModalities: ["IMAGE", "TEXT"],
-      },
+    generatedImage = await generateMarketingImage({
+      prompt,
+      negativePrompt,
+      aspectRatio: ratio,
+      referenceImage,
     });
-
-    const parts = result.response.candidates?.[0]?.content?.parts ?? [];
-    const imagePart = parts.find(
-      // @ts-ignore
-      (p) => p.inlineData?.mimeType?.startsWith("image/")
-    );
-
-    if (!imagePart || !("inlineData" in imagePart)) {
-      return NextResponse.json({ error: "No image was returned by the model" }, { status: 500 });
-    }
-
-    // @ts-ignore
-    imageBase64 = imagePart.inlineData.data;
-    // @ts-ignore
-    mimeType = imagePart.inlineData.mimeType ?? "image/png";
+    imageBase64 = generatedImage.base64;
+    mimeType = generatedImage.mimeType;
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Image generation failed";
     return NextResponse.json({ error: msg }, { status: 500 });
@@ -257,6 +235,9 @@ async function handleReferenceImageGeneration(params: {
   const publicUrl = urlData.publicUrl;
 
   // Generate caption + hashtags
+  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  if (!apiKey) return NextResponse.json({ error: "GOOGLE_AI_API_KEY not configured for caption generation" }, { status: 500 });
+  const genAI = new GoogleGenerativeAI(apiKey);
   const platformLabel = platform.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
   let generatedCaption = "";
   let generatedHashtags: string[] = [];
@@ -312,7 +293,7 @@ Rules:
   // Create campaign if needed
   let finalCampaignId = params.campaignId;
   if (!finalCampaignId) {
-    const { data: campaign } = await (supabase as any)
+    const { data: campaign } = await supabase
       .from("campaigns")
       .insert({
         project_id: projectId,
@@ -328,7 +309,7 @@ Rules:
   }
 
   // Save asset
-  const { data: asset, error: assetError } = await (supabase as any)
+  const { data: asset, error: assetError } = await supabase
     .from("campaign_assets")
     .insert({
       campaign_id: finalCampaignId,
@@ -340,7 +321,8 @@ Rules:
       metadata: {
         platform,
         aspect_ratio: ratio,
-        model_tier: params.modelTier,
+        provider: generatedImage.provider,
+        model: generatedImage.model,
         mime_type: mimeType,
         file_name: fileName,
         ...(generatedCaption && { caption: generatedCaption }),

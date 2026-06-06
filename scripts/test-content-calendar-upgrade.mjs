@@ -1,0 +1,43 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+
+const route = fs.readFileSync('src/app/api/skills/content-calendar/route.ts', 'utf8');
+const statusRoute = fs.readFileSync('src/app/api/skills/content-calendar/status/route.ts', 'utf8');
+const skillsPage = fs.readFileSync('src/app/(dashboard)/dashboard/[projectId]/skills/page.tsx', 'utf8');
+const campaignPage = fs.readFileSync('src/app/(dashboard)/dashboard/[projectId]/campaigns/[campaignId]/page.tsx', 'utf8');
+
+assert.match(route, /templateMode/, 'Content Calendar API should accept templateMode');
+assert.match(route, /allowCarousels/, 'Content Calendar API should accept allowCarousels');
+assert.match(route, /templateId/, 'Content Calendar API should accept selected templateId');
+assert.doesNotMatch(route, /Only single-slide templates for content calendar/, 'Calendar must not be restricted to single-slide templates');
+assert.match(route, /resolveTemplateForPlan/, 'Calendar should resolve templates through a dedicated selector');
+assert.match(route, /buildTemplateSlides/, 'Calendar should fill actual template slide fields, not only headline/subheadline/cta');
+assert.match(route, /carouselGroupId/, 'Calendar should support carousel asset grouping');
+assert.match(route, /const mediaUrls\s*=\s*post\.imageUrls/, 'Scheduled post platform rows should collect all rendered carousel URLs');
+assert.match(route, /media_urls:\s*mediaUrls/, 'Scheduled post platform rows should receive all rendered carousel URLs');
+assert.match(route, /format === "carousel"/, 'Calendar should request carousel-capable schedules when selected');
+assert.match(route, /slideCopy/, 'Calendar planner should generate slide-specific carousel copy');
+assert.doesNotMatch(route, /\$\{plan\.headline\} \$\{slideIndex\}/, 'Carousel slide text must not append numeric suffixes to headlines');
+assert.match(route, /buildProjectIntelligenceBrief/, 'Planner should receive a broad project intelligence brief');
+assert.match(route, /PROJECT INTELLIGENCE SOURCE OF TRUTH/, 'Planner should ground strategy in project intelligence');
+assert.match(route, /viral hook patterns/i, 'Planner should include reusable viral hook patterns');
+assert.match(route, /ICP, job-to-be-done, emotional stakes, product mechanism, proof points, objections/i, 'Planner should infer reusable strategic inputs');
+assert.match(route, /specific audience pain from project intelligence/i, 'Fallbacks should be generic and intelligence-derived');
+assert.doesNotMatch(route, /BestRest|restaurant owner|invoice chaos|supplier price|food cost|accountant-ready|Gmail\/WhatsApp|manual Excel|Hebrew invoices|See BestRest|Stop Invoice Chaos|Find Price Creep/i, 'Reusable planner must not hard-code BestRest or restaurant-only examples');
+assert.match(route, /buildStrategyPreview/, 'Calendar should build a strategy preview before rendering');
+assert.match(route, /evaluateContentPlanQuality/, 'Calendar should run a pre-render quality gate');
+assert.match(route, /Reviewing strategy quality before rendering/, 'Pipeline should have an explicit strategy quality step');
+assert.match(route, /if \(!qualityGate\.passed\)/, 'Low-quality content plans should stop before rendering');
+assert.match(route, /Strategy rejected/, 'Quality gate should reject generic plans with diagnostics');
+assert.match(route, /strategyPreview,\s*qualityGate/s, 'Completed job metadata should preserve strategy preview and quality gate');
+assert.match(statusRoute, /strategyPreview/, 'Status endpoint should expose strategy preview');
+assert.match(statusRoute, /qualityGate/, 'Status endpoint should expose quality gate');
+assert.match(skillsPage, /Strategy Preview/, 'Skills progress UI should show strategy preview');
+assert.match(skillsPage, /Quality Gate/, 'Skills progress UI should show quality gate');
+assert.match(route, /for \(const assetId of assetIds\)/, 'Caption metadata should be attached to every rendered slide asset');
+assert.match(campaignPage, /groupedAssets/, 'Campaign page should group carousel slide assets as posts');
+assert.match(campaignPage, /slideCount/, 'Campaign page should show slide counts separately from post counts');
+assert.match(skillsPage, /templateMode/, 'Skills UI should expose Content Calendar template mode');
+assert.match(skillsPage, /allowCarousels/, 'Skills UI should expose carousel support');
+
+console.log('content-calendar-upgrade checks passed');

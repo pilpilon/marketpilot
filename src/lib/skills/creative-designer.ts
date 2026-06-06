@@ -1,14 +1,14 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { PLATFORM_RATIOS } from "@/lib/templates/dimensions";
 import { loadBrandContext } from "@/lib/templates/brand-tokens";
 import { buildImagePrompt } from "@/lib/templates/prompt-builder";
-import { getCondensedStorytellingGuidance } from "@/lib/ai/storytelling-framework";
+import { generateMarketingImage } from "@/lib/ai/image-generation";
+import { generateSocialCaption } from "@/lib/ai/caption-generation";
 
 export type BrandContext = Awaited<ReturnType<typeof loadBrandContext>>;
 
 export interface GenerateCreativeImageParams {
-  supabase: SupabaseClient<any, any, any>;
+  supabase: SupabaseClient;
   userId: string;
   projectId: string;
   campaignId: string;
@@ -63,35 +63,16 @@ export async function generateCreativeImage(
     customInstruction,
   });
 
-  // Generate image with Gemini 3.1 Flash Image
-  const apiKey = process.env.GOOGLE_AI_API_KEY;
-  if (!apiKey) throw new Error("GOOGLE_AI_API_KEY not configured");
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const imageModel = genAI.getGenerativeModel({ model: "gemini-3.1-flash-image-preview" });
-
-  const result = await imageModel.generateContent({
-    contents: [{ role: "user", parts: [{ text: `${prompt}\n\nAvoid: ${negativePrompt}` }] }],
-    generationConfig: {
-      // @ts-ignore — responseModalities is supported but not in older type defs
-      responseModalities: ["IMAGE", "TEXT"],
-    },
+  // Generate the visual. OpenAI is the default when IMAGE_PROVIDER=openai;
+  // Gemini remains available as an automatic fallback.
+  const generatedImage = await generateMarketingImage({
+    prompt,
+    negativePrompt,
+    aspectRatio: ratio,
   });
 
-  const parts = result.response.candidates?.[0]?.content?.parts ?? [];
-  const imagePart = parts.find(
-    // @ts-ignore
-    (p) => p.inlineData?.mimeType?.startsWith("image/")
-  );
-
-  if (!imagePart || !("inlineData" in imagePart)) {
-    throw new Error("No image was returned by the model");
-  }
-
-  // @ts-ignore
-  const imageBase64: string = imagePart.inlineData.data;
-  // @ts-ignore
-  const mimeType: string = imagePart.inlineData.mimeType ?? "image/png";
+  const imageBase64 = generatedImage.base64;
+  const mimeType = generatedImage.mimeType;
 
   // Upload to Supabase Storage using service role
   const serviceSupabase = createClient(
@@ -115,55 +96,19 @@ export async function generateCreativeImage(
 
   const publicUrl = urlData.publicUrl;
 
-  // Generate caption + hashtags
-  const platformLabel = platform.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
   let generatedCaption = "";
   let generatedHashtags: string[] = [];
 
   try {
-    const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const captionResult = await textModel.generateContent(
-      `You are an expert social media copywriter. Write a single high-performing caption and hashtags for a ${platformLabel} post.
-
-BRAND CONTEXT:
-- Personality: ${brandContext.brandPersonality || "professional and engaging"}
-- Positioning: ${brandContext.brandPositioning || ""}
-- Product: ${brandContext.productContext || ""}
-- Audience: ${brandContext.audienceContext || ""}
-
-POST CONCEPT:
-${postContent}
-
-${getCondensedStorytellingGuidance()}
-
-PLATFORM: ${platformLabel}
-${localeContext ? `\n${localeContext}\n` : ""}
-OUTPUT FORMAT (follow exactly):
-CAPTION: [your caption — ready to publish, no quotes]
-HASHTAGS: [comma-separated hashtags without # prefix]
-
-Rules:
-- Caption must be platform-appropriate in length and tone
-- Use the brand voice from the context above
-- Do not repeat the post concept verbatim — rewrite it as engaging copy
-- Include 5-10 relevant hashtags
-- No intro text, no explanations — just CAPTION and HASHTAGS`
-    );
-
-    const captionText = captionResult.response.text().trim();
-    const captionMatch = captionText.match(/CAPTION:\s*([\s\S]*?)(?=HASHTAGS:|$)/i);
-    const hashtagsMatch = captionText.match(/HASHTAGS:\s*([\s\S]*?)$/i);
-
-    if (captionMatch?.[1]) {
-      generatedCaption = captionMatch[1].trim();
-    }
-    if (hashtagsMatch?.[1]) {
-      generatedHashtags = hashtagsMatch[1]
-        .trim()
-        .split(/[,\n]+/)
-        .map((h) => h.trim().replace(/^#/, ""))
-        .filter(Boolean);
-    }
+    const captionResult = await generateSocialCaption({
+      brandContext,
+      postConcept: postContent,
+      platform,
+      localeContext,
+      captionLength: "standard",
+    });
+    generatedCaption = captionResult.caption;
+    generatedHashtags = captionResult.hashtags;
   } catch {
     // Caption generation is best-effort
   }
@@ -181,7 +126,8 @@ Rules:
       metadata: {
         platform,
         aspect_ratio: ratio,
-        model_tier: "nb2",
+        provider: generatedImage.provider,
+        model: generatedImage.model,
         mime_type: mimeType,
         file_name: fileName,
         ...(generatedCaption && { caption: generatedCaption }),

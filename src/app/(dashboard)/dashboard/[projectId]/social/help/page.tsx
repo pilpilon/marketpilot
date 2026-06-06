@@ -60,7 +60,7 @@ export default function SocialHelpPage() {
               className="cursor-pointer px-3 py-1.5 text-sm gap-1.5"
             >
               <PlatformIcon platform={p} className="h-3.5 w-3.5" />
-              {t(`${p}Name` as any)}
+              {t(`${p}Name`)}
             </Badge>
           </Link>
         ))}

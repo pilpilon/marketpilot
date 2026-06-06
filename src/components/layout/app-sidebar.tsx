@@ -40,7 +40,7 @@ function useProjectName(projectId: string | null) {
   const [name, setName] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!projectId) { setName(null); return; }
+    if (!projectId) return;
     const supabase = createClient();
     supabase
       .from("projects")
@@ -50,7 +50,7 @@ function useProjectName(projectId: string | null) {
       .then(({ data }) => setName((data as { name: string } | null)?.name || null));
   }, [projectId]);
 
-  return name;
+  return projectId ? name : null;
 }
 
 export function AppSidebar() {

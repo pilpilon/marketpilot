@@ -63,7 +63,7 @@ export class TwitterClient implements SocialPlatformClient {
     sinceId?: string
   ): Promise<PlatformComment[]> {
     // Search for replies to this tweet
-    let query = `conversation_id:${postId} is:reply`;
+    const query = `conversation_id:${postId} is:reply`;
     const params = new URLSearchParams({
       query,
       "tweet.fields": "author_id,created_at,in_reply_to_user_id",

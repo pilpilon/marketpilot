@@ -126,7 +126,10 @@ export function TemplateCustomizer({
 
   // Auto-fill on mount
   useEffect(() => {
-    autoFill();
+    const timer = window.setTimeout(() => {
+      void autoFill();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [autoFill]);
 
   async function generate() {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -16,12 +16,10 @@ export default function SettingsPage() {
   const t = useTranslations("settings");
   const router = useRouter();
   const supabase = createClient();
-  const [locale, setLocale] = useState<"en" | "he">("en");
+  const [locale, setLocale] = useState<"en" | "he">(() =>
+    typeof document === "undefined" ? "en" : getLocaleCookie()
+  );
   const [loggingOut, setLoggingOut] = useState(false);
-
-  useEffect(() => {
-    setLocale(getLocaleCookie());
-  }, []);
 
   async function handleLocaleChange(newLocale: "en" | "he") {
     if (newLocale === locale) return;
@@ -32,7 +30,12 @@ export default function SettingsPage() {
     // Persist to DB (non-blocking)
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        (supabase.from("profiles") as any).update({ locale: newLocale }).eq("id", user.id).then(() => {});
+        const profiles = supabase.from("profiles") as unknown as {
+          update: (values: { locale: "en" | "he" }) => {
+            eq: (column: string, value: string) => PromiseLike<unknown>;
+          };
+        };
+        profiles.update({ locale: newLocale }).eq("id", user.id).then(() => {});
       }
     });
 

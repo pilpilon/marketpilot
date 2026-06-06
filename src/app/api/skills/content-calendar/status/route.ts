@@ -29,6 +29,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Job not found" }, { status: 404 });
   }
 
+  const metadata = (job.metadata as Record<string, unknown>) || {};
+
   return NextResponse.json({
     status: job.status,
     totalPosts: job.total_posts,
@@ -36,6 +38,8 @@ export async function GET(request: Request) {
     currentStep: job.current_step,
     campaignId: job.campaign_id,
     error: job.error_message,
-    warnings: (job.metadata as Record<string, unknown>)?.warnings || [],
+    warnings: metadata.warnings || [],
+    strategyPreview: metadata.strategyPreview || null,
+    qualityGate: metadata.qualityGate || null,
   });
 }

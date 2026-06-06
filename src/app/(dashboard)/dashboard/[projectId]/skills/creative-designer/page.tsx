@@ -113,12 +113,12 @@ export default function CreativeDesignerPage() {
   const PLATFORM_META = Object.fromEntries(
     Object.entries(PLATFORM_META_KEYS).map(([key, meta]) => [
       key,
-      { name: t(meta.nameKey as any), color: meta.color },
+      { name: t(meta.nameKey), color: meta.color },
     ])
   );
   const resolvedPlatformOptions = PLATFORM_OPTIONS.map((p) => ({
     ...p,
-    label: t(p.labelKey as any),
+    label: t(p.labelKey),
   }));
 
   // Mode toggle: freeform vs template (default)

@@ -37,6 +37,18 @@ export default async function ComposePage({
   let initialMediaUrls: string[] | undefined;
 
   if (campaignId) {
+    const { data: campaign } = await supabase
+      .from("campaigns")
+      .select("campaign_type")
+      .eq("id", campaignId)
+      .eq("project_id", projectId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if ((campaign?.campaign_type as string | undefined) === "content_marketing") {
+      redirect(`/dashboard/${projectId}/campaigns/${campaignId}`);
+    }
+
     const { data: assets } = await supabase
       .from("campaign_assets")
       .select("content, storage_path, metadata, asset_type")

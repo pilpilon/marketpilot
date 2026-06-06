@@ -78,6 +78,40 @@ export class FacebookClient implements SocialPlatformClient {
   ): Promise<PlatformPublishResult> {
     const page = await this.resolvePage(accessToken, platformUserId);
 
+    if (!mediaUrls.length) {
+      throw new Error("Facebook publishing requires at least one media URL.");
+    }
+
+    if (mediaUrls.length > 1) {
+      // Facebook multi-photo feed post flow:
+      // 1) upload each photo as unpublished to get a media_fbid
+      // 2) create one feed post with attached_media[]
+      const uploadedPhotos: Array<{ media_fbid: string }> = [];
+      for (const mediaUrl of mediaUrls) {
+        const photo = await this.request(`/${page.id}/photos`, page.access_token, {
+          method: "POST",
+          body: JSON.stringify({
+            url: mediaUrl,
+            published: false,
+          }),
+        });
+        uploadedPhotos.push({ media_fbid: photo.id });
+      }
+
+      const post = await this.request(`/${page.id}/feed`, page.access_token, {
+        method: "POST",
+        body: JSON.stringify({
+          message: caption,
+          attached_media: uploadedPhotos,
+        }),
+      });
+
+      return {
+        platformPostId: post.id,
+        platformPostUrl: `https://www.facebook.com/${post.id}`,
+      };
+    }
+
     const data = await this.request(`/${page.id}/photos`, page.access_token, {
       method: "POST",
       body: JSON.stringify({

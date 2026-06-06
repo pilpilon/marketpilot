@@ -129,7 +129,7 @@ export async function POST(request: Request) {
     : "Twitter, Instagram, LinkedIn";
 
   // Build skill-specific prompt
-  let assetsToCreate: Array<{ title: string; content: string }> = [];
+  const assetsToCreate: Array<{ title: string; content: string }> = [];
   let trendingContext = "";
 
   if (skillType === "email") {

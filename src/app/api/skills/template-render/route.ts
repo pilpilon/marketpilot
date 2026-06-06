@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
 import { loadBrandContext } from "@/lib/templates/brand-tokens";
 import { PLATFORM_RATIOS } from "@/lib/templates/dimensions";
 import { renderTemplateImage } from "@/lib/templates/render-template-image";
 import { findSystemTemplate } from "@/lib/templates/system-templates";
-import { getCondensedStorytellingGuidance } from "@/lib/ai/storytelling-framework";
+import { generateSocialCaption } from "@/lib/ai/caption-generation";
 import type { TemplateRenderResponse } from "@/types/templates";
 
 export async function POST(request: Request) {
@@ -178,52 +177,14 @@ export async function POST(request: Request) {
       .filter(Boolean)
       .join("\n");
 
-    const apiKey = process.env.GOOGLE_AI_API_KEY;
-    if (apiKey) {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const platformLabel = platform.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
-      const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-      const captionResult = await textModel.generateContent(
-        `You are an expert social media copywriter. Write a single high-performing caption and hashtags for a ${platformLabel} post.
-
-BRAND CONTEXT:
-- Personality: ${brandContext.brandPersonality || "professional and engaging"}
-- Positioning: ${brandContext.brandPositioning || ""}
-- Product: ${brandContext.productContext || ""}
-- Audience: ${brandContext.audienceContext || ""}
-
-POST CONCEPT:
-${allContent}
-
-${getCondensedStorytellingGuidance()}
-
-PLATFORM: ${platformLabel}
-
-OUTPUT FORMAT (follow exactly):
-CAPTION: [your caption — ready to publish, no quotes]
-HASHTAGS: [comma-separated hashtags without # prefix]
-
-Rules:
-- Caption must be platform-appropriate in length and tone
-- Use the brand voice from the context above
-- Do not repeat the post concept verbatim — rewrite it as engaging copy
-- Include 5-10 relevant hashtags
-- No intro text, no explanations — just CAPTION and HASHTAGS`
-      );
-
-      const captionText = captionResult.response.text().trim();
-      const captionMatch = captionText.match(/CAPTION:\s*([\s\S]*?)(?=HASHTAGS:|$)/i);
-      const hashtagsMatch = captionText.match(/HASHTAGS:\s*([\s\S]*?)$/i);
-
-      if (captionMatch?.[1]) generatedCaption = captionMatch[1].trim();
-      if (hashtagsMatch?.[1]) {
-        generatedHashtags = hashtagsMatch[1]
-          .trim()
-          .split(/[,\n]+/)
-          .map((h) => h.trim().replace(/^#/, ""))
-          .filter(Boolean);
-      }
-    }
+    const captionResult = await generateSocialCaption({
+      brandContext,
+      postConcept: allContent,
+      platform,
+      captionLength: "standard",
+    });
+    generatedCaption = captionResult.caption;
+    generatedHashtags = captionResult.hashtags;
   } catch {
     // Caption generation is best-effort
   }

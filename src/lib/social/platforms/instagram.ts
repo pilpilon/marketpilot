@@ -89,39 +89,77 @@ export class InstagramClient implements SocialPlatformClient {
   ): Promise<PlatformPublishResult> {
     // publishHint = project name (passed by publisher.ts for FB-style resolution)
     const { igId: igAccountId, pageAccessToken } = await this.resolveIgAccount(accessToken, publishHint);
-    console.log(`[instagram] publishMedia: igAccountId=${igAccountId}, mediaUrl=${mediaUrls[0]?.substring(0, 80)}...`);
+    console.log(`[instagram] publishMedia: igAccountId=${igAccountId}, media_count=${mediaUrls.length}, first=${mediaUrls[0]?.substring(0, 80)}...`);
 
-    // Create media container (use PAGE access token, not user token)
-    const container = await this.post(
-      `/${igAccountId}/media`,
-      pageAccessToken,
-      { image_url: mediaUrls[0], caption }
-    );
-
-    const creationId = container.id;
-    console.log(`[instagram] container created: id=${creationId}`);
-
-    // Wait for container to be ready
-    let ready = false;
-    let attempts = 0;
-    while (!ready && attempts < 10) {
-      const status = await this.get(
-        `/${creationId}?fields=status_code`,
-        pageAccessToken
-      );
-      console.log(`[instagram] container status (attempt ${attempts + 1}): ${status.status_code}`);
-      if (status.status_code === "FINISHED") {
-        ready = true;
-      } else if (status.status_code === "ERROR") {
-        throw new Error("Instagram media container processing failed");
-      } else {
-        await new Promise((r) => setTimeout(r, 2000));
-        attempts++;
-      }
+    if (!mediaUrls.length) {
+      throw new Error("Instagram publishing requires at least one media URL.");
     }
 
-    if (!ready) {
-      throw new Error("Instagram media container timed out — image may be too large or unsupported");
+    const waitForContainer = async (creationId: string) => {
+      let ready = false;
+      let attempts = 0;
+      while (!ready && attempts < 10) {
+        const status = await this.get(
+          `/${creationId}?fields=status_code`,
+          pageAccessToken
+        );
+        console.log(`[instagram] container status (attempt ${attempts + 1}): ${status.status_code}`);
+        if (status.status_code === "FINISHED") {
+          ready = true;
+        } else if (status.status_code === "ERROR") {
+          throw new Error("Instagram media container processing failed");
+        } else {
+          await new Promise((r) => setTimeout(r, 2000));
+          attempts++;
+        }
+      }
+
+      if (!ready) {
+        throw new Error("Instagram media container timed out — image may be too large or unsupported");
+      }
+    };
+
+    let creationId: string;
+
+    if (mediaUrls.length > 1) {
+      if (mediaUrls.length > 10) {
+        throw new Error("Instagram carousel publishing supports up to 10 images per post.");
+      }
+
+      // Instagram carousel flow:
+      // 1) create one child media container per slide with is_carousel_item=true
+      // 2) create a parent CAROUSEL container with children=<child ids>
+      // 3) publish the parent container
+      const childIds: string[] = [];
+      for (const mediaUrl of mediaUrls) {
+        const child = await this.post(
+          `/${igAccountId}/media`,
+          pageAccessToken,
+          { image_url: mediaUrl, is_carousel_item: true }
+        );
+        childIds.push(child.id);
+        await waitForContainer(child.id);
+      }
+
+      const carousel = await this.post(
+        `/${igAccountId}/media`,
+        pageAccessToken,
+        { media_type: "CAROUSEL", children: childIds.join(","), caption }
+      );
+      creationId = carousel.id;
+      await waitForContainer(creationId);
+      console.log(`[instagram] carousel container created: id=${creationId}, children=${childIds.length}`);
+    } else {
+      // Single-image post.
+      const container = await this.post(
+        `/${igAccountId}/media`,
+        pageAccessToken,
+        { image_url: mediaUrls[0], caption }
+      );
+
+      creationId = container.id;
+      console.log(`[instagram] container created: id=${creationId}`);
+      await waitForContainer(creationId);
     }
 
     // Publish
