@@ -33,7 +33,13 @@ import { createClient } from "@/lib/supabase/client";
 function useProjectId() {
   const pathname = usePathname();
   const match = pathname.match(/\/dashboard\/([^/]+)/);
-  return match ? match[1] : null;
+  const candidate = match ? match[1] : null;
+  // Project routes use UUIDs. Do not treat reserved dashboard pages like
+  // /dashboard/settings as project ids; that creates broken links such as
+  // /dashboard/settings/skills/creative-designer and API "Project not found" errors.
+  return candidate && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(candidate)
+    ? candidate
+    : null;
 }
 
 function useProjectName(projectId: string | null) {

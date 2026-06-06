@@ -21,6 +21,7 @@ import {
   Send,
   Eye,
   EyeOff,
+  AlertTriangle,
 } from "lucide-react";
 import { PlatformPreviewFrame } from "@/components/campaigns/platform-preview-frame";
 import { ReferenceImageUpload, type ReferenceImageData } from "@/components/reference-image-upload";
@@ -101,11 +102,14 @@ const RATIO_CLASS: Record<string, string> = {
   "16:9": "aspect-video",
 };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export default function CreativeDesignerPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const projectId = params.projectId as string;
+  const projectIdParam = params.projectId;
+  const projectId = Array.isArray(projectIdParam) ? projectIdParam[0] : projectIdParam as string;
   const t = useTranslations("creativeDesigner");
   const prefillContent = searchParams.get("content") ?? "";
 
@@ -143,6 +147,30 @@ export default function CreativeDesignerPage() {
 
   const selectedPlatform = resolvedPlatformOptions.find((p) => p.value === platform);
   const ratioClass = RATIO_CLASS[selectedPlatform?.ratio ?? "1:1"] ?? "aspect-square";
+  const hasValidProjectId = UUID_RE.test(projectId || "");
+
+  if (!hasValidProjectId) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Card className="max-w-lg border-amber-200 bg-amber-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-amber-800">
+              <AlertTriangle className="h-5 w-5" />
+              Open Creative Designer from a project
+            </CardTitle>
+            <CardDescription className="text-amber-700">
+              This page was opened without a real project id, so generated assets cannot be saved. Go back to Dashboard, open the BestRest project, then choose Skills Engine → Creative Designer.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link href="/dashboard">Choose project</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   async function generate() {
     if (!postContent.trim()) return;
