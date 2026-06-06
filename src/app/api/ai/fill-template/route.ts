@@ -3,6 +3,33 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { loadBrandContext } from "@/lib/templates/brand-tokens";
 
+function extractJsonObject(text: string): string | null {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (fenced?.[1]) return fenced[1].trim();
+  const first = text.indexOf("{");
+  const last = text.lastIndexOf("}");
+  if (first === -1 || last === -1 || last <= first) return null;
+  return text.slice(first, last + 1).trim();
+}
+
+async function parseAiJsonWithRepair<T>(
+  model: ReturnType<GoogleGenerativeAI["getGenerativeModel"]>,
+  text: string
+): Promise<T> {
+  const jsonText = extractJsonObject(text);
+  if (!jsonText) throw new Error("AI response did not contain JSON");
+
+  try {
+    return JSON.parse(jsonText) as T;
+  } catch (firstError) {
+    const repairPrompt = `Repair this malformed JSON and return ONLY valid JSON. Do not add markdown or explanations. Preserve the same keys and text values as much as possible.\n\nMalformed JSON:\n${jsonText}`;
+    const repaired = await model.generateContent(repairPrompt);
+    const repairedText = extractJsonObject(repaired.response.text());
+    if (!repairedText) throw firstError;
+    return JSON.parse(repairedText) as T;
+  }
+}
+
 export async function POST(request: Request) {
   const supabase = await createServerSupabaseClient();
   const {
@@ -50,7 +77,10 @@ export async function POST(request: Request) {
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    generationConfig: { responseMimeType: "application/json" },
+  });
 
   // Build the prompt to fill all template fields
   const slideDescriptions = slides.map((slide: { slideId: string; name: string; role: string; fields: Array<{ id: string; label: string; placeholder?: string; maxLength?: number; required: boolean }> }) => {
@@ -88,6 +118,7 @@ INSTRUCTIONS:
 - Match the brand's tone and personality
 - ALL text MUST be in ${outputLanguage} — this is non-negotiable
 - Keep text natural and fluent — never generate awkward or grammatically broken text
+- Return strict JSON only. Escape any quote characters inside text values. No markdown, no comments, no trailing commas.
 
 Respond ONLY with valid JSON in this exact format:
 {
@@ -102,16 +133,12 @@ Respond ONLY with valid JSON in this exact format:
     const result = await model.generateContent(prompt);
     const text = result.response.text();
 
-    // Extract JSON from response (handle markdown code blocks)
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return NextResponse.json({ error: "Failed to parse AI response" }, { status: 500 });
-    }
-
-    const parsed = JSON.parse(jsonMatch[0]);
+    const parsed = await parseAiJsonWithRepair<{ slides?: Record<string, Record<string, string>> }>(model, text);
     return NextResponse.json(parsed);
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "AI generation failed";
+    const msg = err instanceof Error && !err.message.includes("JSON")
+      ? err.message
+      : "AI returned invalid template copy. Please try again.";
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
