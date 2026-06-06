@@ -23,7 +23,10 @@ import type { Platform } from "@/types/database";
 interface CalendarPost {
   id: string;
   status: string;
-  scheduled_at: string;
+  scheduled_at: string | null;
+  published_at?: string | null;
+  created_at?: string | null;
+  calendar_at?: string | null;
   post_platforms: Array<{
     id: string;
     platform: Platform;
@@ -138,41 +141,44 @@ export function ContentCalendar({ projectId }: ContentCalendarProps) {
               </div>
 
               <div className="space-y-1">
-                {dayPosts.slice(0, 3).map((post) => (
-                  <div
-                    key={post.id}
-                    className="rounded bg-muted px-1.5 py-0.5 text-xs truncate cursor-pointer hover:bg-muted/80"
-                    title={
-                      post.post_platforms?.[0]?.caption ||
-                      `Post at ${format(new Date(post.scheduled_at), "HH:mm")}`
-                    }
-                  >
-                    <div className="flex items-center gap-1">
-                      {post.post_platforms?.map((pp) => (
-                        <PlatformIcon
-                          key={pp.id}
-                          platform={pp.platform}
-                          className="h-3 w-3 shrink-0"
-                        />
-                      ))}
-                      <span className="truncate">
-                        {format(new Date(post.scheduled_at), "HH:mm")}
-                      </span>
-                      <Badge
-                        variant={
-                          post.status === "published"
-                            ? "default"
-                            : post.status === "failed"
-                            ? "destructive"
-                            : "secondary"
-                        }
-                        className="text-[9px] px-1 py-0 h-4 ml-auto"
-                      >
-                        {post.status}
-                      </Badge>
+                {dayPosts.slice(0, 3).map((post) => {
+                  const calendarAt = post.calendar_at || post.scheduled_at || post.published_at || post.created_at;
+                  return (
+                    <div
+                      key={post.id}
+                      className="rounded bg-muted px-1.5 py-0.5 text-xs truncate cursor-pointer hover:bg-muted/80"
+                      title={
+                        post.post_platforms?.[0]?.caption ||
+                        `Post at ${calendarAt ? format(new Date(calendarAt), "HH:mm") : "--:--"}`
+                      }
+                    >
+                      <div className="flex items-center gap-1">
+                        {post.post_platforms?.map((pp) => (
+                          <PlatformIcon
+                            key={pp.id}
+                            platform={pp.platform}
+                            className="h-3 w-3 shrink-0"
+                          />
+                        ))}
+                        <span className="truncate">
+                          {calendarAt ? format(new Date(calendarAt), "HH:mm") : "--:--"}
+                        </span>
+                        <Badge
+                          variant={
+                            post.status === "published"
+                              ? "default"
+                              : post.status === "failed"
+                              ? "destructive"
+                              : "secondary"
+                          }
+                          className="text-[9px] px-1 py-0 h-4 ml-auto"
+                        >
+                          {post.status}
+                        </Badge>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {dayPosts.length > 3 && (
                   <div className="text-[10px] text-muted-foreground text-center">
                     +{dayPosts.length - 3} more
