@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import { getCondensedStorytellingGuidance } from "@/lib/ai/storytelling-framework";
 
 type CaptionBrandContext = {
@@ -21,6 +21,11 @@ export interface GenerateSocialCaptionParams {
 export interface SocialCaptionResult {
   caption: string;
   hashtags: string[];
+}
+
+function cleanEnvValue(value: string | undefined): string | undefined {
+  const cleaned = value?.trim().replace(/(?:\\r|\\n)+$/g, "").trim();
+  return cleaned || undefined;
 }
 
 function platformLabel(platform: string): string {
@@ -58,21 +63,27 @@ function parseCaptionResponse(text: string): SocialCaptionResult {
 }
 
 export async function generateSocialCaption(params: GenerateSocialCaptionParams): Promise<SocialCaptionResult> {
-  const apiKey = process.env.GOOGLE_AI_API_KEY;
-  if (!apiKey) throw new Error("GOOGLE_AI_API_KEY not configured for caption generation");
+  const apiKey = cleanEnvValue(process.env.OPENAI_API_KEY);
+  if (!apiKey) throw new Error("OPENAI_API_KEY not configured for caption generation");
 
   const { brandContext, postConcept, platform, headline, localeContext, captionLength } = params;
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const textModel = genAI.getGenerativeModel({ model: process.env.CAPTION_MODEL || "gemini-2.5-flash" });
+  const client = new OpenAI({ apiKey });
+  const textModel = cleanEnvValue(process.env.OPENAI_TEXT_MODEL) || cleanEnvValue(process.env.CHAT_MODEL) || "gpt-4o-mini";
   const featuresGuard = brandContext.features
     ? `\nCONFIRMED PRODUCT CAPABILITIES — use ONLY these, do not invent features:\n${brandContext.features.slice(0, 1400)}\n`
     : "";
   const language = inferLanguage(localeContext);
 
-  const result = await textModel.generateContent(
-    `You are a senior performance social media copywriter for B2B SaaS and local businesses.
-
-Write a conversion-focused caption and hashtags for a ${platformLabel(platform)} post.
+  const result = await client.chat.completions.create({
+    model: textModel,
+    messages: [
+      {
+        role: "system",
+        content: "You are a senior performance social media copywriter. Return exactly CAPTION and HASHTAGS sections, no explanation.",
+      },
+      {
+        role: "user",
+        content: `Write a conversion-focused caption and hashtags for a ${platformLabel(platform)} post.
 
 BRAND CONTEXT:
 - Personality: ${brandContext.brandPersonality || "clear, practical, confident"}
@@ -102,14 +113,18 @@ Rules:
 - Start with a strong hook, not a generic intro.
 - Be specific to the business, audience pain, and product value.
 - For B2B/local business content, use: pain → consequence → product mechanism → concrete benefit → CTA.
+- For restaurant/inventory software, prefer concrete pains like supplier chaos, invoice/OCR review, stock-count mistakes, min-stock/reorder confusion, manual spreadsheets, and wasted manager time when supported by the concept/context.
 - Do not write one-sentence captions unless explicitly asked for short.
 - Do not repeat the visual headline verbatim; expand it.
 - Include a clear CTA.
 - Include 5-10 relevant hashtags.
 - Do NOT invent product capabilities, metrics, customers, integrations, or guarantees.
 - CONTENT SAFETY: no religious symbols, national flags, political topics, military imagery, or culturally controversial subjects.
-- No intro text, no explanations — just CAPTION and HASHTAGS.`
-  );
+- No intro text, no explanations — just CAPTION and HASHTAGS.`,
+      },
+    ],
+    temperature: 0.7,
+  });
 
-  return parseCaptionResponse(result.response.text().trim());
+  return parseCaptionResponse(result.choices[0]?.message?.content?.trim() || "");
 }

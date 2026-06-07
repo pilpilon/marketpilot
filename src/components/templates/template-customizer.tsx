@@ -16,6 +16,7 @@ import { CarouselPreview } from "./carousel-preview";
 import { PlatformPreviewFrame } from "@/components/campaigns/platform-preview-frame";
 import { ReferenceImageUpload, type ReferenceImageData } from "@/components/reference-image-upload";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 interface TemplateCustomizerProps {
   template: ContentTemplate;
@@ -61,10 +62,21 @@ export function TemplateCustomizer({
   const [error, setError] = useState("");
   const [result, setResult] = useState<TemplateRenderResponse | null>(null);
   const [referenceImage, setReferenceImage] = useState<ReferenceImageData | null>(null);
+  const [projectName, setProjectName] = useState<string>("");
 
   const selectedPlatform = platformOptions.find((p) => p.value === platform);
   const ratioClass = ratioClassMap[selectedPlatform?.ratio ?? "1:1"] ?? "aspect-square";
   const activeSlide = template.slides[activeSlideIndex];
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("projects")
+      .select("name")
+      .eq("id", projectId)
+      .single()
+      .then(({ data }) => setProjectName((data as { name?: string } | null)?.name || ""));
+  }, [projectId]);
 
   function updateField(slideId: string, fieldId: string, value: string) {
     setSlideValues((prev) => ({
@@ -398,6 +410,7 @@ export function TemplateCustomizer({
               <PlatformPreviewFrame
                 platform={platform}
                 ratioClass={ratioClass}
+                username={projectName || undefined}
               >
                 <OverlayPreview
                   overlayStyle={activeSlide.overlayStyle}

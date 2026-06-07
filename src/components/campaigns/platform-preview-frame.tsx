@@ -4,13 +4,21 @@ import React from "react";
 import Image from "next/image";
 import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Share2, ThumbsUp, Repeat2 } from "lucide-react";
 
+function brandInitials(username?: string): string {
+  const clean = username?.replace(/[_-]+/g, " ").trim();
+  if (!clean) return "MP";
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return words.slice(0, 2).map((word) => word[0]).join("").toUpperCase();
+}
+
 function InstagramFrame({ children, username }: { children: React.ReactNode; username?: string }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden max-w-sm mx-auto">
       {/* Header */}
       <div className="flex items-center gap-2.5 px-3 py-2.5">
         <div className="h-8 w-8 rounded-full primary-gradient flex items-center justify-center text-white text-xs font-bold">
-          MP
+          {brandInitials(username)}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-gray-900 truncate">{username || "your_brand"}</p>
@@ -46,7 +54,7 @@ function TwitterFrame({ children, username }: { children: React.ReactNode; usern
       {/* Header */}
       <div className="flex items-start gap-2.5 px-3 pt-3">
         <div className="h-9 w-9 rounded-full primary-gradient flex items-center justify-center text-white text-xs font-bold shrink-0">
-          MP
+          {brandInitials(username)}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1">
@@ -113,7 +121,7 @@ function LinkedInFrame({ children, username }: { children: React.ReactNode; user
       {/* Header */}
       <div className="flex items-start gap-2.5 px-3 py-2.5">
         <div className="h-10 w-10 rounded-full primary-gradient flex items-center justify-center text-white text-xs font-bold shrink-0">
-          MP
+          {brandInitials(username)}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-gray-900">{username || "Your Brand"}</p>

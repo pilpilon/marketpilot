@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
+import OpenAI from "openai";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { loadBrandContext } from "@/lib/templates/brand-tokens";
+
+function cleanEnvValue(value: string | undefined): string | undefined {
+  const cleaned = value?.trim().replace(/(?:\\r|\\n)+$/g, "").trim();
+  return cleaned || undefined;
+}
 
 function extractJsonObject(text: string): string | null {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
@@ -12,22 +17,18 @@ function extractJsonObject(text: string): string | null {
   return text.slice(first, last + 1).trim();
 }
 
-async function parseAiJsonWithRepair<T>(
-  model: ReturnType<GoogleGenerativeAI["getGenerativeModel"]>,
-  text: string
-): Promise<T> {
+function parseAiJson<T>(text: string): T {
   const jsonText = extractJsonObject(text);
   if (!jsonText) throw new Error("AI response did not contain JSON");
+  return JSON.parse(jsonText) as T;
+}
 
-  try {
-    return JSON.parse(jsonText) as T;
-  } catch (firstError) {
-    const repairPrompt = `Repair this malformed JSON and return ONLY valid JSON. Do not add markdown or explanations. Preserve the same keys and text values as much as possible.\n\nMalformed JSON:\n${jsonText}`;
-    const repaired = await model.generateContent(repairPrompt);
-    const repairedText = extractJsonObject(repaired.response.text());
-    if (!repairedText) throw firstError;
-    return JSON.parse(repairedText) as T;
-  }
+function inferProductName(projectName: string, context: string): string {
+  const detectedNames = context.match(/\b[A-Z][A-Za-z0-9]*(?:[A-Z][A-Za-z0-9]*)+\b/g) || [];
+  const names = [projectName, ...detectedNames]
+    .map((name) => name.trim())
+    .filter(Boolean);
+  return names[0] || "the product";
 }
 
 export async function POST(request: Request) {
@@ -43,20 +44,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "projectId and slides are required" }, { status: 400 });
   }
 
-  // Load brand context
-  const { visual, brandPersonality } = await loadBrandContext(supabase, projectId);
+  const { data: project } = await supabase
+    .from("projects")
+    .select("name")
+    .eq("id", projectId)
+    .eq("user_id", user.id)
+    .single();
+  const projectName = (project as { name?: string } | null)?.name || "";
 
-  // Load additional context (product, audience, brand)
+  // Load brand context
+  const { visual, brandPersonality, brandPositioning, productContext, audienceContext, features } = await loadBrandContext(supabase, projectId);
+
+  // Load additional raw context so short template fields can stay specific.
   const { data: contextFiles } = await supabase
     .from("context_files")
     .select("file_type, content")
     .eq("project_id", projectId)
-    .in("file_type", ["brand", "product", "audience"]);
+    .in("file_type", ["brand", "product", "audience", "features", "intake"]);
 
   const files = (contextFiles || []) as Array<{ file_type: string; content: string }>;
-  const brandFile = files.find((f) => f.file_type === "brand")?.content?.slice(0, 500) || "";
-  const productFile = files.find((f) => f.file_type === "product")?.content?.slice(0, 500) || "";
-  const audienceFile = files.find((f) => f.file_type === "audience")?.content?.slice(0, 300) || "";
+  const brandFile = files.find((f) => f.file_type === "brand")?.content?.slice(0, 1600) || "";
+  const productFile = files.find((f) => f.file_type === "product")?.content?.slice(0, 1600) || "";
+  const audienceFile = files.find((f) => f.file_type === "audience")?.content?.slice(0, 1000) || "";
+  const featuresFile = files.find((f) => f.file_type === "features")?.content?.slice(0, 1800) || features.slice(0, 1800) || "";
+  const intakeFile = files.find((f) => f.file_type === "intake")?.content?.slice(0, 1000) || "";
 
   // Detect language from user locale and brand context
   const { data: profile } = await supabase
@@ -66,23 +77,30 @@ export async function POST(request: Request) {
     .single();
   const locale = (profile as { locale: string } | null)?.locale || "en";
 
-  // Also check if brand context contains Hebrew characters
-  const allContext = [brandFile, productFile, audienceFile, brandPersonality].join(" ");
+  const allContext = [
+    projectName,
+    brandFile,
+    productFile,
+    audienceFile,
+    featuresFile,
+    intakeFile,
+    brandPersonality,
+    brandPositioning,
+    productContext,
+    audienceContext,
+  ].join(" ");
   const hasHebrew = /[\u0590-\u05FF]/.test(allContext);
   const outputLanguage = locale === "he" || hasHebrew ? "Hebrew (עברית)" : "English";
+  const productName = inferProductName(projectName, allContext);
 
-  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  const apiKey = cleanEnvValue(process.env.OPENAI_API_KEY);
   if (!apiKey) {
-    return NextResponse.json({ error: "GOOGLE_AI_API_KEY not configured" }, { status: 500 });
+    return NextResponse.json({ error: "OPENAI_API_KEY not configured" }, { status: 500 });
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
-    generationConfig: { responseMimeType: "application/json" },
-  });
+  const client = new OpenAI({ apiKey });
+  const model = cleanEnvValue(process.env.OPENAI_TEXT_MODEL) || cleanEnvValue(process.env.CHAT_MODEL) || "gpt-4o-mini";
 
-  // Build the prompt to fill all template fields
   const slideDescriptions = slides.map((slide: { slideId: string; name: string; role: string; fields: Array<{ id: string; label: string; placeholder?: string; maxLength?: number; required: boolean }> }) => {
     const fieldList = slide.fields
       .map((f) => `  - "${f.id}" (${f.label}${f.required ? ", REQUIRED" : ", optional"}${f.maxLength ? `, max ${f.maxLength} chars` : ""}${f.placeholder ? `, example format: ${f.placeholder}` : ""})`)
@@ -90,35 +108,43 @@ export async function POST(request: Request) {
     return `Slide "${slide.slideId}" (${slide.name}, role: ${slide.role}):\n${fieldList}`;
   }).join("\n\n");
 
-  const prompt = `You are a social media copywriter. Generate compelling text content for a "${templateName}" (${templateCategory}) social media post template.
+  const prompt = `You are a senior performance copywriter for B2B SaaS/local-business software. Generate precise text content for a "${templateName}" (${templateCategory}) social media post template.
 
-CRITICAL: You MUST write ALL generated text in ${outputLanguage}. Every field value must be in ${outputLanguage}. Do not mix languages.
+CRITICAL LANGUAGE RULE: Write ALL generated field values in ${outputLanguage}. Do not mix languages.
+
+PROJECT / PRODUCT NAME:
+${productName}
 
 BRAND CONTEXT:
 ${brandPersonality}
 
-${brandFile ? `BRAND INFO:\n${brandFile}\n` : ""}
-${productFile ? `PRODUCT/SERVICE:\n${productFile}\n` : ""}
-${audienceFile ? `TARGET AUDIENCE:\n${audienceFile}\n` : ""}
+${projectName ? `PROJECT NAME:\n${projectName}\n` : ""}
+${brandPositioning ? `BRAND POSITIONING SUMMARY:\n${brandPositioning}\n` : ""}
+${productContext ? `PRODUCT SUMMARY:\n${productContext}\n` : ""}
+${audienceContext ? `TARGET AUDIENCE SUMMARY:\n${audienceContext}\n` : ""}
+${brandFile ? `RAW BRAND INFO:\n${brandFile}\n` : ""}
+${productFile ? `RAW PRODUCT/SERVICE INFO:\n${productFile}\n` : ""}
+${featuresFile ? `CONFIRMED PRODUCT CAPABILITIES — use ONLY these, do not invent features:\n${featuresFile}\n` : ""}
+${audienceFile ? `RAW TARGET AUDIENCE:\n${audienceFile}\n` : ""}
+${intakeFile ? `INTAKE / PRIORITY CONTEXT:\n${intakeFile}\n` : ""}
 VISUAL STYLE CONTEXT:
 ${visual.styleKeywords}
 
 TEMPLATE SLIDES TO FILL:
 ${slideDescriptions}
 
-INSTRUCTIONS:
-- Generate engaging, on-brand copy for each field
-- Respect max character limits strictly
-- Make headlines punchy and attention-grabbing
-- Subheadlines should add context or detail
-- CTAs should be action-oriented (e.g. "Shop Now", "Learn More", "Get Started")
-- For quote templates: the "headline" field is the quote itself (an inspiring statement that fits the brand voice). The "attribution" field MUST be a person's name or title with a dash prefix (e.g. "— Sarah Cohen, CEO" or "— The BestRest Team"). NEVER put a tagline or slogan in attribution.
-- For testimonial templates: the "headline" is a customer testimonial quote. The "attribution" is the customer's name and role.
-- For carousel templates, make each slide build on the previous one with a cohesive narrative
-- Match the brand's tone and personality
-- ALL text MUST be in ${outputLanguage} — this is non-negotiable
-- Keep text natural and fluent — never generate awkward or grammatically broken text
-- Return strict JSON only. Escape any quote characters inside text values. No markdown, no comments, no trailing commas.
+COPY QUALITY RULES:
+- Mention the product/brand name when it fits the field length. For this project, do not hide behind "your business" or "your brand".
+- Anchor the copy in a concrete buyer pain point from the context. Avoid generic SaaS slogans.
+- For restaurant/inventory software, prefer pains like messy stock counts, invoice/OCR review, supplier chaos, missing items, manual spreadsheets, reorder/min-stock confusion, or wasted manager time — but ONLY if supported by the confirmed context.
+- Use this structure when possible: specific pain → product mechanism → concrete operational benefit → CTA.
+- Headlines must be sharp and specific, not broad. Bad: "Manage your business with AI". Good: "BestRest turns supplier invoices into stock updates".
+- Key-benefit fields must explain what problem is fixed and how, not just "save time".
+- CTA fields should be direct and practical.
+- Respect max character limits strictly.
+- Never invent customers, metrics, guarantees, integrations, prices, or features.
+- For quote/testimonial templates, follow the field-specific rules from the template role and labels.
+- Return strict JSON only. Escape quote characters inside text values. No markdown, no comments, no trailing commas.
 
 Respond ONLY with valid JSON in this exact format:
 {
@@ -130,10 +156,18 @@ Respond ONLY with valid JSON in this exact format:
 }`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const result = await client.chat.completions.create({
+      model,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: "Return only valid JSON. Write concise, specific, on-brand marketing copy." },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.65,
+    });
 
-    const parsed = await parseAiJsonWithRepair<{ slides?: Record<string, Record<string, string>> }>(model, text);
+    const text = result.choices[0]?.message?.content || "";
+    const parsed = parseAiJson<{ slides?: Record<string, Record<string, string>> }>(text);
     return NextResponse.json(parsed);
   } catch (err) {
     const msg = err instanceof Error && !err.message.includes("JSON")
