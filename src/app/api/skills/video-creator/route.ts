@@ -9,6 +9,7 @@ import type {
   VideoLanguage,
   VideoMode,
   MusicMood,
+  VideoTemplate,
 } from "@/lib/video/types";
 
 const DEFAULT_DURATION = 16;
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
     language,
     durationSeconds,
     framework,
+    template,
     goal,
     tone,
     musicMood,
@@ -118,6 +120,7 @@ export async function POST(request: Request) {
     durationSeconds: resolvedDuration,
     aspectRatio: "9:16",
     framework: (framework || "problem_aha_proof_cta") as VideoFramework,
+    template: (template || "product_demo") as VideoTemplate,
     musicMood: (musicMood || "upbeat") as MusicMood,
     costUsd: 0,
     warnings: [],

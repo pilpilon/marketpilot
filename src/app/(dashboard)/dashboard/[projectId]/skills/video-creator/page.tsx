@@ -18,6 +18,7 @@ import {
 import { Loader2, Video, ArrowLeft, AlertTriangle, CheckCircle2, Zap } from "lucide-react";
 import type {
   VideoFramework,
+  VideoTemplate,
   VideoLanguage,
   MusicMood,
   VideoJobStatusResponse,
@@ -28,6 +29,13 @@ const FRAMEWORK_OPTIONS: Array<{ value: VideoFramework; labelKey: string }> = [
   { value: "pas", labelKey: "frameworkPas" },
   { value: "aida", labelKey: "frameworkAida" },
   { value: "bab", labelKey: "frameworkBab" },
+];
+
+const TEMPLATE_OPTIONS: Array<{ value: VideoTemplate; labelKey: string }> = [
+  { value: "product_demo", labelKey: "templateProductDemo" },
+  { value: "educational", labelKey: "templateEducational" },
+  { value: "ugc", labelKey: "templateUgc" },
+  { value: "ai_avatar", labelKey: "templateAiAvatar" },
 ];
 
 const MOOD_OPTIONS: Array<{ value: MusicMood; labelKey: string }> = [
@@ -53,6 +61,7 @@ export default function VideoCreatorPage() {
   const tSkills = useTranslations("skills");
 
   const [framework, setFramework] = useState<VideoFramework>("problem_aha_proof_cta");
+  const [template, setTemplate] = useState<VideoTemplate>("product_demo");
   const [language, setLanguage] = useState<VideoLanguage | "auto">("auto");
   const [durationSeconds, setDurationSeconds] = useState(16);
   const [musicMood, setMusicMood] = useState<MusicMood>("upbeat");
@@ -120,6 +129,7 @@ export default function VideoCreatorPage() {
           language: language === "auto" ? undefined : language,
           durationSeconds,
           framework,
+          template,
           musicMood,
           goal: goal || undefined,
           tone: tone || undefined,
@@ -185,6 +195,26 @@ export default function VideoCreatorPage() {
                 value={campaignName}
                 onChange={(e) => setCampaignName(e.target.value)}
               />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>{t("templateLabel")}</Label>
+              <Select
+                value={template}
+                onValueChange={(v) => v && setTemplate(v as VideoTemplate)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TEMPLATE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {t(opt.labelKey)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">{t("templateHint")}</p>
             </div>
 
             <div className="space-y-1.5">

@@ -11,6 +11,7 @@ import { z } from "zod";
 import type { loadBrandContext } from "@/lib/templates/brand-tokens";
 import type {
   VideoFramework,
+  VideoTemplate,
   VideoLanguage,
   VideoScript,
   MusicMood,
@@ -57,9 +58,21 @@ const FRAMEWORK_GUIDE: Record<VideoFramework, string> = {
     "Scene 3 = Bridge (how the product gets you there). Scene 4 = CTA.",
 };
 
+const TEMPLATE_GUIDE: Record<VideoTemplate, string> = {
+  product_demo:
+    "Product demo / feature walkthrough. Make the app itself the hero: real browser/product screens, cursor movement, dashboard/list/table moments, invoice/OCR/product-matching workflow, before-after UI clarity. Avoid AI actors. Use B-roll only as context around real app usage.",
+  educational:
+    "Educational explainer. Teach one practical concept, then show how the product handles it. Use simple visual metaphors, product screens, and clear chapter-like overlays. Calm, helpful, not hype.",
+  ugc:
+    "UGC-style testimonial. Casual handheld phone-style footage, but avoid clear faces unless explicitly requested. Use hands/over-shoulder/product usage, natural restaurant/workspace context, authentic imperfections.",
+  ai_avatar:
+    "AI avatar / presenter. This template intentionally allows a synthetic presenter, but should be treated as experimental because faces can look uncanny. Keep presenter brief and rely on product-screen cutaways.",
+};
+
 export async function generateVideoScript(params: {
   brandContext: BrandContext;
   framework: VideoFramework;
+  template?: VideoTemplate;
   language: VideoLanguage;
   durationSeconds: number;
   goal?: string;
@@ -70,6 +83,7 @@ export async function generateVideoScript(params: {
   const {
     brandContext,
     framework,
+    template = "product_demo",
     language,
     durationSeconds,
     goal,
@@ -110,6 +124,8 @@ GOAL: ${goal || "drive awareness and sign-ups"}
 TONE OVERRIDE: ${tone || "match the brand voice above"}
 FRAMEWORK: ${framework}
 FRAMEWORK GUIDE: ${FRAMEWORK_GUIDE[framework]}
+VIDEO TEMPLATE: ${template}
+TEMPLATE GUIDE: ${TEMPLATE_GUIDE[template]}
 
 LANGUAGE: All hook/keyMessage/cta/overlayText MUST be written in ${lang}. Scene prompts stay in English (they go to an image/video model).
 
@@ -134,8 +150,10 @@ JSON SHAPE:
 }
 
 VISUAL QUALITY DIRECTION:
-- Use realistic B2B/product-demo visuals, not AI-influencer / talking-head / avatar scenes.
+- Use realistic B2B/product-demo visuals, not AI-influencer / talking-head / avatar scenes, unless VIDEO TEMPLATE is ai_avatar.
 - Prefer hands, objects, restaurant inventory shelves, invoices, POS/laptop/phone screens, supplier deliveries, stockroom/fridge shots, and product UI moments.
+- For product_demo, at least 2 scenes must visibly focus on the product/app workflow, not generic restaurant office B-roll.
+- For product_demo, write prompts as screen-demo/cursor/product walkthrough scenes when possible: browser window, dashboard table, OCR review panel, supplier/product matching, inventory count, reorder/min-stock alert, clean CTA screen.
 - Avoid showing faces or full synthetic people. If a person is unavoidable, show only hands, over-the-shoulder angles, cropped torso, or wide back view with no clear face.
 - Do NOT ask for close-ups of faces, smiling characters, stressed facial expressions, or fictional AI-generated people.
 - Style must be photorealistic handheld documentary / SaaS product demo, natural lighting, realistic camera motion, no cartoon, no 3D render, no plastic skin, no uncanny valley.
@@ -224,6 +242,11 @@ function sanitizeScenePrompt(prompt: string): string {
     .replace(/\b(person|character|owner|manager|customer)'s\s+(face|expression|smile|eyes|mouth)\b/gi, "hands and workspace")
     .replace(/\b(the )?(person|character|owner|manager|customer)\b/gi, "hands-only restaurant operator")
     .trim();
+
+  const wantsAvatar = /\b(ai avatar|avatar|presenter|talking head)\b/i.test(prompt);
+  if (wantsAvatar) {
+    return `Professional AI presenter template, realistic studio lighting, avoid uncanny close-up, include product-screen cutaways. ${cleaned}`.slice(0, 1200);
+  }
 
   const realismPrefix =
     "Photorealistic B2B product-demo style, real handheld camera footage, natural lighting, no cartoon, no 3D render, no avatar, no clear human faces. ";

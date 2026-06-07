@@ -18,6 +18,7 @@ import type {
   VideoJobMetadata,
   VideoScript,
   VideoFramework,
+  VideoTemplate,
   VideoLanguage,
   MusicMood,
 } from "@/lib/video/types";
@@ -161,6 +162,7 @@ async function stagePlanning(
     localeContext:
       (meta?.localeContext as string | undefined) || undefined,
     features: brandContext.features || undefined,
+    template: (meta?.template || "product_demo") as VideoTemplate,
   });
 
   // Respect user's chosen mood if it wasn't "auto"

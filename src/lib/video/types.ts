@@ -15,6 +15,12 @@ export type VideoLanguage = "en" | "he";
 
 export type VideoMode = "freeform" | "template";
 
+export type VideoTemplate =
+  | "product_demo"
+  | "educational"
+  | "ugc"
+  | "ai_avatar";
+
 export type VideoAspectRatio = "9:16" | "1:1" | "16:9";
 
 export type MusicMood =
@@ -78,6 +84,7 @@ export interface VideoJobMetadata {
   durationSeconds: number;
   aspectRatio: VideoAspectRatio;
   framework: VideoFramework;
+  template: VideoTemplate;
   musicMood: MusicMood;
   musicTrackUrl?: string;
   script?: VideoScript;
@@ -98,6 +105,7 @@ export interface CreateVideoJobInput {
   language?: VideoLanguage;
   durationSeconds?: number;
   framework?: VideoFramework;
+  template?: VideoTemplate;
   goal?: string;
   tone?: string;
   musicMood?: MusicMood;
