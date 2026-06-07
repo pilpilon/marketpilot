@@ -20,6 +20,14 @@ export interface CapturedProductDemoFrame {
   cursor?: { x: number; y: number };
 }
 
+export interface ProductDemoAccessVerification {
+  ok: boolean;
+  finalUrl: string;
+  title: string;
+  hasPasswordField: boolean;
+  message: string;
+}
+
 const FEATURE_FLOWS: Array<{
   intent: CapturedProductDemoFrame["intent"];
   overlayText: string;
@@ -42,23 +50,58 @@ const FEATURE_FLOWS: Array<{
   },
 ];
 
+export async function verifyProductDemoAccess(
+  access: ProductDemoAccess
+): Promise<ProductDemoAccessVerification> {
+  if (!access.demoUrl) {
+    return {
+      ok: false,
+      finalUrl: "",
+      title: "",
+      hasPasswordField: false,
+      message: "Demo/login URL is required.",
+    };
+  }
+
+  const browser = await launchRecorderBrowser();
+  try {
+    const page = await browser.newPage();
+    await page.goto(access.demoUrl, { waitUntil: "networkidle2", timeout: 25_000 });
+    await loginIfNeeded(page, access);
+    const hasPasswordField = Boolean(await page.$('input[type="password"]'));
+    const finalUrl = page.url();
+    const title = await page.title().catch(() => "");
+    const looksLoggedIn = !hasPasswordField && !/login|signin|sign-in|auth|התחברות|כניסה/i.test(finalUrl);
+
+    return {
+      ok: looksLoggedIn,
+      finalUrl,
+      title,
+      hasPasswordField,
+      message: looksLoggedIn
+        ? "Demo login works. MarketPilot can access the app."
+        : "MarketPilot still sees a login screen after submitting the credentials.",
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      finalUrl: access.demoUrl,
+      title: "",
+      hasPasswordField: false,
+      message: err instanceof Error ? err.message : "Could not open or verify the demo app.",
+    };
+  } finally {
+    await browser.close();
+  }
+}
+
 export async function captureProductDemoFlows(
   access: ProductDemoAccess
 ): Promise<CapturedProductDemoFrame[]> {
   if (!access.demoUrl) return [];
 
   const spec = VIEWPORTS.desktop;
-  const executablePath = await chromium.executablePath(CHROMIUM_PACK_URL);
-  const browser = await puppeteer.launch({
-    args: chromium.args,
-    defaultViewport: {
-      width: spec.width,
-      height: spec.height,
-      deviceScaleFactor: spec.deviceScaleFactor ?? 2,
-    },
-    executablePath,
-    headless: true,
-  });
+  const browser = await launchRecorderBrowser();
 
   try {
     const page = await browser.newPage();
@@ -88,6 +131,21 @@ export async function captureProductDemoFlows(
   } finally {
     await browser.close();
   }
+}
+
+async function launchRecorderBrowser() {
+  const spec = VIEWPORTS.desktop;
+  const executablePath = await chromium.executablePath(CHROMIUM_PACK_URL);
+  return puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: {
+      width: spec.width,
+      height: spec.height,
+      deviceScaleFactor: spec.deviceScaleFactor ?? 2,
+    },
+    executablePath,
+    headless: true,
+  });
 }
 
 async function loginIfNeeded(page: Page, access: ProductDemoAccess) {

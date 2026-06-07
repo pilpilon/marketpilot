@@ -71,6 +71,12 @@ export default function VideoCreatorPage() {
   const [demoUrl, setDemoUrl] = useState("");
   const [demoEmail, setDemoEmail] = useState("");
   const [demoPassword, setDemoPassword] = useState("");
+  const [testingAccess, setTestingAccess] = useState(false);
+  const [testAccessStatus, setTestAccessStatus] = useState<{
+    ok: boolean;
+    message: string;
+    finalUrl?: string;
+  } | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -116,6 +122,35 @@ export default function VideoCreatorPage() {
     pollRef.current = setInterval(poll, 3000);
     return () => stopPolling();
   }, [jobId, stopPolling]);
+
+  async function handleTestAccess() {
+    setTestingAccess(true);
+    setError("");
+    setTestAccessStatus(null);
+
+    try {
+      const res = await fetch("/api/skills/video-creator/test-access", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId,
+          demoUrl,
+          demoEmail: demoEmail || undefined,
+          demoPassword: demoPassword || undefined,
+        }),
+      });
+      const data = await res.json();
+      setTestAccessStatus({
+        ok: Boolean(data.ok),
+        message: data.message || data.error || (res.ok ? t("accessTestPassed") : t("accessTestFailed")),
+        finalUrl: data.finalUrl,
+      });
+    } catch {
+      setTestAccessStatus({ ok: false, message: t("accessTestFailed") });
+    } finally {
+      setTestingAccess(false);
+    }
+  }
 
   async function handleSubmit() {
     setSubmitting(true);
@@ -316,7 +351,10 @@ export default function VideoCreatorPage() {
                   <Input
                     placeholder="https://app.customer.com/login"
                     value={demoUrl}
-                    onChange={(e) => setDemoUrl(e.target.value)}
+                    onChange={(e) => {
+                      setDemoUrl(e.target.value);
+                      setTestAccessStatus(null);
+                    }}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -326,7 +364,10 @@ export default function VideoCreatorPage() {
                       type="email"
                       placeholder="qa@example.com"
                       value={demoEmail}
-                      onChange={(e) => setDemoEmail(e.target.value)}
+                      onChange={(e) => {
+                        setDemoEmail(e.target.value);
+                        setTestAccessStatus(null);
+                      }}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -335,10 +376,53 @@ export default function VideoCreatorPage() {
                       type="password"
                       placeholder="••••••••"
                       value={demoPassword}
-                      onChange={(e) => setDemoPassword(e.target.value)}
+                      onChange={(e) => {
+                        setDemoPassword(e.target.value);
+                        setTestAccessStatus(null);
+                      }}
                     />
                   </div>
                 </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleTestAccess}
+                  disabled={testingAccess || !demoUrl || !demoEmail || !demoPassword}
+                  className="w-full"
+                >
+                  {testingAccess ? (
+                    <>
+                      <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                      {t("testingDemoAccess")}
+                    </>
+                  ) : (
+                    t("testDemoAccess")
+                  )}
+                </Button>
+                {testAccessStatus && (
+                  <div
+                    className={`rounded-md border p-2 text-xs ${
+                      testAccessStatus.ok
+                        ? "border-green-200 bg-green-50 text-green-700"
+                        : "border-destructive/30 bg-destructive/10 text-destructive"
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      {testAccessStatus.ok ? (
+                        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5" />
+                      ) : (
+                        <AlertTriangle className="mt-0.5 h-3.5 w-3.5" />
+                      )}
+                      <div>
+                        <p className="font-medium">
+                          {testAccessStatus.ok ? t("accessTestPassed") : t("accessTestFailed")}
+                        </p>
+                        <p>{testAccessStatus.message}</p>
+                        {testAccessStatus.finalUrl && <p className="break-all">{testAccessStatus.finalUrl}</p>}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
