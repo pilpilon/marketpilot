@@ -14,6 +14,8 @@ import {
 } from "@/lib/video/composer";
 import { getMusicTrackUrl } from "@/lib/video/music-library";
 import { estimateVideoCost } from "@/lib/video/cost-guard";
+import { captureProductDemoFlows } from "@/lib/video/product-demo-recorder";
+import { decryptSecret } from "@/lib/security/credentials";
 import type {
   VideoJobMetadata,
   VideoScript,
@@ -248,26 +250,18 @@ async function stageProductDemoWalkthrough(
   meta: JobMetadata,
   brandContext: Awaited<ReturnType<typeof loadBrandContext>>
 ): Promise<string> {
-  const { data: screenshots, error } = await supabase
-    .from("project_screenshots")
-    .select("public_url, viewport, screenshot_type, created_at")
-    .eq("project_id", job.project_id)
-    .eq("approved", true)
-    .order("screenshot_type", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(6);
-
-  if (error) throw new Error(error.message);
-
-  const usableScreenshots = ((screenshots || []) as Array<{
-    public_url: string;
-    viewport: string;
-    screenshot_type?: string | null;
-  }>).filter((s) => Boolean(s.public_url));
+  const recordedScreenshots = await captureRecordedProductDemoScreenshots(
+    supabase,
+    job,
+    meta,
+    brandContext
+  );
+  const fallbackScreenshots = recordedScreenshots.length > 0 ? [] : await loadFallbackScreenshots(supabase, job.project_id);
+  const usableScreenshots = recordedScreenshots.length > 0 ? recordedScreenshots : fallbackScreenshots;
 
   if (usableScreenshots.length === 0) {
     throw new Error(
-      "Product demo video needs at least one approved app/product screenshot. Upload or approve screenshots in Intelligence first."
+      "Product demo video needs demo app credentials or at least one approved app/product screenshot. Add demo URL/login details or approve screenshots in Intelligence first."
     );
   }
 
@@ -292,7 +286,7 @@ async function stageProductDemoWalkthrough(
         index,
         prompt: "Real app walkthrough screenshot scene rendered by Remotion; no AI actor and no synthetic face.",
         imageUrl: screenshot.public_url,
-        overlayText: overlays[index] || overlays[overlays.length - 1],
+        overlayText: screenshot.overlayText || overlays[index] || overlays[overlays.length - 1],
         duration: 8,
       };
     }),
@@ -327,6 +321,99 @@ async function stageProductDemoWalkthrough(
       musicMood: script.musicMood,
       musicTrackUrl: getMusicTrackUrl(script.musicMood) || undefined,
     }
+  );
+}
+
+type ProductDemoScreenshot = {
+  public_url: string;
+  viewport: string;
+  screenshot_type?: string | null;
+  overlayText?: string;
+};
+
+async function captureRecordedProductDemoScreenshots(
+  supabase: SupabaseClient,
+  job: JobRow,
+  meta: JobMetadata,
+  _brandContext: Awaited<ReturnType<typeof loadBrandContext>>
+): Promise<ProductDemoScreenshot[]> {
+  const storedAccess = meta.productDemoAccess;
+  const { data: project } = await supabase
+    .from("projects")
+    .select("url")
+    .eq("id", job.project_id)
+    .single();
+
+  const demoUrl =
+    storedAccess?.demoUrl ||
+    ((project as { url?: string | null } | null)?.url || undefined);
+  if (!demoUrl) return [];
+
+  const demoPassword = storedAccess?.encryptedPassword
+    ? decryptSecret(storedAccess.encryptedPassword)
+    : undefined;
+
+  if (!storedAccess?.demoEmail || !demoPassword) {
+    return [];
+  }
+
+  try {
+    const frames = await captureProductDemoFlows({
+      demoUrl,
+      demoEmail: storedAccess.demoEmail,
+      demoPassword,
+    });
+
+    const uploaded: ProductDemoScreenshot[] = [];
+    for (const frame of frames) {
+      const fileName = `screenshots/${job.user_id}/${job.project_id}/recorded-${frame.intent}-${Date.now()}.png`;
+      const { error: uploadError } = await supabase.storage
+        .from("generated-images")
+        .upload(fileName, frame.buffer, {
+          contentType: "image/png",
+          upsert: true,
+        });
+      if (uploadError) continue;
+
+      const { data: urlData } = supabase.storage
+        .from("generated-images")
+        .getPublicUrl(fileName);
+
+      uploaded.push({
+        public_url: urlData.publicUrl,
+        viewport: "desktop",
+        screenshot_type: `recorded_${frame.intent}`,
+        overlayText: frame.overlayText,
+      });
+    }
+
+    return uploaded;
+  } catch (err) {
+    console.warn(
+      "[video_creator] Product demo recorder failed; using fallbackScreenshots",
+      err instanceof Error ? err.message : err
+    );
+    return [];
+  }
+}
+
+async function loadFallbackScreenshots(
+  supabase: SupabaseClient,
+  projectId: string
+): Promise<ProductDemoScreenshot[]> {
+  const { data: screenshots, error } = await supabase
+    .from("project_screenshots")
+    .select("public_url, viewport, screenshot_type, created_at")
+    .eq("project_id", projectId)
+    .eq("approved", true)
+    .order("screenshot_type", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(6);
+
+  if (error) throw new Error(error.message);
+
+  return ((screenshots || []) as ProductDemoScreenshot[]).filter((s) =>
+    Boolean(s.public_url)
   );
 }
 

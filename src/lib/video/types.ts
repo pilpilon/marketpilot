@@ -79,6 +79,19 @@ export interface VideoScript {
   totalDuration: number;
 }
 
+export interface ProductDemoAccessInput {
+  demoUrl?: string;
+  demoEmail?: string;
+  demoPassword?: string;
+}
+
+export interface StoredProductDemoAccess {
+  demoUrl?: string;
+  demoEmail?: string;
+  encryptedPassword?: string;
+  password?: "[redacted]";
+}
+
 /** Metadata blob persisted on pipeline_jobs.metadata for video jobs. */
 export interface VideoJobMetadata {
   mode: VideoMode;
@@ -98,6 +111,8 @@ export interface VideoJobMetadata {
   composer?: "remotion_lambda" | "fallback_first_scene";
   /** Warnings surfaced to the user. */
   warnings?: string[];
+  /** Optional encrypted customer demo-app access used by product demo recorder. */
+  productDemoAccess?: StoredProductDemoAccess;
 }
 
 /** Input for starting a new video job. */
@@ -112,6 +127,7 @@ export interface CreateVideoJobInput {
   tone?: string;
   musicMood?: MusicMood;
   campaignName?: string;
+  productDemoAccess?: ProductDemoAccessInput;
 }
 
 /** Client-side polling response shape. */

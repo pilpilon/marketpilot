@@ -68,6 +68,9 @@ export default function VideoCreatorPage() {
   const [goal, setGoal] = useState("");
   const [tone, setTone] = useState("");
   const [campaignName, setCampaignName] = useState("");
+  const [demoUrl, setDemoUrl] = useState("");
+  const [demoEmail, setDemoEmail] = useState("");
+  const [demoPassword, setDemoPassword] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -134,6 +137,14 @@ export default function VideoCreatorPage() {
           goal: goal || undefined,
           tone: tone || undefined,
           campaignName: campaignName || undefined,
+          productDemoAccess:
+            template === "product_demo" && demoUrl
+              ? {
+                  demoUrl,
+                  demoEmail: demoEmail || undefined,
+                  demoPassword: demoPassword || undefined,
+                }
+              : undefined,
         }),
       });
 
@@ -293,6 +304,43 @@ export default function VideoCreatorPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {template === "product_demo" && (
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{t("demoAccessTitle")}</p>
+                  <p className="text-xs text-muted-foreground">{t("demoAccessDesc")}</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t("demoUrlLabel")}</Label>
+                  <Input
+                    placeholder="https://app.customer.com/login"
+                    value={demoUrl}
+                    onChange={(e) => setDemoUrl(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>{t("demoEmailLabel")}</Label>
+                    <Input
+                      type="email"
+                      placeholder="qa@example.com"
+                      value={demoEmail}
+                      onChange={(e) => setDemoEmail(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("demoPasswordLabel")}</Label>
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      value={demoPassword}
+                      onChange={(e) => setDemoPassword(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground space-y-1.5">
               <p className="font-medium text-foreground">{t("productionStackTitle")}</p>

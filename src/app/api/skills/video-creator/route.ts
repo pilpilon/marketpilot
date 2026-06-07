@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { parseProjectSettings, buildLocaleContext } from "@/lib/ai/locale-context";
 import { estimateVideoCost, assertBelowCap } from "@/lib/video/cost-guard";
+import { encryptSecret } from "@/lib/security/credentials";
 import type {
   CreateVideoJobInput,
   VideoJobMetadata,
@@ -36,6 +37,7 @@ export async function POST(request: Request) {
     tone,
     musicMood,
     campaignName,
+    productDemoAccess,
   } = body;
 
   if (!projectId || !mode) {
@@ -113,6 +115,17 @@ export async function POST(request: Request) {
 
   const campaignId = (campaign as { id: string }).id;
 
+  const safeProductDemoAccess = productDemoAccess?.demoUrl
+    ? {
+        demoUrl: productDemoAccess.demoUrl,
+        demoEmail: productDemoAccess.demoEmail || undefined,
+        encryptedPassword: productDemoAccess.demoPassword
+          ? encryptSecret(productDemoAccess.demoPassword)
+          : undefined,
+        password: productDemoAccess.demoPassword ? "[redacted]" as const : undefined,
+      }
+    : undefined;
+
   // Create pipeline job with video-creator metadata
   const jobMetadata: VideoJobMetadata = {
     mode: mode as VideoMode,
@@ -124,6 +137,7 @@ export async function POST(request: Request) {
     musicMood: (musicMood || "upbeat") as MusicMood,
     costUsd: 0,
     warnings: [],
+    productDemoAccess: safeProductDemoAccess,
   };
 
   // Stash goal/tone/localeContext into metadata for the worker

@@ -1,0 +1,173 @@
+import puppeteer, { type Page } from "puppeteer-core";
+import chromium from "@sparticuz/chromium-min";
+import { VIEWPORTS } from "@/lib/screenshots/capture";
+
+const CHROMIUM_PACK_URL =
+  "https://github.com/nichochar/chromium-min-pack/releases/download/v133.0.0/chromium-v133.0.0-pack.tar";
+
+export interface ProductDemoAccess {
+  demoUrl: string;
+  demoEmail?: string;
+  demoPassword?: string;
+}
+
+export interface CapturedProductDemoFrame {
+  intent: "invoice" | "supplier" | "inventory";
+  overlayText: string;
+  buffer: Buffer;
+  width: number;
+  height: number;
+  cursor?: { x: number; y: number };
+}
+
+const FEATURE_FLOWS: Array<{
+  intent: CapturedProductDemoFrame["intent"];
+  overlayText: string;
+  keywords: string[];
+}> = [
+  {
+    intent: "invoice",
+    overlayText: "Upload an invoice and review extracted line items",
+    keywords: ["invoice", "חשבונית", "upload", "scan", "סריקת"],
+  },
+  {
+    intent: "supplier",
+    overlayText: "Catch supplier price increases before they hurt margin",
+    keywords: ["supplier", "ספק", "price", "התייקרות", "מחיר"],
+  },
+  {
+    intent: "inventory",
+    overlayText: "Turn low inventory into the next supplier order",
+    keywords: ["inventory", "מלאי", "stock", "whatsapp", "order", "הזמנה"],
+  },
+];
+
+export async function captureProductDemoFlows(
+  access: ProductDemoAccess
+): Promise<CapturedProductDemoFrame[]> {
+  if (!access.demoUrl) return [];
+
+  const spec = VIEWPORTS.desktop;
+  const executablePath = await chromium.executablePath(CHROMIUM_PACK_URL);
+  const browser = await puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: {
+      width: spec.width,
+      height: spec.height,
+      deviceScaleFactor: spec.deviceScaleFactor ?? 2,
+    },
+    executablePath,
+    headless: true,
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.goto(access.demoUrl, { waitUntil: "networkidle2", timeout: 25_000 });
+    await loginIfNeeded(page, access);
+
+    const frames: CapturedProductDemoFrame[] = [];
+    for (const flow of FEATURE_FLOWS) {
+      await navigateToFeature(page, flow.keywords);
+      const cursor = cursorForIntent(flow.intent);
+      await page.mouse.move(cursor.x - 180, cursor.y - 120, { steps: 8 });
+      await page.mouse.move(cursor.x, cursor.y, { steps: 18 });
+      await page.mouse.click(cursor.x, cursor.y).catch(() => undefined);
+      await settle(page);
+      const screenshot = await page.screenshot({ type: "png", fullPage: false });
+      frames.push({
+        intent: flow.intent,
+        overlayText: flow.overlayText,
+        buffer: Buffer.from(screenshot),
+        width: spec.width * (spec.deviceScaleFactor ?? 2),
+        height: spec.height * (spec.deviceScaleFactor ?? 2),
+        cursor,
+      });
+    }
+
+    return frames;
+  } finally {
+    await browser.close();
+  }
+}
+
+async function loginIfNeeded(page: Page, access: ProductDemoAccess) {
+  if (!access.demoEmail || !access.demoPassword) return;
+
+  const hasPasswordField = await page.$('input[type="password"]');
+  const hasEmailField = await page.$('input[type="email"], input[name*="email" i], input[autocomplete="email"]');
+
+  if (!hasPasswordField && !hasEmailField) return;
+
+  const emailSelector = 'input[type="email"], input[name*="email" i], input[autocomplete="email"], input[type="text"]';
+  await page.click(emailSelector).catch(() => undefined);
+  await page.keyboard.down(process.platform === "darwin" ? "Meta" : "Control");
+  await page.keyboard.press("KeyA");
+  await page.keyboard.up(process.platform === "darwin" ? "Meta" : "Control");
+  await page.keyboard.type(access.demoEmail, { delay: 10 });
+
+  await page.click('input[type="password"]');
+  await page.keyboard.type(access.demoPassword, { delay: 10 });
+
+  const submitted = await clickSubmitButton(page);
+
+  if (!submitted) await page.keyboard.press("Enter");
+  await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 12_000 }).catch(() => undefined);
+  await settle(page);
+}
+
+async function navigateToFeature(page: Page, keywords: string[]) {
+  const candidates = await page.$$("a, button, [role=button], nav a, aside a");
+  for (const el of candidates) {
+    const text = ((await el.evaluate((node) => node.textContent || "")) || "").toLowerCase();
+    if (keywords.some((keyword) => text.includes(keyword.toLowerCase()))) {
+      await el.click().catch(() => undefined);
+      await settle(page);
+      return;
+    }
+  }
+
+  // Fallback: keep the current dashboard/screen but scroll to vary the shot.
+  await page.evaluate((terms) => {
+    const lowerTerms = (terms as string[]).map((t) => t.toLowerCase());
+    const all = Array.from(document.querySelectorAll("h1,h2,h3,p,span,div"));
+    const match = all.find((el) =>
+      lowerTerms.some((term) => (el.textContent || "").toLowerCase().includes(term))
+    );
+    match?.scrollIntoView({ behavior: "instant", block: "center" });
+  }, keywords);
+  await settle(page);
+}
+
+async function clickSubmitButton(page: Page): Promise<boolean> {
+  const clicked = await page.evaluate(() => {
+    const labels = ["login", "sign in", "התחבר", "כניסה", "כניסה למערכת"];
+    const buttons = Array.from(document.querySelectorAll("button, input[type=submit]"));
+    const target = buttons.find((button) => {
+      const text = `${button.textContent || ""} ${(button as HTMLInputElement).value || ""}`.toLowerCase();
+      return (
+        (button as HTMLButtonElement).type === "submit" ||
+        labels.some((label) => text.includes(label.toLowerCase()))
+      );
+    }) as HTMLElement | undefined;
+    target?.click();
+    return Boolean(target);
+  });
+  return Boolean(clicked);
+}
+
+async function settle(page: Page) {
+  await page.waitForNetworkIdle({ idleTime: 600, timeout: 5_000 }).catch(() => undefined);
+  await new Promise((resolve) => setTimeout(resolve, 800));
+}
+
+function cursorForIntent(intent: CapturedProductDemoFrame["intent"]) {
+  switch (intent) {
+    case "invoice":
+      return { x: 720, y: 360 };
+    case "supplier":
+      return { x: 880, y: 430 };
+    case "inventory":
+    default:
+      return { x: 640, y: 520 };
+  }
+}
