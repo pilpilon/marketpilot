@@ -18,6 +18,8 @@ assert.match(recorder, /Google login/, 'external Google auth should return a cle
 assert.match(recorder, /looksLikeAccessibleApp/, 'URL-only magic/invite links should be accepted when they land in the app');
 assert.match(recorder, /Invite\/magic link works/, 'successful URL-only access should use invite/magic-link wording');
 assert.match(recorder, /let browser: Awaited<ReturnType<typeof launchRecorderBrowser>> \| null = null/, 'browser launch errors should be caught and returned as JSON');
+assert.match(recorder, /Sparticuz\/chromium\/releases\/download\/v143\.0\.4\/chromium-v143\.0\.4-pack\.x64\.tar/, 'Chromium pack URL should point to an existing Sparticuz release asset');
+assert.doesNotMatch(recorder, /nichochar\/chromium-min-pack/, 'Chromium pack URL must not point to the removed 404 asset');
 assert.match(route, /export const runtime = "nodejs"/, 'test-access route should force Node runtime for Puppeteer');
 assert.match(route, /await import\("@\/lib\/video\/product-demo-recorder"\)/, 'test-access route should dynamically import Puppeteer verifier inside try/catch');
 assert.match(route, /status: 422/, 'test-access route should return JSON 422 for verifier failures instead of raw 500');

@@ -3,7 +3,8 @@ import chromium from "@sparticuz/chromium-min";
 import { VIEWPORTS } from "@/lib/screenshots/capture";
 
 const CHROMIUM_PACK_URL =
-  "https://github.com/nichochar/chromium-min-pack/releases/download/v133.0.0/chromium-v133.0.0-pack.tar";
+  process.env.CHROMIUM_PACK_URL ||
+  "https://github.com/Sparticuz/chromium/releases/download/v143.0.4/chromium-v143.0.4-pack.x64.tar";
 
 export interface ProductDemoAccess {
   demoUrl: string;
