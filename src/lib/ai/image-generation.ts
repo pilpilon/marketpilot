@@ -23,9 +23,14 @@ export interface GenerateMarketingImageInput {
   preferredProvider?: ImageProvider;
 }
 
+function cleanEnvValue(value: string | undefined): string | undefined {
+  const cleaned = value?.trim().replace(/(?:\\r|\\n)+$/g, "").trim();
+  return cleaned || undefined;
+}
+
 function getPreferredProvider(explicit?: ImageProvider): ImageProvider {
   if (explicit) return explicit;
-  const configured = process.env.IMAGE_PROVIDER?.toLowerCase();
+  const configured = cleanEnvValue(process.env.IMAGE_PROVIDER)?.toLowerCase();
   return configured === "gemini" ? "gemini" : "openai";
 }
 
@@ -56,11 +61,11 @@ function openAIPrompt(input: GenerateMarketingImageInput): string {
 }
 
 async function generateWithOpenAI(input: GenerateMarketingImageInput): Promise<GeneratedImageResult> {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = cleanEnvValue(process.env.OPENAI_API_KEY);
   if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
 
   const client = new OpenAI({ apiKey });
-  const model = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1";
+  const model = cleanEnvValue(process.env.OPENAI_IMAGE_MODEL) || "gpt-image-1";
   const prompt = openAIPrompt(input);
   const size = openAIImageSize(input.aspectRatio);
 
@@ -99,7 +104,7 @@ async function generateWithOpenAI(input: GenerateMarketingImageInput): Promise<G
 }
 
 async function generateWithGemini(input: GenerateMarketingImageInput): Promise<GeneratedImageResult> {
-  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  const apiKey = cleanEnvValue(process.env.GOOGLE_AI_API_KEY);
   if (!apiKey) throw new Error("GOOGLE_AI_API_KEY not configured");
 
   const model = "gemini-3.1-flash-image-preview";
