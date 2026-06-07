@@ -103,10 +103,10 @@ export async function POST(request: Request) {
   const isCarousel = (resolvedTemplate?.format === "carousel" && (resolvedTemplate?.slides.length ?? 0) > 1);
   const carouselGroupId = isCarousel ? crypto.randomUUID() : null;
 
-  const results: Array<{ slideId: string; imageUrl: string; assetId: string }> = [];
+  const results: Array<{ slideId: string; imageUrl: string; assetId: string; provider: string; model: string }> = [];
 
   for (let i = 0; i < rendered.length; i++) {
-    const { slideId, imageBuffer } = rendered[i];
+    const { slideId, imageBuffer, provider, model } = rendered[i];
 
     const fileName = `${user.id}/${projectId}/${Date.now()}-${templateId}-${slideId}.jpg`;
     const { error: uploadError } = await serviceSupabase.storage
@@ -143,6 +143,8 @@ export async function POST(request: Request) {
           platform,
           aspect_ratio: PLATFORM_RATIOS[platform] || "1:1",
           model_tier: modelTier,
+          provider,
+          model,
           overlay_style: slideDef?.overlayStyle,
           mime_type: "image/jpeg",
           file_name: fileName,
@@ -160,6 +162,8 @@ export async function POST(request: Request) {
       slideId,
       imageUrl: urlData.publicUrl,
       assetId: (asset as { id: string }).id,
+      provider,
+      model,
     });
   }
 

@@ -6,6 +6,7 @@ import { renderOverlayToPng } from "@/lib/templates/renderer";
 import { compositeImage } from "@/lib/templates/compositor";
 import { findSystemTemplate } from "@/lib/templates/system-templates";
 import { generateMarketingImage } from "@/lib/ai/image-generation";
+import { detectDirection } from "@/lib/templates/overlays/utils";
 import type { BrandTokens, ContentTemplate, OverlayStyle } from "@/types/templates";
 
 // ─── Public Interface ─────────────────────────────────────────────────────────
@@ -25,6 +26,26 @@ export interface RenderTemplateImageResult {
   slideId: string;
   imageBuffer: Buffer;
   mimeType: string;
+  provider: string;
+  model: string;
+}
+
+function getOverlaySafeAreaInstruction(
+  overlayStyle: OverlayStyle,
+  fields: Record<string, string>
+): string {
+  if (overlayStyle !== "split_layout") return "";
+
+  const dir = detectDirection(fields);
+  const textSide = dir === "rtl" ? "RIGHT" : "LEFT";
+  const imageSide = dir === "rtl" ? "LEFT" : "RIGHT";
+
+  return [
+    `Split-layout composition: the ${textSide} 50% of the final image will be covered by a solid text panel after generation.`,
+    `Keep the main person/product/face/action entirely inside the ${imageSide} 50% of the frame, with comfortable margin from the center line.`,
+    `The ${textSide} half must be clean negative space/background only — no faces, hands, key product details, or important subject matter there.`,
+    "Do not crop the subject at the center split. Compose as if a magazine layout text block will be placed on the reserved half.",
+  ].join(" ");
 }
 
 /**
@@ -105,7 +126,13 @@ export async function renderTemplateImage(
     // the actual text to Gemini causes it to render words into the background
     // image even though the prompt says "no text".  The text overlay is added
     // separately by the Takumi compositor.
-    const visualDirection = [customInstruction, slideDef.aiPromptHint].filter(Boolean).join(". ");
+    const overlaySafeAreaInstruction = getOverlaySafeAreaInstruction(
+      slideDef.overlayStyle,
+      fieldValues
+    );
+    const visualDirection = [customInstruction, slideDef.aiPromptHint, overlaySafeAreaInstruction]
+      .filter(Boolean)
+      .join(". ");
     const { prompt, negativePrompt } = buildImagePrompt({
       postContent: visualDirection || `Background image for a ${template.category} social media post`,
       platform,
@@ -118,7 +145,11 @@ export async function renderTemplateImage(
       productContext: brandContext.productContext,
       intakePatterns: brandContext.intakePatterns,
       hasReferenceImage: !!referenceImage,
-      customInstruction: "This is a BACKGROUND IMAGE ONLY — text will be overlaid separately. Generate a purely visual scene with absolutely NO text, words, letters, or numbers anywhere in the image.",
+      customInstruction: [
+        "This is a BACKGROUND IMAGE ONLY — text will be overlaid separately.",
+        "Generate a purely visual scene with absolutely NO text, words, letters, or numbers anywhere in the image.",
+        overlaySafeAreaInstruction,
+      ].filter(Boolean).join(" "),
     });
 
     // 2. Generate background image via the shared provider abstraction.
@@ -148,6 +179,8 @@ export async function renderTemplateImage(
       slideId: slideDef.id,
       imageBuffer: finalImage,
       mimeType: "image/jpeg",
+      provider: generatedImage.provider,
+      model: generatedImage.model,
     });
   }
 

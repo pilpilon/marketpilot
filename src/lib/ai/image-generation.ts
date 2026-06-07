@@ -34,6 +34,13 @@ function getPreferredProvider(explicit?: ImageProvider): ImageProvider {
   return configured === "gemini" ? "gemini" : "openai";
 }
 
+function getFallbackProvider(primary: ImageProvider): ImageProvider | null {
+  const configured = cleanEnvValue(process.env.IMAGE_FALLBACK_PROVIDER)?.toLowerCase();
+  if (configured !== "openai" && configured !== "gemini") return null;
+  if (configured === primary) return null;
+  return configured;
+}
+
 function openAIImageSize(aspectRatio?: string): "1024x1024" | "1536x1024" | "1024x1536" {
   const ratio = aspectRatio?.trim();
   if (!ratio) return "1024x1024";
@@ -152,13 +159,14 @@ export async function generateMarketingImage(
   input: GenerateMarketingImageInput
 ): Promise<GeneratedImageResult> {
   const provider = getPreferredProvider(input.preferredProvider);
+  const fallbackProvider = getFallbackProvider(provider);
 
   if (provider === "openai") {
     try {
       return await generateWithOpenAI(input);
     } catch (err) {
-      if (!process.env.GOOGLE_AI_API_KEY) throw err;
-      console.warn("OpenAI image generation failed; falling back to Gemini", err);
+      if (fallbackProvider !== "gemini") throw err;
+      console.warn("OpenAI image generation failed; falling back to Gemini because IMAGE_FALLBACK_PROVIDER=gemini", err);
       return generateWithGemini(input);
     }
   }
@@ -166,8 +174,8 @@ export async function generateMarketingImage(
   try {
     return await generateWithGemini(input);
   } catch (err) {
-    if (!process.env.OPENAI_API_KEY) throw err;
-    console.warn("Gemini image generation failed; falling back to OpenAI", err);
+    if (fallbackProvider !== "openai") throw err;
+    console.warn("Gemini image generation failed; falling back to OpenAI because IMAGE_FALLBACK_PROVIDER=openai", err);
     return generateWithOpenAI(input);
   }
 }

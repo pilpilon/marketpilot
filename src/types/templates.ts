@@ -124,6 +124,8 @@ export interface TemplateRenderResult {
   slideId: string;
   imageUrl: string;
   assetId: string;
+  provider?: string;
+  model?: string;
 }
 
 export interface TemplateRenderResponse {

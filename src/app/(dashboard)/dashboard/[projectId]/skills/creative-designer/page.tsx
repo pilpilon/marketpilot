@@ -90,8 +90,7 @@ function PlatformSvg({ platform, className = "h-4 w-4" }: { platform: string; cl
 }
 
 const MODEL_OPTIONS = [
-  { value: "nb2", label: "Nano Banana 2 (Fast · 4K)", description: "Gemini 3.1 Flash Image — best for most use cases" },
-  { value: "pro", label: "Pro (Max Quality · 4K)",   description: "Gemini 3 Pro Image — highest reasoning, slower" },
+  { value: "default", label: "Default image model", description: "Uses the configured image provider for this workspace" },
 ];
 
 // Aspect ratio → CSS aspect-ratio class for preview
@@ -132,7 +131,7 @@ export default function CreativeDesignerPage() {
   // Freeform state
   const [postContent, setPostContent] = useState(prefillContent);
   const [platform, setPlatform] = useState("instagram_feed");
-  const [model, setModel] = useState("nb2");
+  const [model, setModel] = useState("default");
   const [customInstruction, setCustomInstruction] = useState("");
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
@@ -424,7 +423,7 @@ export default function CreativeDesignerPage() {
                 <div className={`${ratioClass} w-full max-w-sm mx-auto rounded-lg bg-muted flex flex-col items-center justify-center gap-3`}>
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    {t("generatingWithNanoBanana")}
+                    {t("generatingWithAi")}
                   </p>
                 </div>
               ) : result ? (

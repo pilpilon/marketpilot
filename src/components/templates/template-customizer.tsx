@@ -391,7 +391,7 @@ export function TemplateCustomizer({
                 <p className="text-sm text-muted-foreground">
                   {isCarousel
                     ? t("generatingSlide", { count: template.slides.length })
-                    : t("generatingWithNanoBanana")}
+                    : t("generatingWithAi")}
                 </p>
               </div>
             ) : activeSlide ? (
