@@ -63,8 +63,9 @@ export async function verifyProductDemoAccess(
     };
   }
 
-  const browser = await launchRecorderBrowser();
+  let browser: Awaited<ReturnType<typeof launchRecorderBrowser>> | null = null;
   try {
+    browser = await launchRecorderBrowser();
     const page = await browser.newPage();
     await page.goto(access.demoUrl, { waitUntil: "networkidle2", timeout: 25_000 });
     await loginIfNeeded(page, access);
@@ -117,7 +118,7 @@ export async function verifyProductDemoAccess(
       message: err instanceof Error ? err.message : "Could not open or verify the demo app.",
     };
   } finally {
-    await browser.close();
+    await browser?.close().catch(() => undefined);
   }
 }
 
