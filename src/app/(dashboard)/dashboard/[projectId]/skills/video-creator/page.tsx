@@ -387,7 +387,7 @@ export default function VideoCreatorPage() {
                   type="button"
                   variant="outline"
                   onClick={handleTestAccess}
-                  disabled={testingAccess || !demoUrl || !demoEmail || !demoPassword}
+                  disabled={testingAccess || !demoUrl}
                   className="w-full"
                 >
                   {testingAccess ? (

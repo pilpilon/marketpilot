@@ -71,16 +71,42 @@ export async function verifyProductDemoAccess(
     const hasPasswordField = Boolean(await page.$('input[type="password"]'));
     const finalUrl = page.url();
     const title = await page.title().catch(() => "");
-    const looksLoggedIn = !hasPasswordField && !/login|signin|sign-in|auth|התחברות|כניסה/i.test(finalUrl);
+    const pageText = await getVisibleText(page);
 
+    if (looksLikeExternalAuthWall(finalUrl, pageText)) {
+      return {
+        ok: false,
+        finalUrl,
+        title,
+        hasPasswordField,
+        message:
+          "This link reaches Google login / external OAuth. MarketPilot cannot use a private Google account password. Use a true magic/demo link that opens the app directly, invite a dedicated capture account, or use screenshots/browser recording.",
+      };
+    }
+
+    if (hasPasswordField || /login|signin|sign-in|auth|התחברות|כניסה/i.test(finalUrl)) {
+      return {
+        ok: false,
+        finalUrl,
+        title,
+        hasPasswordField,
+        message: access.demoEmail || access.demoPassword
+          ? "MarketPilot still sees a login screen after submitting the credentials."
+          : "This link still reaches a login screen. For invite/magic-link access, the URL must open the app without asking for a password.",
+      };
+    }
+
+    const accessibleApp = looksLikeAccessibleApp(finalUrl, pageText);
     return {
-      ok: looksLoggedIn,
+      ok: accessibleApp,
       finalUrl,
       title,
       hasPasswordField,
-      message: looksLoggedIn
-        ? "Demo login works. MarketPilot can access the app."
-        : "MarketPilot still sees a login screen after submitting the credentials.",
+      message: accessibleApp
+        ? access.demoEmail || access.demoPassword
+          ? "Demo login works. MarketPilot can access the app."
+          : "Invite/magic link works. MarketPilot can access the app without email/password."
+        : "The URL opened, but it looks like a public landing/marketing page rather than an authenticated app screen. Use a link that lands inside the product dashboard or demo workspace.",
     };
   } catch (err) {
     return {
@@ -146,6 +172,45 @@ async function launchRecorderBrowser() {
     executablePath,
     headless: true,
   });
+}
+
+async function getVisibleText(page: Page): Promise<string> {
+  return page
+    .evaluate(() => document.body?.innerText || "")
+    .catch(() => "");
+}
+
+function looksLikeExternalAuthWall(finalUrl: string, pageText: string): boolean {
+  return (
+    /accounts\.google\.com|oauth|openid|sso/i.test(finalUrl) ||
+    /sign in with google|continue with google|המשך עם google|כניסה עם google/i.test(pageText)
+  );
+}
+
+function looksLikePublicLandingPage(finalUrl: string, pageText: string): boolean {
+  const url = new URL(finalUrl);
+  const rootPath = url.pathname === "/" || url.pathname === "";
+  const landingSignals = [
+    /pricing|מחירים/i,
+    /faq|שאלות נפוצות/i,
+    /start free|free trial|התחל.*חינם|ניסיון.*חינם/i,
+    /no credit card|ללא כרטיס אשראי/i,
+  ];
+  return rootPath && landingSignals.filter((pattern) => pattern.test(pageText)).length >= 2;
+}
+
+function looksLikeAccessibleApp(finalUrl: string, pageText: string): boolean {
+  if (looksLikeExternalAuthWall(finalUrl, pageText)) return false;
+  if (looksLikePublicLandingPage(finalUrl, pageText)) return false;
+
+  const appPath = /dashboard|app|admin|workspace|restaurant|inventory|invoices|orders/i.test(
+    finalUrl
+  );
+  const appTextSignals = [
+    /dashboard|workspace|inventory|supplier|invoice|approve|upload invoice/i,
+    /דשבורד|מלאי|ספקים|חשבוניות|אישור|העלאת חשבונית/i,
+  ];
+  return appPath || appTextSignals.some((pattern) => pattern.test(pageText));
 }
 
 async function loginIfNeeded(page: Page, access: ProductDemoAccess) {
