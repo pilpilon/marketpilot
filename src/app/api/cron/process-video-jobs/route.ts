@@ -152,6 +152,10 @@ async function stagePlanning(
 
   const brandContext = await loadBrandContext(supabase, job.project_id);
 
+  if ((meta?.template || "product_demo") === "product_demo") {
+    return await stageProductDemoWalkthrough(supabase, job, meta, brandContext);
+  }
+
   const script: VideoScript = await generateVideoScript({
     brandContext,
     framework: (meta?.framework || "problem_aha_proof_cta") as VideoFramework,
@@ -235,6 +239,121 @@ async function stagePlanning(
   });
 
   return "generating";
+}
+
+// ── Stage: Product demo walkthrough (no Veo) ────────────────────────────────
+async function stageProductDemoWalkthrough(
+  supabase: SupabaseClient,
+  job: JobRow,
+  meta: JobMetadata,
+  brandContext: Awaited<ReturnType<typeof loadBrandContext>>
+): Promise<string> {
+  const { data: screenshots, error } = await supabase
+    .from("project_screenshots")
+    .select("public_url, viewport, screenshot_type, created_at")
+    .eq("project_id", job.project_id)
+    .eq("approved", true)
+    .order("screenshot_type", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(6);
+
+  if (error) throw new Error(error.message);
+
+  const usableScreenshots = ((screenshots || []) as Array<{
+    public_url: string;
+    viewport: string;
+    screenshot_type?: string | null;
+  }>).filter((s) => Boolean(s.public_url));
+
+  if (usableScreenshots.length === 0) {
+    throw new Error(
+      "Product demo video needs at least one approved app/product screenshot. Upload or approve screenshots in Intelligence first."
+    );
+  }
+
+  const durationSeconds = meta?.durationSeconds || 16;
+  const sceneCount = Math.max(2, Math.min(4, Math.round(durationSeconds / 8)));
+  const language = (meta?.language || "en") as VideoLanguage;
+  const isHebrew = language === "he";
+  const productName = inferProductName(brandContext.productContext) || "BestRest";
+  const overlays = buildProductDemoOverlays(productName, isHebrew, sceneCount);
+
+  const script: VideoScript = {
+    hook: overlays[0],
+    keyMessage: overlays[Math.min(1, overlays.length - 1)],
+    cta: overlays[overlays.length - 1],
+    framework: (meta?.framework || "problem_aha_proof_cta") as VideoFramework,
+    language,
+    musicMood: (meta?.musicMood as MusicMood) || "corporate",
+    totalDuration: sceneCount * 8,
+    scenes: Array.from({ length: sceneCount }, (_, index) => {
+      const screenshot = usableScreenshots[index % usableScreenshots.length];
+      return {
+        index,
+        prompt: "Real app walkthrough screenshot scene rendered by Remotion; no AI actor and no synthetic face.",
+        imageUrl: screenshot.public_url,
+        overlayText: overlays[index] || overlays[overlays.length - 1],
+        duration: 8,
+      };
+    }),
+  };
+
+  await updateJob(supabase, job.id, {
+    status: "composing",
+    current_step: "Rendering product demo walkthrough from app screenshots…",
+    total_posts: script.scenes.length,
+    completed_posts: script.scenes.length,
+    metadata: {
+      ...meta,
+      script,
+      template: "product_demo",
+      musicMood: script.musicMood,
+      musicTrackUrl: getMusicTrackUrl(script.musicMood) || undefined,
+      costUsd: meta.costUsd || 0,
+      warnings: [
+        ...((meta.warnings || []) as string[]),
+        "Product demo used approved app screenshots + Remotion animation, not Veo people/scenes.",
+      ],
+    },
+  });
+
+  return await stageCompose(
+    supabase,
+    { ...job, status: "composing", metadata: { ...meta, script } },
+    {
+      ...meta,
+      script,
+      template: "product_demo",
+      musicMood: script.musicMood,
+      musicTrackUrl: getMusicTrackUrl(script.musicMood) || undefined,
+    }
+  );
+}
+
+function inferProductName(productContext?: string | null): string | null {
+  if (!productContext) return null;
+  const match = productContext.match(/\b(BestRest|MarketPilot|[A-Z][A-Za-z0-9]{2,})\b/);
+  return match?.[1] || null;
+}
+
+function buildProductDemoOverlays(
+  productName: string,
+  isHebrew: boolean,
+  sceneCount: number
+): string[] {
+  const english = [
+    `${productName} replaces messy stock counts`,
+    "Review invoices and supplier matches",
+    "Track inventory before items run out",
+    "See the app in action",
+  ];
+  const hebrew = [
+    `${productName} מסדר ספירות מלאי`,
+    "בדיקת חשבוניות והתאמות ספקים",
+    "מזהים חוסרים לפני שנגמר",
+    "ראו את המערכת בפעולה",
+  ];
+  return (isHebrew ? hebrew : english).slice(0, sceneCount);
 }
 
 // ── Stage: Scene generation ────────────────────────────────────────────────
@@ -380,9 +499,9 @@ async function stageCompose(
   const script = meta?.script as VideoScript | undefined;
   if (!script) throw new Error("No script in metadata for composing stage");
 
-  // All scenes should have videoUrl by now
-  if (script.scenes.some((s) => !s.videoUrl)) {
-    throw new Error("Some scenes are missing video URLs at compose time");
+  // All scenes should have either a generated video clip or a screenshot image.
+  if (script.scenes.some((s) => !s.videoUrl && !s.imageUrl)) {
+    throw new Error("Some scenes are missing video URLs or screenshot images at compose time");
   }
 
   // ── If a composer handle is already persisted, poll it ──
@@ -442,6 +561,7 @@ async function stageCompose(
   const startResult = await startComposition({
     scenes: script.scenes.map((s) => ({
       videoUrl: s.videoUrl,
+      imageUrl: s.imageUrl,
       overlayText: s.overlayText,
       duration: s.duration,
     })),

@@ -7,6 +7,7 @@ export const videoCompositionSchema = z.object({
   scenes: z.array(
     z.object({
       videoUrl: z.string().optional(),
+      imageUrl: z.string().optional(),
       overlayText: z.string(),
       duration: z.number(),
     })
@@ -63,6 +64,7 @@ export function VideoComposition(props: VideoCompositionProps) {
         >
           <SceneClip
             videoUrl={entry.scene.videoUrl}
+            imageUrl={entry.scene.imageUrl}
             fallbackColor={brandPalette.primary}
           />
         </Sequence>

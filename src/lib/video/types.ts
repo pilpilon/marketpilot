@@ -51,6 +51,8 @@ export interface VideoScene {
   duration: number;
   /** Public URL of the generated scene clip (once complete). */
   videoUrl?: string;
+  /** Public URL of a product/app screenshot used for screenshot walkthrough scenes. */
+  imageUrl?: string;
   /** Veo long-running operation name (while generating). */
   veoOperationName?: string;
   /** Reference image URL passed to Veo (last frame of previous scene). */

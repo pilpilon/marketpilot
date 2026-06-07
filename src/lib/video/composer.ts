@@ -17,7 +17,7 @@
 import type { VideoAspectRatio, VideoLanguage, VideoScene } from "./types";
 
 export interface ComposeInput {
-  scenes: Array<Pick<VideoScene, "videoUrl" | "overlayText" | "duration">>;
+  scenes: Array<Pick<VideoScene, "videoUrl" | "imageUrl" | "overlayText" | "duration">>;
   hook: string;
   keyMessage: string;
   cta: string;
