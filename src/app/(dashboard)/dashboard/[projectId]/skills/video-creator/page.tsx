@@ -41,10 +41,9 @@ const MOOD_OPTIONS: Array<{ value: MusicMood; labelKey: string }> = [
 ];
 
 const DURATION_OPTIONS = [
-  { value: 16, label: "16s (2 scenes)" },
-  { value: 24, label: "24s (3 scenes)" },
-  { value: 32, label: "32s (4 scenes)" },
-  { value: 40, label: "40s (5 scenes)" },
+  { value: 16, label: "16s (recommended, 2 scenes)" },
+  { value: 24, label: "24s (product demo, 3 scenes)" },
+  { value: 32, label: "32s (advanced, 4 scenes)" },
 ];
 
 export default function VideoCreatorPage() {
@@ -55,7 +54,7 @@ export default function VideoCreatorPage() {
 
   const [framework, setFramework] = useState<VideoFramework>("problem_aha_proof_cta");
   const [language, setLanguage] = useState<VideoLanguage | "auto">("auto");
-  const [durationSeconds, setDurationSeconds] = useState(32);
+  const [durationSeconds, setDurationSeconds] = useState(16);
   const [musicMood, setMusicMood] = useState<MusicMood>("upbeat");
   const [goal, setGoal] = useState("");
   const [tone, setTone] = useState("");
@@ -257,6 +256,12 @@ export default function VideoCreatorPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground space-y-1.5">
+              <p className="font-medium text-foreground">{t("productionStackTitle")}</p>
+              <p>{t("productionStackDesc")}</p>
+              <p>{t("captionsDefault")}</p>
             </div>
 
             <div className="space-y-1.5">

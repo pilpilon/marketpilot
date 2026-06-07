@@ -135,6 +135,10 @@ JSON SHAPE:
 
 Rules:
 - Exactly ${sceneCount} scenes.
+- The ad must name the product/brand when brand context provides it.
+- The hook must describe a concrete buyer pain, not generic AI/productivity language.
+- For restaurant/inventory products, prefer concrete pains such as supplier invoices, OCR review, stock counts, missing items, reorder/min-stock, messy product names, and manual Excel/WhatsApp workflows.
+- Every overlayText must be product-specific enough that it would still make sense without the visual.
 - Scene prompts must describe real, filmable shots (no abstract concepts).
 - Scene prompts in English, all overlayText / hook / keyMessage / cta in ${lang}.
 - Overlay text must be short enough to read in 2-3 seconds (max 10 words).

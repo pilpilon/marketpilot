@@ -11,7 +11,7 @@ import type {
   MusicMood,
 } from "@/lib/video/types";
 
-const DEFAULT_DURATION = 30;
+const DEFAULT_DURATION = 16;
 const SCENE_DURATION = 8;
 
 export async function POST(request: Request) {
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
 
   const resolvedDuration = Math.max(
     16,
-    Math.min(60, durationSeconds || DEFAULT_DURATION)
+    Math.min(32, durationSeconds || DEFAULT_DURATION)
   );
   const sceneCount = Math.max(
     2,

@@ -17,6 +17,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "jobId is required" }, { status: 400 });
   }
 
+  await advanceVideoJobFromStatusPoll(request);
+
   const { data: job, error } = await supabase
     .from("pipeline_jobs")
     .select("*")
@@ -47,4 +49,21 @@ export async function GET(request: Request) {
   };
 
   return NextResponse.json(response);
+}
+
+async function advanceVideoJobFromStatusPoll(request: Request): Promise<void> {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return;
+
+  try {
+    const workerUrl = new URL("/api/cron/process-video-jobs", request.url);
+    await fetch(workerUrl, {
+      method: "GET",
+      headers: { authorization: `Bearer ${secret}` },
+      cache: "no-store",
+      signal: AbortSignal.timeout(55_000),
+    });
+  } catch {
+    // Best-effort: the status endpoint should still return the latest persisted state.
+  }
 }
