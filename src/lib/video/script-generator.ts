@@ -133,6 +133,13 @@ JSON SHAPE:
   ]
 }
 
+VISUAL QUALITY DIRECTION:
+- Use realistic B2B/product-demo visuals, not AI-influencer / talking-head / avatar scenes.
+- Prefer hands, objects, restaurant inventory shelves, invoices, POS/laptop/phone screens, supplier deliveries, stockroom/fridge shots, and product UI moments.
+- Avoid showing faces or full synthetic people. If a person is unavoidable, show only hands, over-the-shoulder angles, cropped torso, or wide back view with no clear face.
+- Do NOT ask for close-ups of faces, smiling characters, stressed facial expressions, or fictional AI-generated people.
+- Style must be photorealistic handheld documentary / SaaS product demo, natural lighting, realistic camera motion, no cartoon, no 3D render, no plastic skin, no uncanny valley.
+
 Rules:
 - Exactly ${sceneCount} scenes.
 - The ad must name the product/brand when brand context provides it.
@@ -142,7 +149,7 @@ Rules:
 - Scene prompts must describe real, filmable shots (no abstract concepts).
 - Scene prompts in English, all overlayText / hook / keyMessage / cta in ${lang}.
 - Overlay text must be short enough to read in 2-3 seconds (max 10 words).
-- Lean authentic UGC-style visuals, not cinematic stock-ad clichés.
+- Lean authentic product-demo/documentary visuals, not cinematic stock-ad clichés.
 
 ${!brandContext.platformTypes?.some((p) => p === "ios" || p === "android") ? (brandContext.platformTypes?.some((p) => p === "pwa") ? "PLATFORM GUARD: This product is a PWA (mobile web app). It IS okay to show someone using it on a phone/tablet. Do NOT show app stores, app download screens, or 'available on App Store/Google Play' messaging.\n\n" : "PLATFORM GUARD: This product is a WEBSITE, not a mobile app. Do NOT show app stores, app download screens, or people using mobile apps. Show the product as a website on a laptop/desktop screen if needed.\n\n") : ""}CONTENT SAFETY (applies to ALL scenes):
 - Do NOT include any religious symbols (crosses, Stars of David, crescents, menorahs, churches, mosques, synagogues)
@@ -150,13 +157,10 @@ ${!brandContext.platformTypes?.some((p) => p === "ios" || p === "android") ? (br
 - Do NOT include military imagery or culturally controversial symbols
 - Keep visuals culturally neutral — focus on the product, people, and lifestyle
 
-PEOPLE RULES (important — Veo rejects specific wording):
-- People ARE allowed, but must be framed as clearly fictional synthetic characters.
-- Every scene involving a person MUST begin with: "A fictional AI-generated person (not a real individual): ..."
-- Use "a person" / "a character" — NEVER "the owner", "the founder", "the CEO", "the customer", "the manager" (these imply a specific real person and get blocked).
-- Do NOT combine nationality + personal pronouns (no "an Israeli smile", "a French chef"). Describe actions instead.
+PEOPLE / REALISM RULES:
+- Avoid human faces entirely by default. Faces are the main source of unprofessional uncanny output.
+- Use hands-only, over-the-shoulder, cropped torso, or environmental shots when human context is needed.
 - NO children (under 18). NO named real people. NO celebrities.
-- Prefer medium/wide shots over extreme face close-ups. Show body language + environment, not just faces.
 - Avoid text baked into the scene (logos fine, but no legible words) — overlay cards handle all text.`;
 
   const genAI = new GoogleGenerativeAI(apiKey);
@@ -205,9 +209,27 @@ PEOPLE RULES (important — Veo rejects specific wording):
     totalDuration: raw.scenes.length * SCENE_DURATION_SECONDS,
     scenes: raw.scenes.map((s, i) => ({
       index: i,
-      prompt: s.prompt,
+      prompt: sanitizeScenePrompt(s.prompt),
       overlayText: s.overlayText || "",
       duration: SCENE_DURATION_SECONDS,
     })),
   };
+}
+
+function sanitizeScenePrompt(prompt: string): string {
+  const cleaned = prompt
+    .replace(/A fictional AI-generated person \(not a real individual\):\s*/gi, "")
+    .replace(/\b(close-up|close up)\b[^.]*\b(face|expression|smile|smiling|eyes|mouth)\b[^.]*\./gi, "")
+    .replace(/\b(stressed|frustrated|relieved|smiling|tired|overwhelmed)\s+(person|character|owner|manager|customer)\b/gi, "restaurant operations workspace")
+    .replace(/\b(person|character|owner|manager|customer)'s\s+(face|expression|smile|eyes|mouth)\b/gi, "hands and workspace")
+    .replace(/\b(the )?(person|character|owner|manager|customer)\b/gi, "hands-only restaurant operator")
+    .trim();
+
+  const realismPrefix =
+    "Photorealistic B2B product-demo style, real handheld camera footage, natural lighting, no cartoon, no 3D render, no avatar, no clear human faces. ";
+
+  const noFaceInstruction =
+    "If people are present, show only hands, cropped torso, or over-the-shoulder angles; focus on invoices, inventory shelves, restaurant workspace, and product screens. ";
+
+  return `${realismPrefix}${noFaceInstruction}${cleaned}`.slice(0, 1200);
 }
