@@ -113,7 +113,21 @@ async function advanceJob(
     return await stagePlanning(supabase, job, meta);
   }
 
-  if (job.status === "planning" || job.status === "generating") {
+  if (job.status === "planning") {
+    const hasStartedScenes = Boolean(
+      meta?.script &&
+        Array.isArray(meta?.sceneOperations) &&
+        meta.sceneOperations.length > 0
+    );
+
+    if (!hasStartedScenes) {
+      return "planning";
+    }
+
+    return await stageScenes(supabase, job, meta);
+  }
+
+  if (job.status === "generating") {
     return await stageScenes(supabase, job, meta);
   }
 

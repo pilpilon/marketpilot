@@ -65,6 +65,7 @@ export default function VideoCreatorPage() {
   const [jobId, setJobId] = useState<string | null>(null);
   const [status, setStatus] = useState<VideoJobStatusResponse | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollingInFlightRef = useRef(false);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -77,6 +78,9 @@ export default function VideoCreatorPage() {
     if (!jobId) return;
 
     const poll = async () => {
+      if (pollingInFlightRef.current) return;
+      pollingInFlightRef.current = true;
+
       try {
         const res = await fetch(
           `/api/skills/video-creator/status?jobId=${jobId}`,
@@ -91,6 +95,8 @@ export default function VideoCreatorPage() {
         }
       } catch {
         // swallow — retry next tick
+      } finally {
+        pollingInFlightRef.current = false;
       }
     };
 
