@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { loadBrandContext } from "@/lib/templates/brand-tokens";
 
@@ -29,6 +30,19 @@ function inferProductName(projectName: string, context: string): string {
     .map((name) => name.trim())
     .filter(Boolean);
   return names[0] || "the product";
+}
+
+async function generateTemplateJsonWithGemini(prompt: string): Promise<{ slides?: Record<string, Record<string, string>> }> {
+  const apiKey = cleanEnvValue(process.env.GOOGLE_AI_API_KEY);
+  if (!apiKey) throw new Error("GOOGLE_AI_API_KEY not configured for template copy fallback");
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: cleanEnvValue(process.env.CAPTION_FALLBACK_MODEL) || "gemini-2.5-flash",
+    generationConfig: { responseMimeType: "application/json" },
+  });
+  const result = await model.generateContent(prompt);
+  return parseAiJson<{ slides?: Record<string, Record<string, string>> }>(result.response.text());
 }
 
 export async function POST(request: Request) {
@@ -170,6 +184,15 @@ Respond ONLY with valid JSON in this exact format:
     const parsed = parseAiJson<{ slides?: Record<string, Record<string, string>> }>(text);
     return NextResponse.json(parsed);
   } catch (err) {
+    if (cleanEnvValue(process.env.TEXT_FALLBACK_PROVIDER) === "gemini") {
+      try {
+        const parsed = await generateTemplateJsonWithGemini(prompt);
+        return NextResponse.json(parsed);
+      } catch (fallbackErr) {
+        console.warn("Template copy fallback to Gemini failed", fallbackErr);
+      }
+    }
+
     const msg = err instanceof Error && !err.message.includes("JSON")
       ? err.message
       : "AI returned invalid template copy. Please try again.";

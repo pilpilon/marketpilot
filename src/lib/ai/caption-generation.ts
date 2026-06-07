@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getCondensedStorytellingGuidance } from "@/lib/ai/storytelling-framework";
 
 type CaptionBrandContext = {
@@ -62,28 +63,9 @@ function parseCaptionResponse(text: string): SocialCaptionResult {
   return { caption, hashtags };
 }
 
-export async function generateSocialCaption(params: GenerateSocialCaptionParams): Promise<SocialCaptionResult> {
-  const apiKey = cleanEnvValue(process.env.OPENAI_API_KEY);
-  if (!apiKey) throw new Error("OPENAI_API_KEY not configured for caption generation");
-
+function buildCaptionPrompt(params: GenerateSocialCaptionParams, featuresGuard: string, language: string): string {
   const { brandContext, postConcept, platform, headline, localeContext, captionLength } = params;
-  const client = new OpenAI({ apiKey });
-  const textModel = cleanEnvValue(process.env.OPENAI_TEXT_MODEL) || cleanEnvValue(process.env.CHAT_MODEL) || "gpt-4o-mini";
-  const featuresGuard = brandContext.features
-    ? `\nCONFIRMED PRODUCT CAPABILITIES — use ONLY these, do not invent features:\n${brandContext.features.slice(0, 1400)}\n`
-    : "";
-  const language = inferLanguage(localeContext);
-
-  const result = await client.chat.completions.create({
-    model: textModel,
-    messages: [
-      {
-        role: "system",
-        content: "You are a senior performance social media copywriter. Return exactly CAPTION and HASHTAGS sections, no explanation.",
-      },
-      {
-        role: "user",
-        content: `Write a conversion-focused caption and hashtags for a ${platformLabel(platform)} post.
+  return `Write a conversion-focused caption and hashtags for a ${platformLabel(platform)} post.
 
 BRAND CONTEXT:
 - Personality: ${brandContext.brandPersonality || "clear, practical, confident"}
@@ -120,11 +102,50 @@ Rules:
 - Include 5-10 relevant hashtags.
 - Do NOT invent product capabilities, metrics, customers, integrations, or guarantees.
 - CONTENT SAFETY: no religious symbols, national flags, political topics, military imagery, or culturally controversial subjects.
-- No intro text, no explanations — just CAPTION and HASHTAGS.`,
-      },
-    ],
-    temperature: 0.7,
-  });
+- No intro text, no explanations — just CAPTION and HASHTAGS.`;
+}
 
-  return parseCaptionResponse(result.choices[0]?.message?.content?.trim() || "");
+async function generateCaptionWithGemini(prompt: string): Promise<SocialCaptionResult> {
+  const apiKey = cleanEnvValue(process.env.GOOGLE_AI_API_KEY);
+  if (!apiKey) throw new Error("GOOGLE_AI_API_KEY not configured for caption fallback");
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: cleanEnvValue(process.env.CAPTION_FALLBACK_MODEL) || "gemini-2.5-flash" });
+  const result = await model.generateContent(prompt);
+  return parseCaptionResponse(result.response.text().trim());
+}
+
+export async function generateSocialCaption(params: GenerateSocialCaptionParams): Promise<SocialCaptionResult> {
+  const apiKey = cleanEnvValue(process.env.OPENAI_API_KEY);
+  if (!apiKey) throw new Error("OPENAI_API_KEY not configured for caption generation");
+
+  const { brandContext } = params;
+  const client = new OpenAI({ apiKey });
+  const textModel = cleanEnvValue(process.env.OPENAI_TEXT_MODEL) || cleanEnvValue(process.env.CHAT_MODEL) || "gpt-4o-mini";
+  const featuresGuard = brandContext.features
+    ? `\nCONFIRMED PRODUCT CAPABILITIES — use ONLY these, do not invent features:\n${brandContext.features.slice(0, 1400)}\n`
+    : "";
+  const language = inferLanguage(params.localeContext);
+  const prompt = buildCaptionPrompt(params, featuresGuard, language);
+
+  try {
+    const result = await client.chat.completions.create({
+      model: textModel,
+      messages: [
+        {
+          role: "system",
+          content: "You are a senior performance social media copywriter. Return exactly CAPTION and HASHTAGS sections, no explanation.",
+        },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.7,
+    });
+
+    return parseCaptionResponse(result.choices[0]?.message?.content?.trim() || "");
+  } catch (err) {
+    if (cleanEnvValue(process.env.TEXT_FALLBACK_PROVIDER) === "gemini") {
+      return generateCaptionWithGemini(prompt);
+    }
+    throw err;
+  }
 }

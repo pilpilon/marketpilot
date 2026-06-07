@@ -11,11 +11,12 @@ interface CarouselPreviewProps {
   slides: TemplateRenderResult[];
   ratioClass: string;
   platform: string;
+  username?: string;
   onSendToComposer?: (imageUrls: string[]) => void;
   onRegenerate?: () => void;
 }
 
-export function CarouselPreview({ slides, ratioClass, platform, onSendToComposer, onRegenerate }: CarouselPreviewProps) {
+export function CarouselPreview({ slides, ratioClass, platform, username, onSendToComposer, onRegenerate }: CarouselPreviewProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showPreview, setShowPreview] = useState(true);
 
@@ -68,6 +69,7 @@ export function CarouselPreview({ slides, ratioClass, platform, onSendToComposer
             platform={platform}
             imageUrl={current.imageUrl}
             ratioClass={ratioClass}
+            username={username}
           />
         ) : (
           <div className={`${ratioClass} w-full max-w-sm mx-auto rounded-lg overflow-hidden border bg-muted relative`}>

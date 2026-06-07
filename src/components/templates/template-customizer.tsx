@@ -217,6 +217,7 @@ export function TemplateCustomizer({
               slides={result.slides}
               ratioClass={ratioClass}
               platform={platform}
+              username={projectName || undefined}
             />
           </CardContent>
         </Card>
