@@ -10,6 +10,7 @@ import {
 import {
   startComposition,
   pollComposition,
+  isRetryableComposerError,
   type ComposerHandle,
 } from "@/lib/video/composer";
 import { getMusicTrackUrl } from "@/lib/video/music-library";
@@ -63,9 +64,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ processed: 0 });
   }
 
+  const composingJob = jobs.find((candidate) => candidate.status === "composing");
+  const jobsToProcess = composingJob
+    ? [composingJob]
+    : jobs.filter((candidate) => candidate.status !== "composing");
+
   const results: Array<{ jobId: string; status: string; error?: string }> = [];
 
-  for (const job of jobs) {
+  for (const job of jobsToProcess) {
     try {
       const nextStatus = await advanceJob(supabase, job);
       results.push({ jobId: job.id, status: nextStatus });
@@ -603,6 +609,10 @@ async function stageCompose(
       return "composing";
     }
     if (pollResult.error) {
+      if (pollResult.retryable || isRetryableComposerError(pollResult.error)) {
+        await scheduleComposerRetry(supabase, job, meta, pollResult.error);
+        return "composing";
+      }
       throw new Error(pollResult.error);
     }
     if (!pollResult.videoUrl) {
@@ -619,6 +629,14 @@ async function stageCompose(
       existingHandle.composer,
       []
     );
+  }
+
+  const retryAt = typeof meta.composerRetryAt === "string" ? Date.parse(meta.composerRetryAt) : 0;
+  if (retryAt && retryAt > Date.now()) {
+    await updateJob(supabase, job.id, {
+      current_step: `Waiting to retry Remotion render after AWS rate limit…`,
+    });
+    return "composing";
   }
 
   // ── First time in composing stage: kick off the render ──
@@ -645,25 +663,39 @@ async function stageCompose(
         ]
       : [];
 
-  const startResult = await startComposition({
-    scenes: script.scenes.map((s) => ({
-      videoUrl: s.videoUrl,
-      imageUrl: s.imageUrl,
-      overlayText: s.overlayText,
-      duration: s.duration,
-    })),
-    hook: script.hook,
-    keyMessage: script.keyMessage,
-    cta: script.cta,
-    language: script.language,
-    aspectRatio: "9:16",
-    musicTrackUrl,
-    brandPalette: {
-      primary: brandTokens.primaryColor,
-      accent: brandTokens.accentColor,
-      text: brandTokens.textColor,
-    },
-  });
+  let startResult: Awaited<ReturnType<typeof startComposition>>;
+  try {
+    startResult = await startComposition({
+      scenes: script.scenes.map((s) => ({
+        videoUrl: s.videoUrl,
+        imageUrl: s.imageUrl,
+        overlayText: s.overlayText,
+        duration: s.duration,
+      })),
+      hook: script.hook,
+      keyMessage: script.keyMessage,
+      cta: script.cta,
+      language: script.language,
+      aspectRatio: "9:16",
+      musicTrackUrl,
+      brandPalette: {
+        primary: brandTokens.primaryColor,
+        accent: brandTokens.accentColor,
+        text: brandTokens.textColor,
+      },
+    });
+  } catch (err) {
+    if (isRetryableComposerError(err)) {
+      await scheduleComposerRetry(
+        supabase,
+        job,
+        meta,
+        err instanceof Error ? err.message : String(err)
+      );
+      return "composing";
+    }
+    throw err;
+  }
 
   // Fallback composer is instant — skip polling, go straight to finalize
   if (startResult.immediate) {
@@ -694,6 +726,41 @@ async function stageCompose(
     },
   });
   return "composing";
+}
+
+async function scheduleComposerRetry(
+  supabase: SupabaseClient,
+  job: JobRow,
+  meta: JobMetadata,
+  errorMessage: string
+): Promise<void> {
+  const attempt = Math.min(((meta.compositionAttempts as number | undefined) || 0) + 1, 4);
+  const maxAttempts = 4;
+
+  if (attempt >= maxAttempts) {
+    throw new Error(
+      `Remotion render failed after ${maxAttempts} attempts: ${errorMessage}`
+    );
+  }
+
+  const delaySeconds = Math.min(180, 30 * Math.pow(2, attempt - 1));
+  const retryAt = new Date(Date.now() + delaySeconds * 1000).toISOString();
+  const nextMeta: JobMetadata = {
+    ...meta,
+    compositionAttempts: attempt,
+    composerRetryAt: retryAt,
+    composerLastError: errorMessage,
+    warnings: [
+      ...((meta.warnings || []) as string[]),
+      `Remotion rate limit hit; retrying render in ${delaySeconds}s (attempt ${attempt + 1}/${maxAttempts}).`,
+    ],
+  };
+  delete nextMeta.composerHandle;
+
+  await updateJob(supabase, job.id, {
+    current_step: `Remotion AWS rate limit hit — retrying in ${delaySeconds}s…`,
+    metadata: nextMeta,
+  });
 }
 
 async function finalizeComposition(

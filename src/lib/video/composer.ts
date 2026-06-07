@@ -64,6 +64,14 @@ export interface PollCompositionResult {
   videoUrl?: string;
   durationSeconds?: number;
   error?: string;
+  retryable?: boolean;
+}
+
+export function isRetryableComposerError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error || "");
+  return /Rate Exceeded|Concurrency limit|TooManyRequests|Throttl|LimitExceeded|Service Quota|RequestLimitExceeded/i.test(
+    message
+  );
 }
 
 function isRemotionConfigured(): boolean {
@@ -149,10 +157,11 @@ async function startRemotionLambda(
   const fps = 30;
 
   // framesPerLambda controls render fan-out. Lower = more parallel lambdas,
-  // faster per-chunk render. 120 → 8 renderers for 960 frames (32s@30fps).
-  // Override via VIDEO_FRAMES_PER_LAMBDA.
+  // faster per-chunk render. 480 keeps a 16s product demo to one Lambda and
+  // a 24s demo to two Lambdas, avoiding AWS account concurrency spikes.
+  // Override via VIDEO_FRAMES_PER_LAMBDA when the AWS quota is raised.
   const framesPerLambda = parseInt(
-    process.env.VIDEO_FRAMES_PER_LAMBDA || "120",
+    process.env.VIDEO_FRAMES_PER_LAMBDA || "480",
     10
   );
 
@@ -213,7 +222,11 @@ async function pollRemotionLambda(
     const msg = progress.errors
       .map((e: { message: string }) => e.message)
       .join("; ");
-    return { done: true, error: `Remotion render failed: ${msg}` };
+    return {
+      done: true,
+      error: `Remotion render failed: ${msg}`,
+      retryable: isRetryableComposerError(msg),
+    };
   }
 
   if (progress.done && progress.outputFile) {
