@@ -86,7 +86,9 @@ export async function verifyProductDemoAccess(
       };
     }
 
-    if (hasPasswordField || /login|signin|sign-in|auth|התחברות|כניסה/i.test(finalUrl)) {
+    const accessibleApp = looksLikeAccessibleApp(finalUrl, pageText);
+
+    if (!accessibleApp && (hasPasswordField || /login|signin|sign-in|auth|התחברות|כניסה/i.test(finalUrl))) {
       return {
         ok: false,
         finalUrl,
@@ -98,7 +100,6 @@ export async function verifyProductDemoAccess(
       };
     }
 
-    const accessibleApp = looksLikeAccessibleApp(finalUrl, pageText);
     return {
       ok: accessibleApp,
       finalUrl,
@@ -236,8 +237,23 @@ async function loginIfNeeded(page: Page, access: ProductDemoAccess) {
   const submitted = await clickSubmitButton(page);
 
   if (!submitted) await page.keyboard.press("Enter");
-  await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 12_000 }).catch(() => undefined);
+  await waitForLoginOutcome(page);
   await settle(page);
+}
+
+async function waitForLoginOutcome(page: Page) {
+  await Promise.race([
+    page.waitForNavigation({ waitUntil: "networkidle2", timeout: 20_000 }).catch(() => undefined),
+    page.waitForFunction(
+      () => {
+        const text = document.body?.innerText || "";
+        const hasPassword = Boolean(document.querySelector('input[type="password"]'));
+        const appSignals = /dashboard|workspace|inventory|supplier|invoice|approve|upload invoice|דשבורד|מלאי|ספקים|חשבוניות|אישור|העלאת חשבונית|סרוק חשבונית|הוצאות החודש/i.test(text);
+        return !hasPassword || appSignals || /dashboard|app|admin|workspace|inventory|invoices|orders/i.test(window.location.href);
+      },
+      { timeout: 20_000 }
+    ).catch(() => undefined),
+  ]);
 }
 
 async function navigateToFeature(page: Page, keywords: string[]) {
