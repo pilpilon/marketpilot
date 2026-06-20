@@ -53,7 +53,9 @@ export class TikTokClient implements SocialPlatformClient {
         body: JSON.stringify({
           post_info: {
             title: caption,
-            privacy_level: "SELF_ONLY", // Start as private, user can change
+            // PUBLIC so posts are actually visible (requires app approval +
+            // the video.publish scope, which grants public posting).
+            privacy_level: "PUBLIC",
             disable_duet: false,
             disable_comment: false,
             disable_stitch: false,
