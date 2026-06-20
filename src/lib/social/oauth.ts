@@ -84,7 +84,7 @@ const platformConfigs: Record<Platform, () => OAuthConfig> = {
     clientSecret: process.env.LINKEDIN_CLIENT_SECRET!,
     // "Share on LinkedIn" product: w_member_social for posting,
     // openid+profile for member identity (r_liteprofile is deprecated)
-    scopes: ["openid", "profile", "w_member_social"],
+    scopes: ["openid", "profile", "w_member_social", "offline_access"],
     usePKCE: false,
   }),
 };
