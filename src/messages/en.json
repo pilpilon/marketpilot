@@ -54,7 +54,7 @@
     "orContinueWithEmail": "Or continue with email",
     "email": "Email",
     "password": "Password",
-    "signingIn": "Signing in\u2026",
+    "signingIn": "Signing in…",
     "signIn": "Sign in",
     "noAccount": "Don't have an account?",
     "createOneFree": "Create one free",
@@ -70,7 +70,7 @@
     "emailPlaceholder": "jane@company.com",
     "password": "Password",
     "passwordPlaceholder": "Min. 6 characters",
-    "creatingAccount": "Creating account\u2026",
+    "creatingAccount": "Creating account…",
     "createFreeAccount": "Create free account",
     "termsAgreement": "By signing up you agree to our",
     "termsOfService": "Terms of Service",
@@ -98,7 +98,7 @@
       "badge": "AI-Powered Marketing Platform",
       "titleLine1": "Market smarter.",
       "titleLine2": "Scale faster.",
-      "subtitle": "MarketPilot uses AI to generate on-brand content, automate scheduling, and grow your social presence \u2014 across every platform, all at once.",
+      "subtitle": "MarketPilot uses AI to generate on-brand content, automate scheduling, and grow your social presence — across every platform, all at once.",
       "startForFree": "Start for free",
       "viewDemo": "View demo",
       "noCreditCard": "No credit card required",
@@ -106,9 +106,9 @@
       "cancelAnytime": "Cancel anytime"
     },
     "stats": {
-      "stat1Value": "10\u00d7",
+      "stat1Value": "10×",
       "stat1Label": "faster content creation",
-      "stat2Value": "3.2\u00d7",
+      "stat2Value": "3.2×",
       "stat2Label": "average engagement lift",
       "stat3Value": "40h",
       "stat3Label": "saved per month",
@@ -129,7 +129,7 @@
       "feat5Title": "Auto-Reply",
       "feat5Desc": "Intelligent comment and DM responses that match your brand voice. Engage your audience 24/7 without lifting a finger.",
       "feat6Title": "Campaign Analytics",
-      "feat6Desc": "Track reach, engagement, and conversions per campaign. AI-driven insights surface what\u2019s working and why."
+      "feat6Desc": "Track reach, engagement, and conversions per campaign. AI-driven insights surface what’s working and why."
     },
     "steps": {
       "title": "Up and running in minutes",
@@ -151,7 +151,7 @@
       "privacyPolicy": "Privacy Policy",
       "termsOfService": "Terms of Service",
       "contact": "Contact",
-      "copyright": "\u00a9 2025 MarketPilot. All rights reserved."
+      "copyright": "© 2025 MarketPilot. All rights reserved."
     }
   },
   "social": {
@@ -165,7 +165,9 @@
     "facebookDescription": "Publish posts, photos, and engage with your Facebook Page audience",
     "tiktokName": "TikTok",
     "tiktokDescription": "Upload short videos and engage with trends",
-    "howToConnect": "How to connect?"
+    "howToConnect": "How to connect?",
+    "linkedinName": "LinkedIn",
+    "linkedinDescription": "Publish posts and images to your LinkedIn personal profile"
   },
   "socialHelp": {
     "backToAccounts": "Back to accounts",
@@ -176,7 +178,6 @@
     "facebookName": "Facebook",
     "twitterName": "X (Twitter)",
     "tiktokName": "TikTok",
-
     "instagram": {
       "title": "Connect Instagram",
       "desc": "Instagram requires connecting via Facebook — this is how the system gets permission to publish content on your behalf.",
@@ -194,7 +195,6 @@
       "switchTitle": "How to switch to a Professional account?",
       "switchDesc": "Open Instagram app → Settings → Account → Switch to Professional account. Choose \"Business\" or \"Creator\". Then link to a Facebook Page: Settings → Account → Accounts Center → Add Facebook Page."
     },
-
     "facebook": {
       "title": "Connect Facebook",
       "desc": "Connect your Facebook Page to publish posts and photos directly from MarketPilot.",
@@ -207,7 +207,6 @@
       "step3": "Select the Page(s) you want MarketPilot to access.",
       "step4": "You'll be redirected back — the Page will appear as connected."
     },
-
     "twitter": {
       "title": "Connect X (Twitter)",
       "desc": "Connect your X account to post tweets directly from MarketPilot.",
@@ -216,7 +215,6 @@
       "step2": "Authorize access — MarketPilot will get permission to post tweets on your behalf.",
       "step3": "You'll be redirected back — the account will appear as connected."
     },
-
     "tiktok": {
       "title": "Connect TikTok",
       "desc": "Connect your TikTok account to publish videos directly from MarketPilot.",
@@ -228,6 +226,17 @@
       "step3": "Approve permissions — MarketPilot will get access to upload videos.",
       "step4": "You'll be redirected back — the account will appear as connected.",
       "note": "TikTok only supports video publishing — images or text-only posts cannot be published."
+    },
+    "linkedinName": "LinkedIn",
+    "linkedin": {
+      "title": "Connect LinkedIn",
+      "desc": "Connect your LinkedIn personal profile to publish posts directly from MarketPilot.",
+      "stepsTitle": "Connection steps",
+      "step1": "Click \"Connect now\" below — you'll be redirected to LinkedIn's authorization page.",
+      "step2": "Sign in with your LinkedIn account and approve the requested permissions (post on your behalf).",
+      "step3": "You'll be redirected back to MarketPilot — your LinkedIn profile will appear as connected.",
+      "step4": "You can now publish text and image posts to your LinkedIn feed from the Compose editor.",
+      "note": "This connects your personal LinkedIn profile (not a Company Page). Company Page posting requires a separate Marketing API review."
     }
   },
   "calendar": {
@@ -280,7 +289,7 @@
     "toneOverride": "Tone override (optional)",
     "toneOverridePlaceholder": "e.g. more casual, more technical, more urgent",
     "toneHint": "Leave blank to use your brand character brief",
-    "generatingWithAi": "Generating with AI\u2026",
+    "generatingWithAi": "Generating with AI…",
     "runSkill": "Run {skill} Skill",
     "failedToRun": "Failed to run skill",
     "timeRangeLabel": "Schedule ahead",
@@ -293,12 +302,12 @@
     "timeRange3Weeks": "3 Weeks",
     "timeRange1Month": "1 Month",
     "timeRangeHint": "Posts will be auto-scheduled based on your target audience's optimal activity times.",
-    "planningContent": "Planning content themes\u2026",
-    "generatingImages": "Generating branded visuals\u2026",
-    "schedulingPosts": "Scheduling posts\u2026",
+    "planningContent": "Planning content themes…",
+    "generatingImages": "Generating branded visuals…",
+    "schedulingPosts": "Scheduling posts…",
     "pipelineComplete": "Content calendar ready!",
     "pipelineFailed": "Pipeline failed",
-    "redirecting": "Redirecting to your campaign\u2026"
+    "redirecting": "Redirecting to your campaign…"
   },
   "videoCreator": {
     "title": "Video Creator",
@@ -313,7 +322,7 @@
     "templateAiAvatar": "AI avatar / presenter (experimental)",
     "frameworkLabel": "Script framework",
     "frameworkHint": "How the short ad is structured. Problem → Aha → Proof → CTA is the strongest default for SaaS/product ads.",
-    "frameworkProblemAha": "Problem \u2192 Aha \u2192 Proof \u2192 CTA (recommended)",
+    "frameworkProblemAha": "Problem → Aha → Proof → CTA (recommended)",
     "frameworkPas": "PAS (Problem, Agitate, Solution)",
     "frameworkAida": "AIDA (Attention, Interest, Desire, Action)",
     "frameworkBab": "BAB (Before, After, Bridge)",
@@ -346,9 +355,9 @@
     "productionStackDesc": "Primary: Veo 3.1 Fast for visual scenes. Composer: Remotion Lambda for stitching, overlays, CTA, and music.",
     "captionsDefault": "Captions/overlay text are rendered deterministically, including Hebrew/RTL — not baked into the AI video.",
     "generateVideo": "Generate video",
-    "starting": "Starting\u2026",
+    "starting": "Starting…",
     "failedToStart": "Failed to start video generation",
-    "queued": "Queued\u2026",
+    "queued": "Queued…",
     "scenes": "scenes",
     "cost": "Generation cost: ${amount}",
     "createAnother": "Create another",
@@ -361,7 +370,7 @@
     "contentAndPlatform": "Content & Platform",
     "contentAndPlatformDesc": "Paste your post copy. The AI will create a matching visual using your brand's visual style and color palette.",
     "postCopy": "Post copy",
-    "postCopyPlaceholder": "Paste the post caption or describe what the image should convey\u2026",
+    "postCopyPlaceholder": "Paste the post caption or describe what the image should convey…",
     "platformAndFormat": "Platform & format",
     "imageModel": "Image model",
     "referenceImage": "Reference image",
@@ -370,7 +379,7 @@
     "styleDirection": "Style direction",
     "styleDirectionPlaceholder": "e.g. 'show a person using a laptop in a modern office', 'abstract geometric pattern', 'outdoor lifestyle photography'",
     "styleDirectionHint": "Override or extend the brand visual style for this specific image.",
-    "generatingImage": "Generating image\u2026",
+    "generatingImage": "Generating image…",
     "generateVisual": "Generate Visual",
     "output": "Output",
     "rawImage": "Raw image",
@@ -398,11 +407,11 @@
     "slide": "Slide",
     "slides": "slides",
     "createAnother": "Create Another",
-    "fillingWithAi": "Filling with brand intelligence\u2026",
+    "fillingWithAi": "Filling with brand intelligence…",
     "regenerateCopyWithAi": "Regenerate Copy with AI",
     "generateSlides": "Generate {count} Slides",
-    "generatingSlides": "Generating {count} slides\u2026",
-    "generatingSlide": "Generating slide 1/{count}\u2026",
+    "generatingSlides": "Generating {count} slides…",
+    "generatingSlide": "Generating slide 1/{count}…",
     "categoryAll": "All",
     "categoryPromotional": "Promotional",
     "categoryEducational": "Educational",
@@ -495,12 +504,12 @@
     "title": "Brand Intelligence",
     "subtitle": "AI-researched context that powers every skill, caption, and campaign.",
     "populated": "{count}/{total} populated",
-    "analyzing": "Analyzing\u2026",
+    "analyzing": "Analyzing…",
     "reAnalyze": "Re-analyze",
     "runAnalysis": "Run Analysis",
     "onboardingTitle": "Start by running the AI analysis",
-    "onboardingDescription": "MarketPilot will research your brand, competitors, and target audience using Perplexity + Gemini \u2014 then generate a full intelligence brief. This takes about 30 seconds.",
-    "loadingIntelligence": "Loading intelligence\u2026",
+    "onboardingDescription": "MarketPilot will research your brand, competitors, and target audience using Perplexity + Gemini — then generate a full intelligence brief. This takes about 30 seconds.",
+    "loadingIntelligence": "Loading intelligence…",
     "edit": "Edit",
     "cancel": "Cancel",
     "save": "Save",
@@ -508,8 +517,8 @@
     "uploadExamplesHint": "Upload examples above, then click Synthesize Examples to generate your style brief.",
     "runAnalysisHint": "Run the analysis above or manually write your {label} brief.",
     "writeManually": "Write manually",
-    "writePlaceholder": "Write your {label} brief here\u2026",
-    "synthesizingPatterns": "Synthesizing patterns\u2026",
+    "writePlaceholder": "Write your {label} brief here…",
+    "synthesizingPatterns": "Synthesizing patterns…",
     "reSynthesizeExamples": "Re-synthesize Examples",
     "synthesizeExamples": "Synthesize Examples",
     "synthesizeDescription": "Analyzes all {count} example{plural} and generates a unified Voice & Style DNA brief",
@@ -526,9 +535,9 @@
     "labelVisualStyle": "Visual Style",
     "descVisualStyle": "Color direction, typography, imagery, composition guidance",
     "labelExamples": "Examples",
-    "descExamples": "Upload past successful posts, campaigns, and presentations \u2014 AI learns your voice and style patterns",
+    "descExamples": "Upload past successful posts, campaigns, and presentations — AI learns your voice and style patterns",
     "labelFeatures": "Features",
-    "descFeatures": "Confirmed product capabilities and platform type \u2014 keeps AI assets grounded in reality",
+    "descFeatures": "Confirmed product capabilities and platform type — keeps AI assets grounded in reality",
     "labelSop": "SOP",
     "descSop": "Standard operating procedure for the research & analysis workflow"
   },

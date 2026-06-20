@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import type { Platform } from "@/types/database";
 
-const VALID_PLATFORMS: Platform[] = ["instagram", "facebook", "twitter", "tiktok"];
+const VALID_PLATFORMS: Platform[] = ["instagram", "facebook", "twitter", "tiktok", "linkedin"];
 
 export default function SocialHelpPage() {
   const params = useParams();
@@ -71,6 +71,7 @@ export default function SocialHelpPage() {
         <div className="space-y-6">
           <InstagramGuide t={t} projectId={projectId} />
           <FacebookGuide t={t} projectId={projectId} />
+          <LinkedInGuide t={t} projectId={projectId} />
           <TwitterGuide t={t} projectId={projectId} />
           <TikTokGuide t={t} projectId={projectId} />
         </div>
@@ -78,6 +79,7 @@ export default function SocialHelpPage() {
         <>
           {activePlatform === "instagram" && <InstagramGuide t={t} projectId={projectId} />}
           {activePlatform === "facebook" && <FacebookGuide t={t} projectId={projectId} />}
+          {activePlatform === "linkedin" && <LinkedInGuide t={t} projectId={projectId} />}
           {activePlatform === "twitter" && <TwitterGuide t={t} projectId={projectId} />}
           {activePlatform === "tiktok" && <TikTokGuide t={t} projectId={projectId} />}
         </>
@@ -286,6 +288,40 @@ function TikTokGuide({ t, projectId }: GuideProps) {
         </div>
 
         <ConnectNowButton platform="tiktok" projectId={projectId} t={t} />
+      </CardContent>
+    </Card>
+  );
+}
+
+function LinkedInGuide({ t, projectId }: GuideProps) {
+  const steps = [
+    t("linkedin.step1"),
+    t("linkedin.step2"),
+    t("linkedin.step3"),
+    t("linkedin.step4"),
+  ];
+
+  return (
+    <Card>
+      <CardContent className="p-6 space-y-5">
+        <div className="flex items-center gap-3">
+          <PlatformIcon platform="linkedin" className="h-8 w-8" />
+          <div>
+            <h2 className="font-heading text-lg font-bold">{t("linkedin.title")}</h2>
+            <p className="text-sm text-muted-foreground">{t("linkedin.desc")}</p>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-semibold mb-3">{t("linkedin.stepsTitle")}</h3>
+          <StepList steps={steps} />
+        </div>
+
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+          <p className="text-sm text-blue-700 dark:text-blue-400">{t("linkedin.note")}</p>
+        </div>
+
+        <ConnectNowButton platform="linkedin" projectId={projectId} t={t} />
       </CardContent>
     </Card>
   );

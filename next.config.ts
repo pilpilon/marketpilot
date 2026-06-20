@@ -13,6 +13,21 @@ const nextConfig: NextConfig = {
         hostname: "ydusfdblkcpswigkeyvm.supabase.co",
         pathname: "/storage/v1/object/public/**",
       },
+      {
+        protocol: "https",
+        hostname: "cdn.higgsfield.ai",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "upload.higgsfield.ai",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**",
+        pathname: "/**",
+      },
     ],
   },
 };

@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       .eq("platform", "instagram")
       .eq("platform_user_id", account.platform_user_id);
   } else {
-    // Per-project platforms (twitter, tiktok): single-row delete
+    // Per-project platforms (twitter, tiktok, linkedin): single-row delete
     await supabase
       .from("social_accounts")
       .delete()

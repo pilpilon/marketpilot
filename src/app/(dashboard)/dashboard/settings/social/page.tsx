@@ -7,7 +7,7 @@ import type { Platform, Database } from "@/types/database";
 
 type SocialAccount = Database["public"]["Tables"]["social_accounts"]["Row"];
 
-const PLATFORM_IDS: Platform[] = ["facebook", "instagram", "twitter", "tiktok"];
+const PLATFORM_IDS: Platform[] = ["facebook", "instagram", "linkedin", "twitter", "tiktok"];
 
 export default async function GlobalSocialAccountsPage() {
   const t = await getTranslations("social");
@@ -47,18 +47,20 @@ export default async function GlobalSocialAccountsPage() {
     instagram: "instagramName",
     facebook: "facebookName",
     tiktok: "tiktokName",
+    linkedin: "linkedinName",
   };
   const platformDescKeys: Record<Platform, string> = {
     twitter: "twitterDescription",
     instagram: "instagramDescription",
     facebook: "facebookDescription",
     tiktok: "tiktokDescription",
+    linkedin: "linkedinDescription",
   };
 
   const platforms = PLATFORM_IDS.map((id) => ({
     id,
-    name: t(platformNameKeys[id] as "twitterName" | "instagramName" | "facebookName" | "tiktokName"),
-    description: t(platformDescKeys[id] as "twitterDescription" | "instagramDescription" | "facebookDescription" | "tiktokDescription"),
+    name: t(platformNameKeys[id] as "twitterName" | "instagramName" | "facebookName" | "tiktokName" | "linkedinName"),
+    description: t(platformDescKeys[id] as "twitterDescription" | "instagramDescription" | "facebookDescription" | "tiktokDescription" | "linkedinDescription"),
   }));
 
   return (

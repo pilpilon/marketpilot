@@ -19,6 +19,7 @@ const PLATFORM_NAMES: Record<Platform, string> = {
   instagram: "Instagram",
   facebook: "Facebook",
   tiktok: "TikTok",
+  linkedin: "LinkedIn",
 };
 
 export function PlatformPreview({
@@ -53,12 +54,21 @@ export function PlatformPreview({
           </div>
           {mediaUrls && mediaUrls.length > 0 && (
             <div className="rounded-md overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={mediaUrls[0]}
-                alt="Post media"
-                className="w-full object-cover"
-              />
+              {mediaUrls[0].toLowerCase().split("?")[0].match(/\.(mp4|mov|webm|avi)$/) ? (
+                <video
+                  src={mediaUrls[0]}
+                  className="w-full max-h-64 object-cover"
+                  controls
+                  muted
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={mediaUrls[0]}
+                  alt="Post media"
+                  className="w-full object-cover"
+                />
+              )}
             </div>
           )}
           <p className="text-sm whitespace-pre-wrap break-words">

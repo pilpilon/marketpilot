@@ -3,6 +3,7 @@ import { TwitterClient } from "./twitter";
 import { InstagramClient } from "./instagram";
 import { TikTokClient } from "./tiktok";
 import { FacebookClient } from "./facebook";
+import { LinkedInClient } from "./linkedin";
 
 export interface PlatformPublishResult {
   platformPostId: string;
@@ -54,10 +55,11 @@ const clients: Record<Platform, SocialPlatformClient> = {
   instagram: new InstagramClient(),
   tiktok: new TikTokClient(),
   facebook: new FacebookClient(),
+  linkedin: new LinkedInClient(),
 };
 
 export function getPlatformClient(platform: Platform): SocialPlatformClient {
   return clients[platform];
 }
 
-export { TwitterClient, InstagramClient, TikTokClient, FacebookClient };
+export { TwitterClient, InstagramClient, TikTokClient, FacebookClient, LinkedInClient };
